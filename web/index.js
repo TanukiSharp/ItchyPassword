@@ -82,7 +82,62 @@ const generatePassword = async (privateKey, publicKey) => {
     return await crypto.subtle.exportKey('raw', result);
 };
 
+const postData = async (url = '', data = {}) => {
+    const response = await fetch(url, {
+        method: 'POST',
+        cache: 'no-cache',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    });
+
+    return response.text();
+};
+
+const generateRandomString = (alphabet) => {
+    const size = Math.random() * 8 + 24;
+
+    let result = '';
+    for (let i = 0; i < size; i += 1) {
+        const index = Math.floor(Math.random() * alphabet.length);
+        result += alphabet[index];
+    }
+
+    return result;
+};
+
+const validate = async () => {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:\'",<.>/?';
+
+    for (let i = 0; i < 150; i += 1) {
+        const privateKey = generateRandomString(alphabet);
+        const publicKey = generateRandomString(alphabet);
+
+        const localDerivedBytes = await generatePassword(privateKey, publicKey);
+        const localDerivedKey = toCustomBase(localDerivedBytes, alphabet);
+
+        const remoteDerivedKey = await postData('http://localhost:5000/', {
+            privateKey,
+            publicKey,
+            iterations: 100000,
+            algorithmName: "SHA512",
+            alphabet
+        });
+
+        if (localDerivedKey !== remoteDerivedKey) {
+            throw new Error(`Keys mismatch at test ${i}, local: ${localDerivedKey}, remote: ${remoteDerivedKey}`);
+        }
+
+        console.log(localDerivedKey);
+    }
+};
+
 const main = async () => {
+    console.log('Validating...');
+    await validate();
+    console.log('Validated');
+
     const keyBytes = await generatePassword('furet', 'en-mousse');
 
     const b16Key = bufferToHexadeximal(keyBytes);
