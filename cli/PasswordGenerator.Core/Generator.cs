@@ -14,6 +14,9 @@ namespace PasswordGenerator.Core
             if (salt == null)
                 throw new ArgumentNullException(nameof(salt));
 
+            if (salt.Length <= 0)
+                throw new ArgumentOutOfRangeException(nameof(salt), $"Argument '{nameof(salt)}' must not be empty.");
+
             if (salt.Length >= 8)
                 return salt;
 
