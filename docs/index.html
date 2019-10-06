@@ -1,0 +1,28 @@
+<html>
+<head>
+    <title>Password Generator</title>
+    <style>
+    body, input {
+        font-family: consolas;
+    }
+    input {
+        width: 600px;
+        margin: 2px;
+    }
+    </style>
+</head>
+<body>
+    Private part: <input id="txtPrivatePart" type="password"></input></br>
+    Public part: <input id="txtPublicPart" type="text"></input></br>
+    Length: <input id="numOutputSizeRange" type="range" min="4" max="64" value="64" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
+    Custom alphabet: <input id="txtCustomAlphabet" type="text" value=""></input><input id="btnResetAlphabet" type="button" value="Reset" style="width: 60px"></input></br>
+
+    <hr/>
+    b16: <input id="txtResultB16" type="text" readonly></input></br>
+    b64: <input id="txtResultB64" type="text" readonly></input></br>
+    b<span id="spnAlphabetSize"></span>: <input id="txtResultCustomBase" type="text" readonly></input></br>
+
+    <script type="text/javascript" src="logic.js"></script>
+    <script type="text/javascript" src="ui.js"></script>
+</body>
+</html>
