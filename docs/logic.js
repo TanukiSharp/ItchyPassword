@@ -1,5 +1,4 @@
 const algorithmName = 'PBKDF2';
-const defaultCustomAlphabet = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:\'",<.>/?';
 
 const truncate = (input, length) => {
     if (input.length <= length) {
