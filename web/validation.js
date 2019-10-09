@@ -1,3 +1,5 @@
+const defaultAlphabet = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+
 const postData = async (url = '', data = {}) => {
     const response = await fetch(url, {
         method: 'POST',
@@ -25,8 +27,8 @@ const generateRandomString = (alphabet) => {
 
 const validate = async () => {
     for (let i = 0; i < 150; i += 1) {
-        const privateKey = generateRandomString(defaultCustomAlphabet);
-        const publicKey = generateRandomString(defaultCustomAlphabet);
+        const privateKey = generateRandomString(defaultAlphabet);
+        const publicKey = generateRandomString(defaultAlphabet);
 
         const localDerivedBytesTask = generatePassword(privateKey, publicKey);
 
@@ -35,7 +37,7 @@ const validate = async () => {
             publicKey,
             iterations: 100000,
             algorithmName: "SHA512",
-            alphabet: defaultCustomAlphabet
+            alphabet: defaultAlphabet
         });
 
         await Promise.all([localDerivedBytesTask, remoteDerivedKeyTask]);
@@ -43,7 +45,7 @@ const validate = async () => {
         const localDerivedBytes = await localDerivedBytesTask;
         const remoteDerivedKey = await remoteDerivedKeyTask;
 
-        const localDerivedKey = toCustomBase(localDerivedBytes, defaultCustomAlphabet);
+        const localDerivedKey = toCustomBase(localDerivedBytes, defaultAlphabet);
 
         if (localDerivedKey !== remoteDerivedKey) {
             throw new Error(`Keys mismatch at test ${i}, local: ${localDerivedKey}, remote: ${remoteDerivedKey}`);

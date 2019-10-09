@@ -88,7 +88,7 @@ namespace PasswordGenerator
             Console.WriteLine($"b16: {passwordBytes.ToBase16().Truncate(passwordLength)}");
             Console.WriteLine($"b64: {passwordBytes.ToBase64().Truncate(passwordLength)}");
 
-            string alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:'\",<.>/?";
+            string alphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
             Console.WriteLine($"b{alphabet.Length}: {passwordBytes.ToCustomBase(alphabet)}");
         }
 
