@@ -30,6 +30,32 @@ const defaultAlphabet = defaultAlphabetV2;
 numOutputSizeRange.max = defaultLength;
 numOutputSizeRange.value = defaultLength;
 
+const setupViewButton = (txt, buttonName) => {
+    const btn = document.getElementById(buttonName);
+    btn.addEventListener('click', () => {
+        if (txt.type === 'password') {
+            txt.type = 'input';
+            btn.innerText = 'Hide';
+        } else {
+            txt.type = 'password';
+            btn.innerText = 'View';
+        }
+    });
+};
+
+const setupCopyButton = (txt, buttonName) => {
+    const btn = document.getElementById(buttonName);
+    btn.addEventListener('click', () => {
+        navigator.clipboard.writeText(txt.value);
+    });
+};
+
+setupViewButton(txtResultB16, 'btnViewBase16');
+setupViewButton(txtResultB64, 'btnViewBase64');
+setupViewButton(txtResultCustomBase, 'btnViewCustomBase');
+
+setupCopyButton(txtResultCustomBase, 'btnCopyCustomBase');
+
 const isAlphabetValid = (alphabet) => {
     const sortedAlphabet = alphabet.split('');
     sortedAlphabet.sort();
@@ -113,6 +139,9 @@ numOutputSizeNum.addEventListener('input', () => {
 
 const updateAlphabetSize = () => {
     spnAlphabetSize.innerText = txtCustomAlphabet.value.length;
+    if (spnAlphabetSize.innerText.length === 1) {
+        spnAlphabetSize.innerText += ' ';
+    }
 };
 
 const updateAlphabetValidityDisplay = (isAlphabetValid) => {

@@ -9,6 +9,9 @@
         width: 600px;
         margin: 2px;
     }
+    .copyButton {
+        margin-left: 2px;
+    }
     </style>
 </head>
 <body>
@@ -20,9 +23,9 @@
     <br/>
     <hr/>
     <br/>
-    b16: <input id="txtResultB16" type="text" readonly></input></br>
-    b64: <input id="txtResultB64" type="text" readonly></input></br>
-    b<span id="spnAlphabetSize"></span>: <input id="txtResultCustomBase" type="text" readonly></input></br>
+    b16: <input id="txtResultB16" type="password" readonly></input><button id="btnViewBase16">View</button></br>
+    b64: <input id="txtResultB64" type="password" readonly></input><button id="btnViewBase64">View</button></br>
+    b<span id="spnAlphabetSize"></span>: <input id="txtResultCustomBase" type="password" readonly></input><button id="btnViewCustomBase">View</button><button id="btnCopyCustomBase" class="copyButton">Copy</button></br>
     <br/>
     <hr/>
     <br/>
