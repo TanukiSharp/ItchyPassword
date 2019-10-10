@@ -20,6 +20,7 @@ const txtResultCustomBase = document.getElementById('txtResultCustomBase');
 const txtParameters = document.getElementById('txtParameters');
 
 const defaultLength = 64;
+
 // Alphabet v1 is screwed, the character { appears twice and } is missing.
 const defaultAlphabetV1 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:\'",<.>/?';
 // Alphabet v2 is correct and in ASCII order.
@@ -69,6 +70,8 @@ const isAlphabetValid = (alphabet) => {
     return true;
 };
 
+// Transforms a path like "a/b/c/d" into a hierarchy of objects like { "a": { "b": { "c": { "d": {} } } } }
+// From the result object, head is the root object that contains "a", tail is the value of "d", and tailParent is the value of "c"
 const pathToObjectChain = (path, chainInfo) => {
     const separatorIndex = path.indexOf('/');
 
@@ -82,10 +85,12 @@ const pathToObjectChain = (path, chainInfo) => {
         node[firstPath] = tail;
         chainInfo = {
             head: node,
+            tailParent: node,
             tail
         };
     } else {
         chainInfo.tail[firstPath] = tail;
+        chainInfo.tailParent = chainInfo.tail;
         chainInfo.tail = tail;
     }
 
@@ -115,6 +120,11 @@ const updateParameters = () => {
         leaf.alphabet = alphabet;
     }
 
+    if (Object.keys(leaf).length === 0) {
+        // Set the value of the first (single) property of the object to null.
+        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = null;
+    }
+
     txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4);
 };
 
@@ -140,6 +150,7 @@ numOutputSizeNum.addEventListener('input', () => {
 const updateAlphabetSize = () => {
     spnAlphabetSize.innerText = txtCustomAlphabet.value.length;
     if (spnAlphabetSize.innerText.length === 1) {
+        // Add a space to keep a nice visual alignment.
         spnAlphabetSize.innerText += ' ';
     }
 };
