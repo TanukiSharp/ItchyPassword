@@ -1,6 +1,7 @@
 const txtPrivatePart = document.getElementById('txtPrivatePart');
 const txtPrivatePartConfirmation = document.getElementById('txtPrivatePartConfirmation');
 const txtPublicPart = document.getElementById('txtPublicPart');
+const txtPublicPartConfirmation = document.getElementById('txtPublicPartConfirmation');
 
 const spnPrivatePartSize = document.getElementById('spnPrivatePartSize');
 const spnPrivatePartSizeConfirmation = document.getElementById('spnPrivatePartSizeConfirmation');
@@ -9,13 +10,18 @@ const numOutputSizeRange = document.getElementById('numOutputSizeRange');
 const numOutputSizeNum = document.getElementById('numOutputSizeNum');
 
 const txtCustomAlphabet = document.getElementById('txtCustomAlphabet');
+const spnAlphabetSize = document.getElementById('spnAlphabetSize');
 const btnResetAlphabet = document.getElementById('btnResetAlphabet');
 
 const txtResultB16 = document.getElementById('txtResultB16');
 const txtResultB64 = document.getElementById('txtResultB64');
-
-const spnAlphabetSize = document.getElementById('spnAlphabetSize');
 const txtResultCustomBase = document.getElementById('txtResultCustomBase');
+
+const spnResultB16Length = document.getElementById('spnResultB16Length');
+const spnResultB64Length = document.getElementById('spnResultB64Length');
+const spnResultCustomBaseLength = document.getElementById('spnResultCustomBaseLength');
+
+const spnCopyFeedback = document.getElementById('spnCopyFeedback');
 
 const txtParameters = document.getElementById('txtParameters');
 
@@ -31,6 +37,14 @@ const defaultAlphabet = defaultAlphabetV2;
 numOutputSizeRange.max = defaultLength;
 numOutputSizeRange.value = defaultLength;
 
+const poormanPadLeft = (text, padding) => {
+    if (text.length >= 2) {
+        return text;
+    }
+
+    return padding + text;
+};
+
 const setupViewButton = (txt, buttonName) => {
     const btn = document.getElementById(buttonName);
     btn.addEventListener('click', () => {
@@ -44,11 +58,49 @@ const setupViewButton = (txt, buttonName) => {
     });
 };
 
+const createFeedbackObject = (element) => {
+    const obj = {
+        element,
+        timeout: null,
+        setText: (text, duration) => {
+            element.innerHTML = text;
+            if (this.timeout) {
+                clearTimeout(this.timeout);
+            }
+            this.timeout = setTimeout(() => element.innerHTML = '', duration);
+        }
+    };
+
+    return obj;
+};
+
+const copyToClipboardFeedbackObject = createFeedbackObject(spnCopyFeedback);
+
+const writeToClipboard = async (text) => {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (error) {
+        console.error(error.stack || error);
+        return false;
+    }
+};
+
 const setupCopyButton = (txt, buttonName) => {
     const btn = document.getElementById(buttonName);
-    btn.addEventListener('click', () => {
-        navigator.clipboard.writeText(txt.value);
+    btn.addEventListener('click', async () => {
+        if (await writeToClipboard(txt.value)) {
+            copyToClipboardFeedbackObject.setText('Copied', 3000);
+        } else {
+            copyToClipboardFeedbackObject.setText('<span style="color: red">Failed to copy</span>', 3000);
+        }
     });
+};
+
+const updateResultLengths = () => {
+    spnResultB16Length.innerText = poormanPadLeft(txtResultB16.value.length.toString(), ' ');
+    spnResultB64Length.innerText = poormanPadLeft(txtResultB64.value.length.toString(), ' ');
+    spnResultCustomBaseLength.innerText = poormanPadLeft(txtResultCustomBase.value.length.toString(), ' ');
 };
 
 setupViewButton(txtResultB16, 'btnViewBase16');
@@ -125,7 +177,7 @@ const updateParameters = () => {
         chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = null;
     }
 
-    txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4);
+    txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4) + ',\n';
 };
 
 const updateOutputSizeRangeToNum = () => {
@@ -148,10 +200,12 @@ numOutputSizeNum.addEventListener('input', () => {
 });
 
 const updateAlphabetSize = () => {
-    spnAlphabetSize.innerText = txtCustomAlphabet.value.length;
-    if (spnAlphabetSize.innerText.length === 1) {
+    spnAlphabetSize.innerHTML = `${txtCustomAlphabet.value.length}:`;
+
+    const alphabetSizeDigitCount = txtCustomAlphabet.value.length.toString().length;
+    if (alphabetSizeDigitCount < 2) {
         // Add a space to keep a nice visual alignment.
-        spnAlphabetSize.innerText += ' ';
+        spnAlphabetSize.innerHTML += '&nbsp;';
     }
 };
 
@@ -186,6 +240,8 @@ const clearOutputs = () => {
     txtResultB16.value = '';
     txtResultB64.value = '';
     txtResultCustomBase.value = '';
+
+    updateResultLengths();
 };
 
 const canRun = () => {
@@ -216,6 +272,8 @@ const run = async () => {
     txtResultB16.value = truncate(bufferToHexadeximal(keyBytes), numOutputSizeRange.value);
     txtResultB64.value = truncate(bufferToBase64(keyBytes), numOutputSizeRange.value);
     txtResultCustomBase.value = truncate(toCustomBase(keyBytes, txtCustomAlphabet.value), numOutputSizeRange.value);
+
+    updateResultLengths();
 };
 
 const resetAlphabet = () => {
@@ -244,12 +302,24 @@ const checkPrivatePartsMatching = () => {
     }
 };
 
+const checkPublicPartsMatching = () => {
+    if (txtPublicPartConfirmation.value === txtPublicPart.value) {
+        txtPublicPartConfirmation.style.setProperty('background', '#D0FFD0');
+    } else {
+        txtPublicPartConfirmation.style.setProperty('background', '#FFD0D0');
+    }
+};
+
 txtPrivatePartConfirmation.addEventListener('input', () => {
     spnPrivatePartSizeConfirmation.innerText = txtPrivatePartConfirmation.value.length;
-    run();
+});
+
+txtPublicPartConfirmation.addEventListener('input', () => {
+    checkPublicPartsMatching();
 });
 
 txtPublicPart.addEventListener('input', () => {
+    checkPublicPartsMatching();
     updateParameters();
     run();
 });
@@ -257,3 +327,4 @@ txtPublicPart.addEventListener('input', () => {
 updateOutputSizeRangeToNum();
 resetAlphabet();
 checkPrivatePartsMatching();
+checkPublicPartsMatching();

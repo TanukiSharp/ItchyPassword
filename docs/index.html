@@ -9,7 +9,7 @@
         width: 600px;
         margin: 2px;
     }
-    .copyButton {
+    .controlButton {
         margin-left: 2px;
     }
     </style>
@@ -17,15 +17,16 @@
 <body>
     Private part: <input id="txtPrivatePart" type="password"></input> <span id="spnPrivatePartSize">0</span></br>
     Private part: <input id="txtPrivatePartConfirmation" type="password"></input> <span id="spnPrivatePartSizeConfirmation">0</span></br>
-    Public part: <input id="txtPublicPart" type="text"></input></br>
+    Public part:&nbsp; <input id="txtPublicPart" type="text"></input></br>
+    Public part:&nbsp; <input id="txtPublicPartConfirmation" type="text"></input></br>
     Length: <input id="numOutputSizeRange" type="range" min="4" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
     Custom alphabet: <input id="txtCustomAlphabet" type="text" value=""></input><input id="btnResetAlphabet" type="button" value="Reset" style="width: 60px"></input></br>
     <br/>
     <hr/>
     <br/>
-    b16: <input id="txtResultB16" type="password" readonly></input><button id="btnViewBase16">View</button></br>
-    b64: <input id="txtResultB64" type="password" readonly></input><button id="btnViewBase64">View</button></br>
-    b<span id="spnAlphabetSize"></span>: <input id="txtResultCustomBase" type="password" readonly></input><button id="btnViewCustomBase">View</button><button id="btnCopyCustomBase" class="copyButton">Copy</button></br>
+    b16: <input id="txtResultB16" type="password" readonly></input><span id="spnResultB16Length"></span><button id="btnViewBase16" class="controlButton">View</button></br>
+    b64: <input id="txtResultB64" type="password" readonly></input><span id="spnResultB64Length"></span><button id="btnViewBase64" class="controlButton">View</button></br>
+    b<span id="spnAlphabetSize"></span> <input id="txtResultCustomBase" type="password" readonly></input><span id="spnResultCustomBaseLength"></span><button id="btnViewCustomBase" class="controlButton">View</button><button id="btnCopyCustomBase" class="controlButton">Copy</button> <span id="spnCopyFeedback"></span></br>
     <br/>
     <hr/>
     <br/>
