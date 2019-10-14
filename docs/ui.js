@@ -20,6 +20,7 @@ const spnResultPasswordLength = document.getElementById('spnResultPasswordLength
 const spnCopyResultPasswordFeedback = document.getElementById('spnCopyResultPasswordFeedback');
 
 const txtParameters = document.getElementById('txtParameters');
+const txtCustomKeys = document.getElementById('txtCustomKeys');
 
 const defaultLength = 64;
 
@@ -32,6 +33,70 @@ const defaultAlphabet = defaultAlphabetV2;
 
 numOutputSizeRange.max = defaultLength;
 numOutputSizeRange.value = defaultLength;
+
+const SUCCESS_COLOR = '#D0FFD0';
+const ERROR_COLOR = '#FFD0D0';
+
+const RESERVED_KEYS = ['alphabet', 'length'];
+
+const updateCustomKeysDisplay = (isValid) => {
+    if (isValid) {
+        txtCustomKeys.style.removeProperty('background');
+        return;
+    }
+
+    txtCustomKeys.style.setProperty('background', ERROR_COLOR);
+};
+
+const parseCustomKeys = () => {
+    if (txtCustomKeys.value === '') {
+        return {};
+    }
+
+    try {
+        const customKeys = JSON.parse(txtCustomKeys.value);
+        return customKeys;
+    } catch {
+        return undefined;
+    }
+};
+
+const shallowMerge = (source, target) => {
+    const result = {};
+
+    if (source === undefined || source === null || source.constructor.name !== 'Object') {
+        return target;
+    }
+
+    for (const [key, value] of Object.entries(source)) {
+        if (!RESERVED_KEYS.includes(key)) {
+            result[key] = value;
+        }
+    }
+
+    for (const [key, value] of Object.entries(target)) {
+        result[key] = value;
+    }
+
+    return result;
+};
+
+const deepMerge = (source, target) => {
+    for (const sourceKey of Object.keys(source)) {
+        const targetValue = target[sourceKey];
+        const sourceValue = source[sourceKey];
+
+        if (targetValue === undefined ||
+            targetValue === null ||
+            targetValue.constructor.name !== 'Object' ||
+            sourceValue.constructor.name !== 'Object') {
+            target[sourceKey] = sourceValue;
+            continue;
+        }
+
+        deepMerge(sourceValue, targetValue);
+    }
+};
 
 const setupViewButton = (txt, buttonName) => {
     const btn = document.getElementById(buttonName);
@@ -156,12 +221,18 @@ const updateParameters = () => {
         leaf.alphabet = alphabet;
     }
 
-    if (Object.keys(leaf).length === 0) {
+    const customKeys = parseCustomKeys();
+    updateCustomKeysDisplay(customKeys !== undefined);
+    const resultParameters = shallowMerge(customKeys, leaf);
+
+    if (Object.keys(resultParameters).length === 0) {
         // Set the value of the first (single) property of the object to null.
         chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = null;
+    } else {
+        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = resultParameters;
     }
 
-    txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4) + ',\n';
+    txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4);
 };
 
 const updateOutputSizeRangeToNum = () => {
@@ -197,7 +268,7 @@ const updateAlphabetValidityDisplay = (isAlphabetValid) => {
     if (isAlphabetValid) {
         txtAlphabet.style.removeProperty('background');
     } else {
-        txtAlphabet.style.setProperty('background', '#FFD0D0');
+        txtAlphabet.style.setProperty('background', ERROR_COLOR);
     }
 };
 
@@ -241,7 +312,6 @@ const canRun = () => {
 };
 
 const run = async () => {
-    checkPrivatePartsMatching();
     updateParameters();
 
     if (canRun() === false) {
@@ -271,27 +341,29 @@ const resetAlphabet = () => {
 
 txtPrivatePart.addEventListener('input', () => {
     spnPrivatePartSize.innerText = txtPrivatePart.value.length;
+    checkPrivatePartsMatching();
     run();
 });
 
 const checkPrivatePartsMatching = () => {
     if (txtPrivatePartConfirmation.value === txtPrivatePart.value) {
-        txtPrivatePartConfirmation.style.setProperty('background', '#D0FFD0');
+        txtPrivatePartConfirmation.style.setProperty('background', SUCCESS_COLOR);
     } else {
-        txtPrivatePartConfirmation.style.setProperty('background', '#FFD0D0');
+        txtPrivatePartConfirmation.style.setProperty('background', ERROR_COLOR);
     }
 };
 
 const checkPublicPartsMatching = () => {
     if (txtPublicPartConfirmation.value === txtPublicPart.value) {
-        txtPublicPartConfirmation.style.setProperty('background', '#D0FFD0');
+        txtPublicPartConfirmation.style.setProperty('background', SUCCESS_COLOR);
     } else {
-        txtPublicPartConfirmation.style.setProperty('background', '#FFD0D0');
+        txtPublicPartConfirmation.style.setProperty('background', ERROR_COLOR);
     }
 };
 
 txtPrivatePartConfirmation.addEventListener('input', () => {
     spnPrivatePartSizeConfirmation.innerText = txtPrivatePartConfirmation.value.length;
+    checkPrivatePartsMatching();
 });
 
 txtPublicPartConfirmation.addEventListener('input', () => {
@@ -302,6 +374,10 @@ txtPublicPart.addEventListener('input', () => {
     checkPublicPartsMatching();
     updateParameters();
     run();
+});
+
+txtCustomKeys.addEventListener('input', () => {
+    updateParameters();
 });
 
 updateOutputSizeRangeToNum();
