@@ -9,19 +9,15 @@ const spnPrivatePartSizeConfirmation = document.getElementById('spnPrivatePartSi
 const numOutputSizeRange = document.getElementById('numOutputSizeRange');
 const numOutputSizeNum = document.getElementById('numOutputSizeNum');
 
-const txtCustomAlphabet = document.getElementById('txtCustomAlphabet');
+const txtAlphabet = document.getElementById('txtAlphabet');
 const spnAlphabetSize = document.getElementById('spnAlphabetSize');
 const btnResetAlphabet = document.getElementById('btnResetAlphabet');
 
-const txtResultB16 = document.getElementById('txtResultB16');
-const txtResultB64 = document.getElementById('txtResultB64');
-const txtResultCustomBase = document.getElementById('txtResultCustomBase');
+const txtResultPassword = document.getElementById('txtResultPassword');
 
-const spnResultB16Length = document.getElementById('spnResultB16Length');
-const spnResultB64Length = document.getElementById('spnResultB64Length');
-const spnResultCustomBaseLength = document.getElementById('spnResultCustomBaseLength');
+const spnResultPasswordLength = document.getElementById('spnResultPasswordLength');
 
-const spnCopyFeedback = document.getElementById('spnCopyFeedback');
+const spnCopyResultPasswordFeedback = document.getElementById('spnCopyResultPasswordFeedback');
 
 const txtParameters = document.getElementById('txtParameters');
 
@@ -66,7 +62,7 @@ const createFeedbackObject = (element) => {
     return obj;
 };
 
-const copyToClipboardFeedbackObject = createFeedbackObject(spnCopyFeedback);
+const copyToClipboardFeedbackObject = createFeedbackObject(spnCopyResultPasswordFeedback);
 
 const writeToClipboard = async (text) => {
     try {
@@ -89,17 +85,13 @@ const setupCopyButton = (txt, buttonName) => {
     });
 };
 
-const updateResultLengths = () => {
-    spnResultB16Length.innerText = txtResultB16.value.length.toString().padStart(2, ' ');
-    spnResultB64Length.innerText = txtResultB64.value.length.toString().padStart(2, ' ');
-    spnResultCustomBaseLength.innerText = txtResultCustomBase.value.length.toString().padStart(2, ' ');
+const updateResultPasswordLength = () => {
+    spnResultPasswordLength.innerText = txtResultPassword.value.length.toString().padStart(2, ' ');
 };
 
-setupViewButton(txtResultB16, 'btnViewBase16');
-setupViewButton(txtResultB64, 'btnViewBase64');
-setupViewButton(txtResultCustomBase, 'btnViewCustomBase');
+setupViewButton(txtResultPassword, 'btnViewResultPassword');
 
-setupCopyButton(txtResultCustomBase, 'btnCopyCustomBase');
+setupCopyButton(txtResultPassword, 'btnCopyResultPassword');
 
 const isAlphabetValid = (alphabet) => {
     const sortedAlphabet = alphabet.split('');
@@ -159,7 +151,7 @@ const updateParameters = () => {
         leaf.length = numericValue;
     }
 
-    const alphabet = txtCustomAlphabet.value;
+    const alphabet = txtAlphabet.value;
     if (alphabet !== defaultAlphabet) {
         leaf.alphabet = alphabet;
     }
@@ -192,25 +184,25 @@ numOutputSizeNum.addEventListener('input', () => {
 });
 
 const updateAlphabetSize = () => {
-    spnAlphabetSize.innerHTML = `${txtCustomAlphabet.value.length}:`;
+    spnAlphabetSize.innerHTML = txtAlphabet.value.length;
 
-    const alphabetSizeDigitCount = txtCustomAlphabet.value.length.toString().length;
+    const alphabetSizeDigitCount = txtAlphabet.value.length.toString().length;
     if (alphabetSizeDigitCount < 2) {
         // Add a space to keep a nice visual alignment.
-        spnAlphabetSize.innerHTML += '&nbsp;';
+        spnAlphabetSize.innerHTML = spnAlphabetSize.innerHTML.padStart(2, ' ');
     }
 };
 
 const updateAlphabetValidityDisplay = (isAlphabetValid) => {
     if (isAlphabetValid) {
-        txtCustomAlphabet.style.removeProperty('background');
+        txtAlphabet.style.removeProperty('background');
     } else {
-        txtCustomAlphabet.style.setProperty('background', '#FFD0D0');
+        txtAlphabet.style.setProperty('background', '#FFD0D0');
     }
 };
 
-txtCustomAlphabet.addEventListener('input', () => {
-    const isAlphabetValidResult = isAlphabetValid(txtCustomAlphabet.value);
+txtAlphabet.addEventListener('input', () => {
+    const isAlphabetValidResult = isAlphabetValid(txtAlphabet.value);
 
     updateAlphabetValidityDisplay(isAlphabetValidResult);
 
@@ -229,15 +221,13 @@ btnResetAlphabet.addEventListener('click', () => {
 });
 
 const clearOutputs = () => {
-    txtResultB16.value = '';
-    txtResultB64.value = '';
-    txtResultCustomBase.value = '';
+    txtResultPassword.value = '';
 
-    updateResultLengths();
+    updateResultPasswordLength();
 };
 
 const canRun = () => {
-    const alphabet = txtCustomAlphabet.value;
+    const alphabet = txtAlphabet.value;
 
     if (isAlphabetValid(alphabet) === false) {
         return false;
@@ -261,18 +251,16 @@ const run = async () => {
 
     const keyBytes = await generatePassword(txtPrivatePart.value, txtPublicPart.value);
 
-    txtResultB16.value = truncate(bufferToHexadeximal(keyBytes), numOutputSizeRange.value);
-    txtResultB64.value = truncate(bufferToBase64(keyBytes), numOutputSizeRange.value);
-    txtResultCustomBase.value = truncate(toCustomBase(keyBytes, txtCustomAlphabet.value), numOutputSizeRange.value);
+    txtResultPassword.value = truncate(toCustomBase(keyBytes, txtAlphabet.value), numOutputSizeRange.value);
 
-    updateResultLengths();
+    updateResultPasswordLength();
 };
 
 const resetAlphabet = () => {
-    txtCustomAlphabet.value = defaultAlphabet;
+    txtAlphabet.value = defaultAlphabet;
     updateAlphabetSize();
 
-    const isAlphabetValidResult = isAlphabetValid(txtCustomAlphabet.value);
+    const isAlphabetValidResult = isAlphabetValid(txtAlphabet.value);
 
     updateAlphabetValidityDisplay(isAlphabetValidResult);
 
