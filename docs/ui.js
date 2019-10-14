@@ -37,14 +37,6 @@ const defaultAlphabet = defaultAlphabetV2;
 numOutputSizeRange.max = defaultLength;
 numOutputSizeRange.value = defaultLength;
 
-const poormanPadLeft = (text, padding) => {
-    if (text.length >= 2) {
-        return text;
-    }
-
-    return padding + text;
-};
-
 const setupViewButton = (txt, buttonName) => {
     const btn = document.getElementById(buttonName);
     btn.addEventListener('click', () => {
@@ -98,9 +90,9 @@ const setupCopyButton = (txt, buttonName) => {
 };
 
 const updateResultLengths = () => {
-    spnResultB16Length.innerText = poormanPadLeft(txtResultB16.value.length.toString(), ' ');
-    spnResultB64Length.innerText = poormanPadLeft(txtResultB64.value.length.toString(), ' ');
-    spnResultCustomBaseLength.innerText = poormanPadLeft(txtResultCustomBase.value.length.toString(), ' ');
+    spnResultB16Length.innerText = txtResultB16.value.length.toString().padStart(2, ' ');
+    spnResultB64Length.innerText = txtResultB64.value.length.toString().padStart(2, ' ');
+    spnResultCustomBaseLength.innerText = txtResultCustomBase.value.length.toString().padStart(2, ' ');
 };
 
 setupViewButton(txtResultB16, 'btnViewBase16');
