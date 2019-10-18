@@ -22,22 +22,24 @@ const spnCopyResultPasswordFeedback = document.getElementById('spnCopyResultPass
 const txtParameters = document.getElementById('txtParameters');
 const txtCustomKeys = document.getElementById('txtCustomKeys');
 
-const defaultLength = 64;
+const DEFAULT_LENGTH = 64;
 
 // Alphabet v1 is screwed, the character { appears twice and } is missing.
-const defaultAlphabetV1 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:\'",<.>/?';
+const DEFAULT_ALPHABET_V1 = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:\'",<.>/?';
 // Alphabet v2 is correct and in ASCII order.
-const defaultAlphabetV2 = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+const DEFAULT_ALPHABET_V2 = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
-const defaultAlphabet = defaultAlphabetV2;
+const DEFAULT_ALPHABET = DEFAULT_ALPHABET_V2;
 
-numOutputSizeRange.max = defaultLength;
-numOutputSizeRange.value = defaultLength;
+const PRIVATE_PART_PROTECTION_TIMEOUT = 60 * 1000;
 
 const SUCCESS_COLOR = '#D0FFD0';
 const ERROR_COLOR = '#FFD0D0';
 
 const RESERVED_KEYS = ['alphabet', 'length'];
+
+numOutputSizeRange.max = DEFAULT_LENGTH;
+numOutputSizeRange.value = DEFAULT_LENGTH;
 
 const updateCustomKeysDisplay = (isValid) => {
     if (isValid) {
@@ -103,10 +105,10 @@ const setupViewButton = (txt, buttonName) => {
     btn.addEventListener('click', () => {
         if (txt.type === 'password') {
             txt.type = 'input';
-            btn.innerText = 'Hide';
+            btn.innerHTML = 'Hide';
         } else {
             txt.type = 'password';
-            btn.innerText = 'View';
+            btn.innerHTML = 'View';
         }
     });
 };
@@ -151,7 +153,7 @@ const setupCopyButton = (txt, buttonName) => {
 };
 
 const updateResultPasswordLength = () => {
-    spnResultPasswordLength.innerText = txtResultPassword.value.length.toString().padStart(2, ' ');
+    spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString().padStart(2, ' ');
 };
 
 setupViewButton(txtResultPassword, 'btnViewResultPassword');
@@ -212,12 +214,12 @@ const updateParameters = () => {
     const leaf = chainInfo.tail;
 
     const numericValue = parseInt(numOutputSizeNum.value, 10);
-    if (numericValue !== defaultLength) {
+    if (numericValue !== DEFAULT_LENGTH) {
         leaf.length = numericValue;
     }
 
     const alphabet = txtAlphabet.value;
-    if (alphabet !== defaultAlphabet) {
+    if (alphabet !== DEFAULT_ALPHABET) {
         leaf.alphabet = alphabet;
     }
 
@@ -327,7 +329,7 @@ const run = async () => {
 };
 
 const resetAlphabet = () => {
-    txtAlphabet.value = defaultAlphabet;
+    txtAlphabet.value = DEFAULT_ALPHABET;
     updateAlphabetSize();
 
     const isAlphabetValidResult = isAlphabetValid(txtAlphabet.value);
@@ -341,11 +343,11 @@ const resetAlphabet = () => {
 
 txtPrivatePart.addEventListener('input', () => {
     spnPrivatePartSize.innerText = txtPrivatePart.value.length;
-    checkPrivatePartsMatching();
+    updatePrivatePartsMatching();
     run();
 });
 
-const checkPrivatePartsMatching = () => {
+const updatePrivatePartsMatching = () => {
     if (txtPrivatePartConfirmation.value === txtPrivatePart.value) {
         txtPrivatePartConfirmation.style.setProperty('background', SUCCESS_COLOR);
     } else {
@@ -353,7 +355,7 @@ const checkPrivatePartsMatching = () => {
     }
 };
 
-const checkPublicPartsMatching = () => {
+const updatePublicPartsMatching = () => {
     if (txtPublicPartConfirmation.value === txtPublicPart.value) {
         txtPublicPartConfirmation.style.setProperty('background', SUCCESS_COLOR);
     } else {
@@ -362,16 +364,16 @@ const checkPublicPartsMatching = () => {
 };
 
 txtPrivatePartConfirmation.addEventListener('input', () => {
-    spnPrivatePartSizeConfirmation.innerText = txtPrivatePartConfirmation.value.length;
-    checkPrivatePartsMatching();
+    spnPrivatePartSizeConfirmation.innerHTML = txtPrivatePartConfirmation.value.length;
+    updatePrivatePartsMatching();
 });
 
 txtPublicPartConfirmation.addEventListener('input', () => {
-    checkPublicPartsMatching();
+    updatePublicPartsMatching();
 });
 
 txtPublicPart.addEventListener('input', () => {
-    checkPublicPartsMatching();
+    updatePublicPartsMatching();
     updateParameters();
     run();
 });
@@ -382,5 +384,6 @@ txtCustomKeys.addEventListener('input', () => {
 
 updateOutputSizeRangeToNum();
 resetAlphabet();
-checkPrivatePartsMatching();
-checkPublicPartsMatching();
+updatePrivatePartsMatching();
+updatePublicPartsMatching();
+
