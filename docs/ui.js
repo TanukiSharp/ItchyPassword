@@ -1,5 +1,8 @@
 const txtPrivatePart = document.getElementById('txtPrivatePart');
 const txtPrivatePartConfirmation = document.getElementById('txtPrivatePartConfirmation');
+const btnProtect = document.getElementById('btnProtect');
+const btnClearProtected = document.getElementById('btnClearProtected');
+const spnProtectedConfirmation = document.getElementById('spnProtectedConfirmation');
 const txtPublicPart = document.getElementById('txtPublicPart');
 const txtPublicPartConfirmation = document.getElementById('txtPublicPartConfirmation');
 
@@ -40,6 +43,43 @@ const RESERVED_KEYS = ['alphabet', 'length'];
 
 numOutputSizeRange.max = DEFAULT_LENGTH;
 numOutputSizeRange.value = DEFAULT_LENGTH;
+
+let privatePart;
+
+const getPrivatePart = () => {
+    if (privatePart !== undefined) {
+        return privatePart;
+    }
+    return txtPrivatePart.value;
+};
+
+const protectPrivatePart = () => {
+    if (txtPrivatePart.value.length === 0) {
+        return;
+    }
+
+    privatePart = txtPrivatePart.value;
+    spnProtectedConfirmation.innerHTML = `Protected, ${privatePart.length} characters`;
+
+    txtPrivatePart.value = '';
+    txtPrivatePartConfirmation.value = '';
+    spnPrivatePartSize.innerHTML = '0';
+    spnPrivatePartSizeConfirmation.innerHTML = '0';
+};
+
+btnProtect.addEventListener('click', () => {
+    protectPrivatePart();
+});
+
+const clearPrivatePartProtection = () => {
+    privatePart = undefined;
+    spnProtectedConfirmation.innerHTML = '';
+};
+
+btnClearProtected.addEventListener('click', () => {
+    clearPrivatePartProtection();
+    run();
+});
 
 const updateCustomKeysDisplay = (isValid) => {
     if (isValid) {
@@ -306,7 +346,7 @@ const canRun = () => {
         return false;
     }
 
-    if (txtPrivatePart.value.length <= 0 || txtPublicPart.value.length <= 0 || alphabet.length <= 1) {
+    if (getPrivatePart().length <= 0 || txtPublicPart.value.length <= 0 || alphabet.length <= 1) {
         return false;
     }
 
@@ -321,7 +361,7 @@ const run = async () => {
         return;
     }
 
-    const keyBytes = await generatePassword(txtPrivatePart.value, txtPublicPart.value);
+    const keyBytes = await generatePassword(getPrivatePart(), txtPublicPart.value);
 
     txtResultPassword.value = truncate(toCustomBase(keyBytes, txtAlphabet.value), numOutputSizeRange.value);
 
@@ -341,10 +381,25 @@ const resetAlphabet = () => {
     }
 };
 
+let protectionTimeout;
+
+const triggerProtectionTimeout = () => {
+    if (protectionTimeout !== undefined) {
+        clearTimeout(protectionTimeout);
+    }
+
+    protectionTimeout = setTimeout(() => {
+        protectPrivatePart();
+        protectionTimeout = undefined;
+    }, PRIVATE_PART_PROTECTION_TIMEOUT);
+};
+
 txtPrivatePart.addEventListener('input', () => {
-    spnPrivatePartSize.innerText = txtPrivatePart.value.length;
+    clearPrivatePartProtection();
+    spnPrivatePartSize.innerHTML = txtPrivatePart.value.length;
     updatePrivatePartsMatching();
     run();
+    triggerProtectionTimeout();
 });
 
 const updatePrivatePartsMatching = () => {
