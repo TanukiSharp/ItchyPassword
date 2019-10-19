@@ -1,4 +1,4 @@
-const algorithmName = 'PBKDF2';
+const ALGORITHM_NAME = 'PBKDF2';
 
 const truncate = (input, length) => {
     if (input.length <= length) {
@@ -79,7 +79,7 @@ const generatePassword = async (privateKey, publicKey) => {
     const algorithmSalt = ensureRepeatedTo8Bytes(stringToArray(publicKey));
 
     const algorithm = {
-        name: algorithmName,
+        name: ALGORITHM_NAME,
         hash: 'SHA-512',
         iterations: 100000,
         salt: algorithmSalt
@@ -93,7 +93,7 @@ const generatePassword = async (privateKey, publicKey) => {
     const baseKey = await crypto.subtle.importKey(
         'raw',
         stringToArray(privateKey),
-        algorithmName,
+        ALGORITHM_NAME,
         false,
         ['deriveKey']
     );
