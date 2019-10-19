@@ -1,4 +1,5 @@
 const ALGORITHM_NAME = 'PBKDF2';
+const BASE62_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 const truncate = (input, length) => {
     if (input.length <= length) {
@@ -107,4 +108,10 @@ const generatePassword = async (privateKey, publicKey) => {
     );
 
     return await crypto.subtle.exportKey('raw', result);
+};
+
+const generareRandomString = (byteCount = 64) => {
+    const array = new Uint8Array(byteCount);
+    crypto.getRandomValues(array);
+    return toCustomBase(array.buffer, BASE62_ALPHABET);
 };
