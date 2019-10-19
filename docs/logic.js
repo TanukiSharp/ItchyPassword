@@ -15,19 +15,6 @@ const copy = (source, sourceIndex, target, targetIndex, length) => {
     }
 };
 
-const ensureRepeatedTo8Bytes = (salt) => {
-    if (salt.length <= 0 || salt.length >= 8)
-        return salt;
-
-    const result = new Uint8Array(8);
-
-    for (let i = 0; i < result.length; i += salt.length) {
-        copy(salt, 0, result, i, Math.min(salt.length, result.length - i));
-    }
-
-    return result;
-}
-
 const arrayBufferToUnsignedBigInt = (arrayBuffer) => {
     const length = arrayBuffer.byteLength;
     const arrayView = new DataView(arrayBuffer, 0);
@@ -77,7 +64,19 @@ const bufferToBase64 = (buffer) => {
 }
 
 const generatePassword = async (privateKey, publicKey) => {
-    const algorithmSalt = ensureRepeatedTo8Bytes(stringToArray(publicKey));
+    const algorithmSalt = stringToArray(publicKey);
+
+    if (algorithmSalt.length < 8) {
+        throw new Error('Public key must be at least 8 bytes long.');
+    }
+
+    const baseKey = await crypto.subtle.importKey(
+        'raw',
+        stringToArray(privateKey),
+        ALGORITHM_NAME,
+        false,
+        ['deriveKey']
+    );
 
     const algorithm = {
         name: ALGORITHM_NAME,
@@ -91,14 +90,6 @@ const generatePassword = async (privateKey, publicKey) => {
         length: 256
     };
 
-    const baseKey = await crypto.subtle.importKey(
-        'raw',
-        stringToArray(privateKey),
-        ALGORITHM_NAME,
-        false,
-        ['deriveKey']
-    );
-
     const result = await crypto.subtle.deriveKey(
         algorithm,
         baseKey,
@@ -110,7 +101,7 @@ const generatePassword = async (privateKey, publicKey) => {
     return await crypto.subtle.exportKey('raw', result);
 };
 
-const generareRandomString = (byteCount = 64) => {
+const generateRandomString = (byteCount = 64) => {
     const array = new Uint8Array(byteCount);
     crypto.getRandomValues(array);
     return toCustomBase(array.buffer, BASE62_ALPHABET);

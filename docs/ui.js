@@ -3,8 +3,9 @@ const txtPrivatePartConfirmation = document.getElementById('txtPrivatePartConfir
 const btnProtect = document.getElementById('btnProtect');
 const btnClearProtected = document.getElementById('btnClearProtected');
 const spnProtectedConfirmation = document.getElementById('spnProtectedConfirmation');
+const txtPath = document.getElementById('txtPath');
 const txtPublicPart = document.getElementById('txtPublicPart');
-const txtPublicPartConfirmation = document.getElementById('txtPublicPartConfirmation');
+const btnGeneratePublicPart = document.getElementById('btnGeneratePublicPart');
 
 const spnPrivatePartSize = document.getElementById('spnPrivatePartSize');
 const spnPrivatePartSizeConfirmation = document.getElementById('spnPrivatePartSizeConfirmation');
@@ -39,12 +40,18 @@ const PRIVATE_PART_PROTECTION_TIMEOUT = 60 * 1000;
 const SUCCESS_COLOR = '#D0FFD0';
 const ERROR_COLOR = '#FFD0D0';
 
-const RESERVED_KEYS = ['alphabet', 'length'];
+const RESERVED_KEYS = ['alphabet', 'length', 'public'];
 
 numOutputSizeRange.max = DEFAULT_LENGTH;
 numOutputSizeRange.value = DEFAULT_LENGTH;
 
 let privatePart;
+
+btnGeneratePublicPart.addEventListener('click', () => {
+    const randomString = generateRandomString();
+    txtPublicPart.value = randomString;
+    run();
+});
 
 const getPrivatePart = () => {
     if (privatePart !== undefined) {
@@ -65,6 +72,7 @@ const protectPrivatePart = () => {
     txtPrivatePartConfirmation.value = '';
     spnPrivatePartSize.innerHTML = '0';
     spnPrivatePartSizeConfirmation.innerHTML = '0';
+    updatePrivatePartsMatching();
 };
 
 btnProtect.addEventListener('click', () => {
@@ -250,8 +258,10 @@ const updateParameters = () => {
         return;
     }
 
-    const chainInfo = pathToObjectChain(txtPublicPart.value);
+    const chainInfo = pathToObjectChain(txtPath.value);
     const leaf = chainInfo.tail;
+
+    leaf.public = txtPublicPart.value;
 
     const numericValue = parseInt(numOutputSizeNum.value, 10);
     if (numericValue !== DEFAULT_LENGTH) {
@@ -346,7 +356,7 @@ const canRun = () => {
         return false;
     }
 
-    if (getPrivatePart().length <= 0 || txtPublicPart.value.length <= 0 || alphabet.length <= 1) {
+    if (getPrivatePart().length <= 0 || txtPublicPart.value.length < 8 || alphabet.length < 2) {
         return false;
     }
 
@@ -410,25 +420,16 @@ const updatePrivatePartsMatching = () => {
     }
 };
 
-const updatePublicPartsMatching = () => {
-    if (txtPublicPartConfirmation.value === txtPublicPart.value) {
-        txtPublicPartConfirmation.style.setProperty('background', SUCCESS_COLOR);
-    } else {
-        txtPublicPartConfirmation.style.setProperty('background', ERROR_COLOR);
-    }
-};
-
 txtPrivatePartConfirmation.addEventListener('input', () => {
     spnPrivatePartSizeConfirmation.innerHTML = txtPrivatePartConfirmation.value.length;
     updatePrivatePartsMatching();
 });
 
-txtPublicPartConfirmation.addEventListener('input', () => {
-    updatePublicPartsMatching();
+txtPath.addEventListener('input', () => {
+    updateParameters();
 });
 
 txtPublicPart.addEventListener('input', () => {
-    updatePublicPartsMatching();
     updateParameters();
     run();
 });
@@ -440,5 +441,4 @@ txtCustomKeys.addEventListener('input', () => {
 updateOutputSizeRangeToNum();
 resetAlphabet();
 updatePrivatePartsMatching();
-updatePublicPartsMatching();
 
