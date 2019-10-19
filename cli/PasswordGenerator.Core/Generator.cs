@@ -9,25 +9,6 @@ namespace PasswordGenerator.Core
     /// </summary>
     public class Generator
     {
-        private static byte[] EnsureRepeatedTo8Bytes(byte[] salt)
-        {
-            if (salt == null)
-                throw new ArgumentNullException(nameof(salt));
-
-            if (salt.Length <= 0)
-                throw new ArgumentOutOfRangeException(nameof(salt), $"Argument '{nameof(salt)}' must not be empty.");
-
-            if (salt.Length >= 8)
-                return salt;
-
-            byte[] result = new byte[8];
-
-            for (int i = 0; i < result.Length; i += salt.Length)
-                Array.Copy(salt, 0, result, i, Math.Min(salt.Length, result.Length - i));
-
-            return result;
-        }
-
         /// <summary>
         /// The default and recommended amount of iterations used with the PBKDF2 algortihm.
         /// </summary>
@@ -61,7 +42,10 @@ namespace PasswordGenerator.Core
             byte[] password = Encoding.UTF8.GetBytes(privateKey);
             byte[] salt = Encoding.UTF8.GetBytes(publicKey);
 
-            using var algorithm = new Rfc2898DeriveBytes(password, EnsureRepeatedTo8Bytes(salt), iterations, hashAlgorithm);
+            if (salt.Length < 8)
+                throw new ArgumentException($"Argument '{nameof(publicKey)}' is invalid. It produced {salt.Length} bytes, whereas 8 bytes are mandatory.", nameof(publicKey));
+
+            using var algorithm = new Rfc2898DeriveBytes(password, salt, iterations, hashAlgorithm);
 
             return algorithm.GetBytes(32);
         }
