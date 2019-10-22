@@ -9,16 +9,24 @@ using Microsoft.Extensions.DependencyInjection;
 using System.Text.Json;
 using PasswordGenerator.Core;
 using System.Security.Cryptography;
+using System.Text.Json.Serialization;
 
 namespace PasswordGenerator.ValidationBackend
 {
     public struct KeyDerivationData
     {
-        public string privateKey { get; set; }
-        public string publicKey { get; set; }
-        public int iterations { get; set; }
-        public string algorithmName { get; set; }
-        public string alphabet { get; set; }
+        [JsonPropertyName("privateKey")]
+        public string PrivateKey { get; set; }
+        [JsonPropertyName("publicKey")]
+        public string PublicKey { get; set; }
+        [JsonPropertyName("iterations")]
+        public int Iterations { get; set; }
+        [JsonPropertyName("algorithmName")]
+        public string AlgorithmName { get; set; }
+        [JsonPropertyName("alphabet")]
+        public string Alphabet { get; set; }
+        [JsonPropertyName("hkdfPurpose")]
+        public string HkdfPurpose { get; set; }
     }
 
     public class Startup
@@ -48,9 +56,9 @@ namespace PasswordGenerator.ValidationBackend
                 endpoints.MapPost("/", async context =>
                 {
                     KeyDerivationData data = await JsonSerializer.DeserializeAsync<KeyDerivationData>(context.Request.Body);
-
-                    byte[] password = Generator.GeneratePassword(data.privateKey, data.publicKey, data.iterations, new HashAlgorithmName(data.algorithmName));
-                    string encodedPassword = password.ToCustomBase(data.alphabet);
+                    
+                    byte[] password = Generator.GeneratePassword(data.PrivateKey, data.PublicKey, data.Iterations, new HashAlgorithmName(data.AlgorithmName), data.HkdfPurpose);
+                    string encodedPassword = password.ToCustomBase(data.Alphabet);
 
                     await context.Response.WriteAsync(encodedPassword);
                 });

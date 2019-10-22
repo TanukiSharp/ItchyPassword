@@ -24,6 +24,8 @@ const spnProtectedConfirmation: HTMLInputElement = getElementById('spnProtectedC
 const txtPath: HTMLInputElement = getElementById('txtPath');
 const txtPublicPart: HTMLInputElement = getElementById('txtPublicPart');
 const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
+const btnCopyPublicPart: HTMLInputElement = getElementById('btnCopyPublicPart');
+const spnCopyPublicPartFeedback: HTMLInputElement = getElementById('spnCopyPublicPartFeedback');
 
 const spnPrivatePartSize: HTMLInputElement = getElementById('spnPrivatePartSize');
 const spnPrivatePartSizeConfirmation: HTMLInputElement = getElementById('spnPrivatePartSizeConfirmation');
@@ -36,9 +38,8 @@ const spnAlphabetSize: HTMLInputElement = getElementById('spnAlphabetSize');
 const btnResetAlphabet: HTMLInputElement = getElementById('btnResetAlphabet');
 
 const txtResultPassword: HTMLInputElement = getElementById('txtResultPassword');
-
 const spnResultPasswordLength: HTMLInputElement = getElementById('spnResultPasswordLength');
-
+const btnCopyResultPassword: HTMLInputElement = getElementById('btnCopyResultPassword');
 const spnCopyResultPasswordFeedback: HTMLInputElement = getElementById('spnCopyResultPasswordFeedback');
 
 const txtParameters: HTMLInputElement = getElementById('txtParameters');
@@ -184,7 +185,8 @@ function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
     });
 }
 
-const copyToClipboardFeedbackObject: VisualFeedback = new VisualFeedback(spnCopyResultPasswordFeedback);
+const copyResultPasswordToClipboardFeedbackObject: VisualFeedback = new VisualFeedback(spnCopyResultPasswordFeedback);
+const copyPublicPartToClipboardFeedbackObject: VisualFeedback = new VisualFeedback(spnCopyPublicPartFeedback);
 
 async function writeToClipboard(text: string): Promise<boolean> {
     try {
@@ -196,13 +198,12 @@ async function writeToClipboard(text: string): Promise<boolean> {
     }
 }
 
-function setupCopyButton(txt: HTMLInputElement, buttonName: string): void {
-    const btn: HTMLInputElement = getElementById(buttonName);
-    btn.addEventListener('click', async () => {
+function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement, feedback: VisualFeedback): void {
+    button.addEventListener('click', async () => {
         if (await writeToClipboard(txt.value)) {
-            copyToClipboardFeedbackObject.setText('Copied', 3000);
+            feedback.setText('Copied', 3000);
         } else {
-            copyToClipboardFeedbackObject.setText('<span style="color: red">Failed to copy</span>', 3000);
+            feedback.setText('<span style="color: red">Failed to copy</span>', 3000);
         }
     });
 }
@@ -213,7 +214,8 @@ function updateResultPasswordLength() {
 
 setupViewButton(txtResultPassword, 'btnViewResultPassword');
 
-setupCopyButton(txtResultPassword, 'btnCopyResultPassword');
+setupCopyButton(txtPublicPart, btnCopyPublicPart, copyPublicPartToClipboardFeedbackObject);
+setupCopyButton(txtResultPassword, btnCopyResultPassword, copyResultPasswordToClipboardFeedbackObject);
 
 function isAlphabetValid(alphabet: string): boolean {
     const sortedAlphabet: string[] = alphabet.split('');
@@ -387,7 +389,7 @@ async function run() {
         return;
     }
 
-    const keyBytes: ArrayBuffer = await crypto.generatePassword(getPrivatePart(), txtPublicPart.value);
+    const keyBytes: ArrayBuffer = await crypto.generatePassword(getPrivatePart(), txtPublicPart.value, 'Password');
 
     const keyString: string = arrayUtils.toCustomBase(keyBytes, txtAlphabet.value);
     txtResultPassword.value = stringUtils.truncate(keyString, parseInt(numOutputSizeRange.value, 10));

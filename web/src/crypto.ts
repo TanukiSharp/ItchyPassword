@@ -2,10 +2,12 @@ import * as stringUtils from './stringUtils';
 import * as arrayUtils from './arrayUtils';
 
 const ALGORITHM_NAME: string = 'PBKDF2';
+const SHA_ALGORITHM_NAME = 'SHA-512';
 export const BASE62_ALPHABET: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-export async function generatePassword(privateKey: string, publicKey: string): Promise<ArrayBuffer> {
+export async function generatePassword(privateKey: string, publicKey: string, hkdfPurpose: string): Promise<ArrayBuffer> {
     const algorithmSalt: Uint8Array = stringUtils.stringToArray(publicKey);
+    const hkdfPurposeBytes: Uint8Array = stringUtils.stringToArray(hkdfPurpose);
 
     if (algorithmSalt.length < 8) {
         throw new Error('Public key must be at least 8 bytes long.');
@@ -21,7 +23,7 @@ export async function generatePassword(privateKey: string, publicKey: string): P
 
     const algorithm: Pbkdf2Params = {
         name: ALGORITHM_NAME,
-        hash: 'SHA-512',
+        hash: SHA_ALGORITHM_NAME,
         iterations: 100000,
         salt: algorithmSalt
     };
@@ -39,7 +41,22 @@ export async function generatePassword(privateKey: string, publicKey: string): P
         ['encrypt']
     );
 
-    return await crypto.subtle.exportKey('raw', result);
+    const key: ArrayBuffer = await crypto.subtle.exportKey('raw', result);
+
+    const hmacParameters: HmacImportParams = {
+        name: 'HMAC',
+        hash: { name: SHA_ALGORITHM_NAME }
+    };
+
+    const hkdfKey: CryptoKey = await crypto.subtle.importKey(
+        'raw',
+        key,
+        hmacParameters,
+        false,
+        ['sign']
+    );
+
+    return await crypto.subtle.sign('HMAC', hkdfKey, hkdfPurposeBytes);
 }
 
 export function generateRandomString(byteCount: number = 64, alphabet: string = BASE62_ALPHABET): string {

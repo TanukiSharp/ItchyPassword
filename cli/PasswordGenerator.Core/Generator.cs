@@ -20,14 +20,15 @@ namespace PasswordGenerator.Core
         public static readonly HashAlgorithmName DefaultHashAlgorithm = HashAlgorithmName.SHA512;
 
         /// <summary>
-        /// Generates a derived password based on a master password and a public part, using the PBKDF2 algorithm.
+        /// Generates a derived password based on a master password and a public part, using the HKDF algorithm (PBKDF2 and HMAC-SHA512).
         /// </summary>
         /// <param name="privateKey">The master password to derive a private key from.</param>
         /// <param name="publicKey">The public part, also called salt, used in the private key derivation function. When the public part converted to UTF8 is less than 8 bytes long, it is repeated until it is 8 bytes long.</param>
         /// <param name="iterations">The amount of iterations used with the PBKDF2 algortihm.</param>
         /// <param name="hashAlgorithm">The hash algorithm used with the PBKDF2 algortihm.</param>
+        /// <param name="hkdfPurpose">An additional purpose to derive key again through HMAC algorithm.</param>
         /// <returns>Returns a derived private key.</returns>
-        public static byte[] GeneratePassword(string privateKey, string publicKey, int iterations, HashAlgorithmName hashAlgorithm)
+        public static byte[] GeneratePassword(string privateKey, string publicKey, int iterations, HashAlgorithmName hashAlgorithm, string hkdfPurpose)
         {
             if (publicKey == null)
                 throw new ArgumentNullException(nameof(publicKey));
@@ -47,7 +48,10 @@ namespace PasswordGenerator.Core
 
             using var algorithm = new Rfc2898DeriveBytes(password, salt, iterations, hashAlgorithm);
 
-            return algorithm.GetBytes(32);
+            using var hkdfAlgorithm = new HMACSHA512(algorithm.GetBytes(32));
+            byte[] key = hkdfAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(hkdfPurpose));
+
+            return key;
         }
     }
 }

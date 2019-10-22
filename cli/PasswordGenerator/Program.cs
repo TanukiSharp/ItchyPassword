@@ -81,7 +81,7 @@ namespace PasswordGenerator
 
             int passwordLength = GetPasswordLength();
 
-            byte[] passwordBytes = Generator.GeneratePassword(privatePart, publicPart, Generator.DefaultIterations, Generator.DefaultHashAlgorithm);
+            byte[] passwordBytes = Generator.GeneratePassword(privatePart, publicPart, Generator.DefaultIterations, Generator.DefaultHashAlgorithm, "Password");
 
             Console.WriteLine("Generated password:");
  
