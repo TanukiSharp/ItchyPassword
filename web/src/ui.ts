@@ -4,6 +4,7 @@ import * as arrayUtils from './arrayUtils';
 
 import VisualFeedback from './VisualFeedback';
 import TimedAction from './TimedAction';
+import { PlainObject } from './PlainObject';
 
 function getElementById(elementName: string): HTMLInputElement {
     const element: HTMLElement|null = document.getElementById(elementName);
@@ -14,8 +15,6 @@ function getElementById(elementName: string): HTMLInputElement {
 
     return element as HTMLInputElement;
 }
-
-type PlainObject = { [key: string]: any };
 
 const txtPrivatePart: HTMLInputElement = getElementById('txtPrivatePart');
 const txtPrivatePartConfirmation: HTMLInputElement = getElementById('txtPrivatePartConfirmation');
@@ -138,7 +137,7 @@ function parseCustomKeys(): PlainObject | null {
 function shallowMerge(source: PlainObject | null, target: PlainObject | null): PlainObject {
     const result: PlainObject = {};
 
-    if (source != null) {
+    if (source !== null) {
         for (const [key, value] of Object.entries(source)) {
             if (RESERVED_KEYS.includes(key) === false) {
                 result[key] = value;
@@ -146,7 +145,7 @@ function shallowMerge(source: PlainObject | null, target: PlainObject | null): P
         }
     }
 
-    if (target != null) {
+    if (target !== null) {
         for (const [key, value] of Object.entries(target)) {
             result[key] = value;
         }

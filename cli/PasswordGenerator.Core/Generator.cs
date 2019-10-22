@@ -7,7 +7,7 @@ namespace PasswordGenerator.Core
     /// <summary>
     /// Generates a derived password based on a master password.
     /// </summary>
-    public class Generator
+    public static class Generator
     {
         /// <summary>
         /// The default and recommended amount of iterations used with the PBKDF2 algortihm.
