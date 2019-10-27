@@ -389,7 +389,13 @@ async function run() {
         return;
     }
 
-    const keyBytes: ArrayBuffer = await crypto.generatePassword(getPrivatePart(), txtPublicPart.value, 'Password');
+    const privatePartString: string = getPrivatePart();
+    const publicPartString = txtPublicPart.value;
+
+    const privatePrivateBytes: ArrayBuffer = stringUtils.stringToArray(privatePartString);
+    const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPartString);
+
+    const keyBytes: ArrayBuffer = await crypto.generatePassword(privatePrivateBytes, publicPartBytes, 'Password');
 
     const keyString: string = arrayUtils.toCustomBase(keyBytes, txtAlphabet.value);
     txtResultPassword.value = stringUtils.truncate(keyString, parseInt(numOutputSizeRange.value, 10));

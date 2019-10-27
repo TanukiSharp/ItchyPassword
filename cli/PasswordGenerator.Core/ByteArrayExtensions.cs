@@ -65,7 +65,12 @@ namespace PasswordGenerator.Core
             if (bytes == null)
                 throw new ArgumentNullException(nameof(bytes));
 
-            return string.Concat(bytes.Select(x => x.ToString("x2")));
+            var sb = new StringBuilder();
+
+            foreach (var x in bytes)
+                sb.Append(x.ToString("x2"));
+
+            return sb.ToString();
         }
     }
 }

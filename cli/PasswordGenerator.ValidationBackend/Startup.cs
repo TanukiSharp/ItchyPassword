@@ -10,23 +10,32 @@ using System.Text.Json;
 using PasswordGenerator.Core;
 using System.Security.Cryptography;
 using System.Text.Json.Serialization;
+using System.Text;
 
 namespace PasswordGenerator.ValidationBackend
 {
     public struct KeyDerivationData
     {
-        [JsonPropertyName("privateKey")]
-        public string PrivateKey { get; set; }
-        [JsonPropertyName("publicKey")]
-        public string PublicKey { get; set; }
-        [JsonPropertyName("iterations")]
-        public int Iterations { get; set; }
-        [JsonPropertyName("algorithmName")]
-        public string AlgorithmName { get; set; }
+        [JsonPropertyName("privatePart")]
+        public string PrivatePart { get; set; }
+        [JsonPropertyName("publicPart")]
+        public string PublicPart { get; set; }
         [JsonPropertyName("alphabet")]
         public string Alphabet { get; set; }
-        [JsonPropertyName("hkdfPurpose")]
-        public string HkdfPurpose { get; set; }
+        [JsonPropertyName("frontendClear")]
+        public string FrontendClear { get; set; }
+        [JsonPropertyName("frontendEncrypted")]
+        public string FrontendEncrypted { get; set; }
+    }
+
+    public struct KeyDerivationDataResponse
+    {
+        [JsonPropertyName("generatedPassword")]
+        public string GeneratedPassword { get; set; }
+        [JsonPropertyName("backendClear")]
+        public string BackendClear { get; set; }
+        [JsonPropertyName("backendEncrypted")]
+        public string BackendEncrypted { get; set; }
     }
 
     public class Startup
@@ -55,12 +64,30 @@ namespace PasswordGenerator.ValidationBackend
             {
                 endpoints.MapPost("/", async context =>
                 {
-                    KeyDerivationData data = await JsonSerializer.DeserializeAsync<KeyDerivationData>(context.Request.Body);
-                    
-                    byte[] password = Generator.GeneratePassword(data.PrivateKey, data.PublicKey, data.Iterations, new HashAlgorithmName(data.AlgorithmName), data.HkdfPurpose);
-                    string encodedPassword = password.ToCustomBase(data.Alphabet);
+                    KeyDerivationData frontendData = await JsonSerializer.DeserializeAsync<KeyDerivationData>(context.Request.Body);
 
-                    await context.Response.WriteAsync(encodedPassword);
+                    byte[] passwordBytes = Crypto.GeneratePassword(frontendData.PrivatePart.FromBase16(), frontendData.PublicPart.FromBase16(), "Password");
+
+                    byte[] decryptedFrontendEncryptedBytes = Crypto.Decrypt(frontendData.FrontendEncrypted.FromBase16(), passwordBytes);
+                    if (decryptedFrontendEncryptedBytes.ToBase16() != frontendData.FrontendClear)
+                    {
+                        context.Response.StatusCode = 500;
+                        return;
+                    }
+
+                    string generatedPassword = passwordBytes.ToCustomBase(frontendData.Alphabet);
+
+                    byte[] randomClearBytes = new byte[256];
+                    RandomNumberGenerator.Create().GetBytes(randomClearBytes);
+
+                    var response = new KeyDerivationDataResponse
+                    {
+                        GeneratedPassword = generatedPassword,
+                        BackendClear = randomClearBytes.ToBase16(),
+                        BackendEncrypted = Crypto.Encrypt(randomClearBytes, passwordBytes).ToBase16()
+                    };
+
+                    await context.Response.WriteAsync(JsonSerializer.Serialize(response));
                 });
             });
         }

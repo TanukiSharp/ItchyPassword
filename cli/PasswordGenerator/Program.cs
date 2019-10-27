@@ -81,10 +81,10 @@ namespace PasswordGenerator
 
             int passwordLength = GetPasswordLength();
 
-            byte[] passwordBytes = Generator.GeneratePassword(privatePart, publicPart, Generator.DefaultIterations, Generator.DefaultHashAlgorithm, "Password");
+            byte[] passwordBytes = Crypto.GeneratePassword(Encoding.UTF8.GetBytes(privatePart), Encoding.UTF8.GetBytes(publicPart), "Password");
 
             Console.WriteLine("Generated password:");
- 
+
             Console.WriteLine($"b16: {passwordBytes.ToBase16().Truncate(passwordLength)}");
             Console.WriteLine($"b64: {passwordBytes.ToBase64().Truncate(passwordLength)}");
 

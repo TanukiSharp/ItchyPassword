@@ -36,13 +36,9 @@ export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
     return result;
 }
 
-export function bufferToHexadeximal(buffer: ArrayBuffer): string {
+export function toBase16(buffer: ArrayBuffer): string {
     return Array.prototype.map.call(
         new Uint8Array(buffer),
         x => ('00' + x.toString(16)).slice(-2)
     ).join('');
-}
-
-export function bufferToBase64(buffer: ArrayBuffer): string {
-    return btoa(String.fromCharCode.apply(null, new Uint8Array(buffer) as any));
 }

@@ -25,5 +25,23 @@ namespace PasswordGenerator.Core
 
             return input.Substring(0, length);
         }
+
+        /// <summary>
+        /// Converts an hexadecimal encoded string to an array of bytes.
+        /// </summary>
+        /// <param name="str">The string containing hexadecimal encoded value to decode.</param>
+        /// <returns>Returns the decoded array of bytes.</returns>
+        public static byte[] FromBase16(this string str)
+        {
+            if (str.Length % 2 != 0)
+                str = $"0{str}";
+
+            byte[] result = new byte[str.Length / 2];
+
+            for (int i = 0; i < result.Length; i++)
+                result[i] = Convert.ToByte(str.Substring(i * 2, 2), 16);
+
+            return result;
+        }
     }
 }
