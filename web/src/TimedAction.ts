@@ -4,7 +4,7 @@ export default class TimedAction {
     }
 
     public reset(overrideDelay: number | undefined = undefined): void {
-        if (this.timeout === undefined) {
+        if (this.timeout !== undefined) {
             clearTimeout(this.timeout);
         }
 

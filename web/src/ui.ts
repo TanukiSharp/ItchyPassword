@@ -6,6 +6,9 @@ import VisualFeedback from './VisualFeedback';
 import TimedAction from './TimedAction';
 import { PlainObject } from './PlainObject';
 
+import { IStorage } from './storages/IStorage';
+import { GitHubStorage } from './storages/GitHubStorage';
+
 function getElementById(elementName: string): HTMLInputElement {
     const element: HTMLElement|null = document.getElementById(elementName);
 
@@ -19,11 +22,11 @@ function getElementById(elementName: string): HTMLInputElement {
 const txtPrivatePart: HTMLInputElement = getElementById('txtPrivatePart');
 const txtPrivatePartConfirmation: HTMLInputElement = getElementById('txtPrivatePartConfirmation');
 const btnProtect: HTMLInputElement = getElementById('btnProtect');
-const btnClearProtected: HTMLInputElement = getElementById('btnClearProtected');
 const spnProtectedConfirmation: HTMLInputElement = getElementById('spnProtectedConfirmation');
 const txtPath: HTMLInputElement = getElementById('txtPath');
 const txtPublicPart: HTMLInputElement = getElementById('txtPublicPart');
 const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
+const btnClearPublicPart: HTMLInputElement = getElementById('btnClearPublicPart');
 const btnCopyPublicPart: HTMLInputElement = getElementById('btnCopyPublicPart');
 const spnCopyPublicPartFeedback: HTMLInputElement = getElementById('spnCopyPublicPartFeedback');
 
@@ -67,7 +70,23 @@ numOutputSizeRange.value = DEFAULT_LENGTH.toString();
 
 let privatePart: string | undefined;
 
+btnClearPublicPart.addEventListener('click', () => {
+    if (txtPublicPart.value.length > 0) {
+        if (prompt('Are you sure you want to clear the public part ?\nType \'y\' to accept', '') !== 'y') {
+            return;
+        }
+    }
+
+    txtPublicPart.value = '';
+});
+
 btnGeneratePublicPart.addEventListener('click', () => {
+    if (txtPublicPart.value.length > 0) {
+        if (prompt('Are you sure you want to generate a new public part ?\nType \'y\' to accept', '') !== 'y') {
+            return;
+        }
+    }
+
     const randomString: string = crypto.generateRandomString();
     txtPublicPart.value = randomString;
     run();
@@ -80,34 +99,47 @@ function getPrivatePart(): string {
     return txtPrivatePart.value;
 }
 
-function protectPrivatePart(): void {
+function protectAndLockPrivatePart(): void {
     if (txtPrivatePart.value.length === 0) {
         return;
     }
 
     privatePart = txtPrivatePart.value;
-    spnProtectedConfirmation.innerHTML = `Protected, ${privatePart.length} characters`;
+    spnProtectedConfirmation.innerHTML = 'Protected';
 
     txtPrivatePart.value = '';
     txtPrivatePartConfirmation.value = '';
     spnPrivatePartSize.innerHTML = '0';
     spnPrivatePartSizeConfirmation.innerHTML = '0';
 
+    txtPrivatePart.disabled = true;
+    txtPrivatePartConfirmation.disabled = true;
+
+    btnProtect.innerHTML = 'Clear and unlock';
+
     updatePrivatePartsMatching();
 }
 
-btnProtect.addEventListener('click', () => {
-    protectPrivatePart();
-});
-
-function clearPrivatePartProtection() {
+function clearAndUnLockPrivatePart(): void {
     privatePart = undefined;
     spnProtectedConfirmation.innerHTML = '';
+
+    txtPrivatePart.disabled = false;
+    txtPrivatePartConfirmation.disabled = false;
+
+    btnProtect.innerHTML = 'Protect and lock';
 }
 
-btnClearProtected.addEventListener('click', () => {
-    clearPrivatePartProtection();
-    run();
+function togglePrivatePartProtection(): void {
+    if (privatePart === undefined) {
+        protectAndLockPrivatePart();
+    } else {
+        clearAndUnLockPrivatePart();
+    }
+}
+
+btnProtect.addEventListener('click', () => {
+    togglePrivatePartProtection();
 });
 
 function updateCustomKeysDisplay(isValid: boolean): void {
@@ -416,10 +448,11 @@ async function resetAlphabet() {
     }
 }
 
-const protectPrivatePartAction: TimedAction = new TimedAction(protectPrivatePart, PRIVATE_PART_PROTECTION_TIMEOUT);
+const protectPrivatePartAction: TimedAction = new TimedAction(protectAndLockPrivatePart, PRIVATE_PART_PROTECTION_TIMEOUT);
 
 txtPrivatePart.addEventListener('input', () => {
-    clearPrivatePartProtection();
+    btnProtect.disabled = txtPrivatePart.value.length === 0;
+
     spnPrivatePartSize.innerHTML = txtPrivatePart.value.length.toString();
     updatePrivatePartsMatching();
     run();
