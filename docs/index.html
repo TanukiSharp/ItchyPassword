@@ -15,15 +15,13 @@
     </style>
 </head>
 <body>
-    Private part: <input id="txtPrivatePart" type="password"></input> <span id="spnPrivatePartSize">0</span><button id="btnProtect" class="controlButton" title="Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.">Protect</button><button id="btnClearProtected" class="controlButton">Clear</button> <span id="spnProtectedConfirmation"></span></br>
+    Private part: <input id="txtPrivatePart" type="password"></input> <span id="spnPrivatePartSize">0</span><button id="btnProtect" class="controlButton" disabled="ture" title="Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.">Protect and lock</button> <span id="spnProtectedConfirmation"></span></br>
     Private part: <input id="txtPrivatePartConfirmation" type="password" title="Just for your convenience to confirm the private part has been input correctly the first time."></input> <span id="spnPrivatePartSizeConfirmation">0</span></br>
     <br/>
     <hr/>
     <br/>
-    Public part:&nbsp; <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
+    Public part:&nbsp; <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
     Alphabet:&nbsp;&nbsp;&nbsp;&nbsp; <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button></br>
-    <br/>
-    Storage path: <input id="txtPath" type="text"></input></br>
     <br/>
     <hr/>
     <br/>
@@ -31,6 +29,8 @@
     Length:&nbsp;&nbsp;&nbsp;<input id="numOutputSizeRange" type="range" min="4" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
     <br/>
     <hr/>
+    <br/>
+    Storage path: <input id="txtPath" type="text"></input></br>
     <br/>
     Password generation parameters:<br/>
     <textarea id="txtParameters" cols="150" rows="20" readonly></textarea><br/>
