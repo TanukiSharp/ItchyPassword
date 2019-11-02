@@ -303,7 +303,7 @@ function pathToObjectChain(path: string, chainInfo: IChainInfo | undefined = und
 
 function updatePasswordGenerationParameters(): void {
     if (canRun() === false) {
-        txtParameters.value = '';
+        clearOutputs();
         return;
     }
 
@@ -397,6 +397,7 @@ btnResetAlphabet.addEventListener('click', () => {
 
 function clearOutputs(): void {
     txtResultPassword.value = '';
+    txtParameters.value = '';
 
     updateResultPasswordLength();
 }
