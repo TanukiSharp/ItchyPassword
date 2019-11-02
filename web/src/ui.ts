@@ -78,6 +78,8 @@ btnClearPublicPart.addEventListener('click', () => {
     }
 
     txtPublicPart.value = '';
+
+    updatePasswordGenerationParameters();
 });
 
 btnGeneratePublicPart.addEventListener('click', () => {
