@@ -829,165 +829,14 @@ namespace QRCode
         private static readonly sbyte[] FormatInformationX1 = new sbyte[] { 0, 1, 2, 3, 4, 5, 7, 8, 8, 8, 8, 8, 8, 8, 8 };
         private static readonly sbyte[] FormatInformationY1 = new sbyte[] { 8, 8, 8, 8, 8, 8, 8, 8, 7, 5, 4, 3, 2, 1, 0 };
 
+        private static readonly int[] D4Value = new int[] { 90, 80, 70, 60, 50, 40, 30, 20, 10, 0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 90 };
+
         #endregion
 
-        public static bool[][] ComputeQRCode(byte[] qrcodeData)
-		{
-			int dataLength;
-			int dataCounter = 0;
-
-			dataLength = qrcodeData.Length;
-
-			int[] dataValue = new int[dataLength + 32];
-			sbyte[] dataBits = new sbyte[dataLength + 32];
-
-			if (dataLength <= 0)
-				return null;
-
-			dataBits[dataCounter] = 4;
-
-			/*  --- determine encode mode --- */
-
-			int codewordNumCounterValue;
-
-			/* ---- 8bit byte ---- */
-
-			dataValue[dataCounter] = 4;
-			dataCounter++;
-			dataValue[dataCounter] = dataLength;
-			dataBits[dataCounter] = 8; /* #version 1-9 */
-			codewordNumCounterValue = dataCounter;
-
-			dataCounter++;
-
-			for (int i = 0; i < dataLength; i++)
-			{
-				dataValue[i + dataCounter] = (qrcodeData[i] & 0xFF);
-				dataBits[i + dataCounter] = 8;
-			}
-
-			dataCounter += dataLength;
-
-			int totalDataBits = 0;
-			for (int i = 0; i < dataCounter; i++)
-				totalDataBits += dataBits[i];
-
-			int maxDataBits = MaxDataBitsArray[QRCodeVersion];
-
-			totalDataBits += CodewordNumPlus[QRCodeVersion];
-			dataBits[codewordNumCounterValue] = (sbyte)(dataBits[codewordNumCounterValue] + CodewordNumPlus[QRCodeVersion]);
-
-			int maxCodewords = MaxCodewordsArray[QRCodeVersion];
-
-			/* ---- read version ECC data file */
-
-			sbyte[] rsEccCodewords = new sbyte[] { 30 };
-			sbyte[] rsBlockOrderTemp = new sbyte[128];
-			rsBlockOrderTemp[0] = -110;
-			rsBlockOrderTemp[1] = -110;
-
-			sbyte rsBlockOrderLength = 2;
-			sbyte[] rsBlockOrder = new sbyte[rsBlockOrderLength];
-			Array.Copy(rsBlockOrderTemp, 0, rsBlockOrder, 0, (byte)rsBlockOrderLength);
-
-			int maxDataCodewords = maxDataBits >> 3;
-
-			/* -- read frame data  -- */
-
-			int modules1Side = 4 * QRCodeVersion + 17;
-
-			/*  --- set terminator */
-
-			if (totalDataBits <= maxDataBits - 4)
-			{
-				dataValue[dataCounter] = 0;
-				dataBits[dataCounter] = 4;
-			}
-			else
-			{
-				if (totalDataBits < maxDataBits)
-				{
-					dataValue[dataCounter] = 0;
-					dataBits[dataCounter] = (sbyte)(maxDataBits - totalDataBits);
-				}
-				else
-				{
-					if (totalDataBits > maxDataBits)
-						Console.Out.WriteLine("overflow");
-				}
-			}
-
-			sbyte[] dataCodewords = DivideDataBy8Bits(dataValue, dataBits, maxDataCodewords);
-			sbyte[] codewords = ComputeRSECC(dataCodewords, rsEccCodewords[0], rsBlockOrder, maxDataCodewords, maxCodewords);
-
-			/* ---- flash matrix */
-
-			sbyte[][] matrixContent = new sbyte[modules1Side][];
-
-			for (int i = 0; i < modules1Side; i++)
-				matrixContent[i] = new sbyte[modules1Side];
-
-			/* --- attach data */
-			for (int i = 0; i < maxCodewords; i++)
-			{
-				sbyte codeword_i = codewords[i];
-				for (int j = 7; j >= 0; j--)
-				{
-					int codewordBitsNumber = (i * 8) + j;
-
-					matrixContent[MatrixX[codewordBitsNumber] & 0xFF][MatrixY[codewordBitsNumber] & 0xFF] = (sbyte)((255 * (codeword_i & 1)) ^ MaskArray[codewordBitsNumber]);
-					codeword_i = (sbyte)URShift((codeword_i & 0xFF), 1);
-				}
-			}
-
-			for (int matrixRemain = MatrixRemainBit[QRCodeVersion]; matrixRemain > 0; matrixRemain--)
-			{
-				int remainBitTemp = matrixRemain + (maxCodewords * 8) - 1;
-				matrixContent[MatrixX[remainBitTemp] & 0xFF][MatrixY[remainBitTemp] & 0xFF] = (sbyte)(255 ^ MaskArray[remainBitTemp]);
-			}
-
-			/* --- mask select --- */
-			sbyte maskNumber = SelectMask(matrixContent, MatrixRemainBit[QRCodeVersion] + maxCodewords * 8);
-			sbyte maskContent = (sbyte)(1 << maskNumber);
-
-			/* --- format information --- */
-
-			sbyte formatInformationValue = (sbyte)(8 | maskNumber);
-
-			for (int i = 0; i < 15; i++)
-			{
-                int content = FormatInformationArray[formatInformationValue][i] == '0' ? 0 : 1;
-
-                matrixContent[FormatInformationX1[i] & 0xFF][FormatInformationY1[i] & 0xFF] = (sbyte)(content * 255);
-				matrixContent[FormatInformationX2[i] & 0xFF][FormatInformationY2[i] & 0xFF] = (sbyte)(content * 255);
-			}
-
-			bool[][] out_Renamed = new bool[modules1Side][];
-			for (int i3 = 0; i3 < modules1Side; i3++)
-				out_Renamed[i3] = new bool[modules1Side];
-
-			int c = 0;
-
-			for (int i = 0; i < modules1Side; i++)
-			{
-				for (int j = 0; j < modules1Side; j++)
-				{
-					if ((matrixContent[j][i] & maskContent) != 0 || FrameData[c] == (char)49)
-						out_Renamed[j][i] = true;
-					else
-						out_Renamed[j][i] = false;
-					c++;
-				}
-				c++;
-			}
-
-			return out_Renamed;
-		}
-
-		private static sbyte[] DivideDataBy8Bits(int[] data, sbyte[] bits, int maxDataCodewords)
+        private static sbyte[] DivideDataBy8Bits(int[] data, sbyte[] bits, int maxDataCodewords)
 		{
 			/* divide Data By 8bit and add padding char */
-			int l1 = bits.Length;
+			int bitsLength = bits.Length;
 			int codewordsCounter = 0;
 			int remainingBits = 8;
 			int max = 0;
@@ -995,12 +844,12 @@ namespace QRCode
 			int bufferBits;
 			bool flag;
 
-			for (int i = 0; i < l1; i++)
+			for (int i = 0; i < bitsLength; i++)
 				max += bits[i];
 
 			sbyte[] codewords = new sbyte[maxDataCodewords];
 
-			for (int i = 0; i < l1; i++)
+			for (int i = 0; i < bitsLength; i++)
 			{
 				buffer = data[i];
 				bufferBits = bits[i];
@@ -1026,7 +875,7 @@ namespace QRCode
 							flag = false;
 						else
 						{
-							buffer = (buffer & ((1 << bufferBits) - 1));
+							buffer &= (1 << bufferBits) - 1;
 							flag = true;
 						}
 
@@ -1108,7 +957,7 @@ namespace QRCode
 						sbyte[] leftChr = new sbyte[rsTempData.Length - 1];
 						Array.Copy(rsTempData, 1, leftChr, 0, rsTempData.Length - 1);
 						sbyte[] cal = RSTableArray[(first & 0xFF)];
-						rsTempData = ComputeByteArrayBits(leftChr, cal);
+						rsTempData = XorArrays(leftChr, cal);
 					}
 					else
 					{
@@ -1140,53 +989,49 @@ namespace QRCode
 			return res;
 		}
 
-		private static sbyte[] ComputeByteArrayBits(sbyte[] xa, sbyte[] xb)
+		private static sbyte[] XorArrays(sbyte[] xa, sbyte[] xb)
 		{
-			int ll;
-			int ls;
-			sbyte[] res;
-			sbyte[] xl;
-			sbyte[] xs;
+			sbyte[] result;
+
+			sbyte[] longArray;
+			sbyte[] shortArray;
 
 			if (xa.Length > xb.Length)
 			{
-				xl = new sbyte[xa.Length];
-				xa.CopyTo(xl, 0);
-				xs = new sbyte[xb.Length];
-				xb.CopyTo(xs, 0);
+				longArray = xa;
+				shortArray = xb;
 			}
 			else
 			{
-				xl = new sbyte[xb.Length];
-				xb.CopyTo(xl, 0);
-				xs = new sbyte[xa.Length];
-				xa.CopyTo(xs, 0);
+				longArray = xb;
+				shortArray = xa;
 			}
 
-			ll = xl.Length;
-			ls = xs.Length;
-			res = new sbyte[ll];
+			int longLength = longArray.Length;
+			int shortLength = shortArray.Length;
 
-			for (int i = 0; i < ll; i++)
+			result = new sbyte[longLength];
+
+			for (int i = 0; i < longLength; i++)
 			{
-				if (i < ls)
-					res[i] = (sbyte)(xl[i] ^ xs[i]);
+				if (i < shortLength)
+					result[i] = (sbyte)(longArray[i] ^ shortArray[i]);
 				else
-					res[i] = xl[i];
+					result[i] = longArray[i];
 			}
 
-			return res;
+			return result;
 		}
 
 		private static sbyte SelectMask(sbyte[][] matrixContent, int maxCodewordsBitWithRemain)
 		{
 			int l = matrixContent.Length;
-			int[] d1 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-			int[] d2 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-			int[] d3 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
-			int[] d4 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] d1 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] d2 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] d3 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+            int[] d4 = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
-			int d2And = 0;
+            int d2And = 0;
 			int d2Or = 0;
 			int[] d4Counter = new int[] { 0, 0, 0, 0, 0, 0, 0, 0 };
 
@@ -1207,8 +1052,8 @@ namespace QRCode
 
 					for (int maskNumber = 0; maskNumber < 8; maskNumber++)
 					{
-						xData[maskNumber] = ((xData[maskNumber] & 63) << 1) | (URShift((matrixContent[x][y] & 0xFF), maskNumber) & 1);
-						yData[maskNumber] = ((yData[maskNumber] & 63) << 1) | (URShift((matrixContent[y][x] & 0xFF), maskNumber) & 1);
+						xData[maskNumber] = ((xData[maskNumber] & 63) << 1) | (UnsignedRightShift((matrixContent[x][y] & 0xFF), maskNumber) & 1);
+						yData[maskNumber] = ((yData[maskNumber] & 63) << 1) | (UnsignedRightShift((matrixContent[y][x] & 0xFF), maskNumber) & 1);
 
 						if ((matrixContent[x][y] & (1 << maskNumber)) != 0)
 							d4Counter[maskNumber]++;
@@ -1266,11 +1111,9 @@ namespace QRCode
 			int minValue = 0;
 			sbyte res = 0;
 
-			int[] d4Value = new int[] { 90, 80, 70, 60, 50, 40, 30, 20, 10, 0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 90 };
-
 			for (int maskNumber = 0; maskNumber < 8; maskNumber++)
 			{
-				d4[maskNumber] = d4Value[(20 * d4Counter[maskNumber]) / maxCodewordsBitWithRemain];
+				d4[maskNumber] = D4Value[(20 * d4Counter[maskNumber]) / maxCodewordsBitWithRemain];
 
 				int demerit = d1[maskNumber] + d2[maskNumber] + d3[maskNumber] + d4[maskNumber];
 
@@ -1284,12 +1127,165 @@ namespace QRCode
 			return res;
 		}
 
-		private static int URShift(int number, int bits)
+		private static int UnsignedRightShift(int number, int bits)
 		{
 			if (number >= 0)
 				return number >> bits;
 			else
 				return (number >> bits) + (2 << ~bits);
 		}
-	}
+
+        public static bool[][] ComputeQRCode(byte[] qrcodeData)
+        {
+            int dataLength;
+            int dataCounter = 0;
+
+            dataLength = qrcodeData.Length;
+
+            int[] dataValue = new int[dataLength + 32];
+            sbyte[] dataBits = new sbyte[dataLength + 32];
+
+            if (dataLength <= 0)
+                return null;
+
+            dataBits[dataCounter] = 4;
+
+            /*  --- determine encode mode --- */
+
+            int codewordNumCounterValue;
+
+            /* ---- 8bit byte ---- */
+
+            dataValue[dataCounter] = 4;
+            dataCounter++;
+            dataValue[dataCounter] = dataLength;
+            dataBits[dataCounter] = 8; /* #version 1-9 */
+            codewordNumCounterValue = dataCounter;
+
+            dataCounter++;
+
+            for (int i = 0; i < dataLength; i++)
+            {
+                dataValue[i + dataCounter] = (qrcodeData[i] & 0xFF);
+                dataBits[i + dataCounter] = 8;
+            }
+
+            dataCounter += dataLength;
+
+            int totalDataBits = 0;
+            for (int i = 0; i < dataCounter; i++)
+                totalDataBits += dataBits[i];
+
+            int maxDataBits = MaxDataBitsArray[QRCodeVersion];
+
+            totalDataBits += CodewordNumPlus[QRCodeVersion];
+            dataBits[codewordNumCounterValue] = (sbyte)(dataBits[codewordNumCounterValue] + CodewordNumPlus[QRCodeVersion]);
+
+            int maxCodewords = MaxCodewordsArray[QRCodeVersion];
+
+            /* ---- read version ECC data file */
+
+            sbyte[] rsEccCodewords = new sbyte[] { 30 };
+            sbyte[] rsBlockOrderTemp = new sbyte[128];
+            rsBlockOrderTemp[0] = -110;
+            rsBlockOrderTemp[1] = -110;
+
+            sbyte rsBlockOrderLength = 2;
+            sbyte[] rsBlockOrder = new sbyte[rsBlockOrderLength];
+            Array.Copy(rsBlockOrderTemp, 0, rsBlockOrder, 0, (byte)rsBlockOrderLength);
+
+            int maxDataCodewords = maxDataBits >> 3;
+
+            /* -- read frame data  -- */
+
+            int modules1Side = 4 * QRCodeVersion + 17;
+
+            /*  --- set terminator */
+
+            if (totalDataBits <= maxDataBits - 4)
+            {
+                dataValue[dataCounter] = 0;
+                dataBits[dataCounter] = 4;
+            }
+            else
+            {
+                if (totalDataBits < maxDataBits)
+                {
+                    dataValue[dataCounter] = 0;
+                    dataBits[dataCounter] = (sbyte)(maxDataBits - totalDataBits);
+                }
+                else
+                {
+                    if (totalDataBits > maxDataBits)
+                        Console.Out.WriteLine("overflow");
+                }
+            }
+
+            sbyte[] dataCodewords = DivideDataBy8Bits(dataValue, dataBits, maxDataCodewords);
+            sbyte[] codewords = ComputeRSECC(dataCodewords, rsEccCodewords[0], rsBlockOrder, maxDataCodewords, maxCodewords);
+
+            /* ---- flash matrix */
+
+            sbyte[][] matrixContent = new sbyte[modules1Side][];
+
+            for (int i = 0; i < modules1Side; i++)
+                matrixContent[i] = new sbyte[modules1Side];
+
+            /* --- attach data */
+            for (int i = 0; i < maxCodewords; i++)
+            {
+                sbyte codeword_i = codewords[i];
+                for (int j = 7; j >= 0; j--)
+                {
+                    int codewordBitsNumber = (i * 8) + j;
+
+                    matrixContent[MatrixX[codewordBitsNumber] & 0xFF][MatrixY[codewordBitsNumber] & 0xFF] = (sbyte)((255 * (codeword_i & 1)) ^ MaskArray[codewordBitsNumber]);
+                    codeword_i = (sbyte)UnsignedRightShift((codeword_i & 0xFF), 1);
+                }
+            }
+
+            for (int matrixRemain = MatrixRemainBit[QRCodeVersion]; matrixRemain > 0; matrixRemain--)
+            {
+                int remainBitTemp = matrixRemain + (maxCodewords * 8) - 1;
+                matrixContent[MatrixX[remainBitTemp] & 0xFF][MatrixY[remainBitTemp] & 0xFF] = (sbyte)(255 ^ MaskArray[remainBitTemp]);
+            }
+
+            /* --- mask select --- */
+            sbyte maskNumber = SelectMask(matrixContent, MatrixRemainBit[QRCodeVersion] + maxCodewords * 8);
+            sbyte maskContent = (sbyte)(1 << maskNumber);
+
+            /* --- format information --- */
+
+            sbyte formatInformationValue = (sbyte)(8 | maskNumber);
+
+            for (int i = 0; i < 15; i++)
+            {
+                int content = FormatInformationArray[formatInformationValue][i] == '0' ? 0 : 1;
+
+                matrixContent[FormatInformationX1[i]][FormatInformationY1[i]] = (sbyte)(content * 255);
+                matrixContent[FormatInformationX2[i]][FormatInformationY2[i]] = (sbyte)(content * 255);
+            }
+
+            bool[][] out_Renamed = new bool[modules1Side][];
+            for (int i3 = 0; i3 < modules1Side; i3++)
+                out_Renamed[i3] = new bool[modules1Side];
+
+            int c = 0;
+
+            for (int i = 0; i < modules1Side; i++)
+            {
+                for (int j = 0; j < modules1Side; j++)
+                {
+                    if ((matrixContent[j][i] & maskContent) != 0 || FrameData[c] == (char)49)
+                        out_Renamed[j][i] = true;
+                    else
+                        out_Renamed[j][i] = false;
+                    c++;
+                }
+                c++;
+            }
+
+            return out_Renamed;
+        }
+    }
 }
