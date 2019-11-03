@@ -1,0 +1,119 @@
+<html>
+    <head>
+        <title>QR Code experiments</title>
+        <script>
+            class QRConsoleWriter {
+                static CELL_WIDTH = 32;
+                static CELL_HEIGHT = 32;
+
+                static svgns = 'http://www.w3.org/2000/svg';
+
+                static write(content, output) {
+                    let offsetX = 0;
+                    let offsetY = 0;
+                    let width = content.width;
+                    let height = content.height;
+
+                    output.setAttribute('width', width * QRConsoleWriter.CELL_WIDTH);
+                    output.setAttribute('height', height * QRConsoleWriter.CELL_HEIGHT);
+
+                    for (let x = offsetX; x < width; x += 1) {
+                        for (let y = offsetY; y < height; y += 1) {
+                            const value = content.values[y][x];
+
+                            const shape = document.createElementNS(QRConsoleWriter.svgns, 'rect');
+                            shape.setAttributeNS(null, 'x', x * QRConsoleWriter.CELL_WIDTH);
+                            shape.setAttributeNS(null, 'y', y * QRConsoleWriter.CELL_HEIGHT);
+                            shape.setAttributeNS(null, 'width',  QRConsoleWriter.CELL_WIDTH);
+                            shape.setAttributeNS(null, 'height', QRConsoleWriter.CELL_HEIGHT);
+                            shape.setAttributeNS(null, 'fill', value ? 'white' : 'black');
+
+                            output.appendChild(shape);
+                        }
+                    }
+                }
+            }
+
+            const lol = () => {
+                const svgOutput = document.getElementById('svgOutput');
+
+                const content = {
+                    width: 8,
+                    height: 8,
+                    values: [
+                        [0,0,0,0,0,0,0,0],
+                        [0,0,1,0,1,0,1,0],
+                        [0,1,0,1,0,1,0,0],
+                        [0,0,1,0,0,0,1,0],
+                        [0,1,0,0,0,1,0,0],
+                        [0,0,1,0,1,0,1,0],
+                        [0,1,0,1,0,1,0,0],
+                        [0,0,0,0,0,0,0,0]
+                    ]
+                }
+
+                QRConsoleWriter.write(content, svgOutput);
+            }
+
+            // class QRConsoleWriter {
+            //     static CELL_WIDTH = 24;
+            //     static CELL_HEIGHT = 24;
+
+            //     static write(content, output) {
+            //         let offsetX = 0;
+            //         let offsetY = 0;
+            //         let width = content.width;
+            //         let height = content.height;
+
+            //         const ctx = output.getContext('2d');
+            //         output.width = width * QRConsoleWriter.CELL_WIDTH;
+            //         output.height = height * QRConsoleWriter.CELL_HEIGHT;
+
+            //         for (let x = offsetX; x < width; x += 1) {
+            //             for (let y = offsetY; y < height; y += 1) {
+            //                 const value = content.values[y][x];
+
+            //                 if (value) {
+            //                     ctx.fillStyle = 'white';
+            //                 } else {
+            //                     ctx.fillStyle = 'black';
+            //                 }
+
+            //                 ctx.fillRect(
+            //                     x * QRConsoleWriter.CELL_WIDTH,
+            //                     y * QRConsoleWriter.CELL_HEIGHT,
+            //                     QRConsoleWriter.CELL_WIDTH,
+            //                     QRConsoleWriter.CELL_HEIGHT
+            //                 );
+            //             }
+            //         }
+            //     }
+            // }
+
+            // const lol = () => {
+            //     const cnvOutput = document.getElementById('cnvOutput');
+
+            //     const content = {
+            //         width: 8,
+            //         height: 8,
+            //         values: [
+            //             [0,0,0,0,0,0,0,0],
+            //             [0,0,1,0,1,0,1,0],
+            //             [0,1,0,1,0,1,0,0],
+            //             [0,0,1,0,0,0,1,0],
+            //             [0,1,0,0,0,1,0,0],
+            //             [0,0,1,0,1,0,1,0],
+            //             [0,1,0,1,0,1,0,0],
+            //             [0,0,0,0,0,0,0,0]
+            //         ]
+            //     }
+
+            //     QRConsoleWriter.write(content, cnvOutput);
+            // }
+        </script>
+    </head>
+    <body onload="lol()" style="background: red">
+        <!-- <canvas id="cnvOutput" style="background: white;"><canvas> -->
+        <svg id="svgOutput" style="background: white;"></svg>
+    </body>
+</html>
