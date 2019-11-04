@@ -6,8 +6,14 @@ import VisualFeedback from './VisualFeedback';
 import TimedAction from './TimedAction';
 import { PlainObject } from './PlainObject';
 
+import { PasswordGeneratorV1 } from './passwordGenerators/v1';
+import { CipherV1 } from './ciphers/v1';
+
 import { IStorage } from './storages/IStorage';
 import { GitHubStorage } from './storages/GitHubStorage';
+
+const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
+const cipher: crypto.ICipher = new CipherV1();
 
 function getElementById(elementName: string): HTMLInputElement {
     const element: HTMLElement|null = document.getElementById(elementName);
@@ -18,6 +24,9 @@ function getElementById(elementName: string): HTMLInputElement {
 
     return element as HTMLInputElement;
 }
+
+const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
+const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';
 
 const txtPrivatePart: HTMLInputElement = getElementById('txtPrivatePart');
 const txtPrivatePartConfirmation: HTMLInputElement = getElementById('txtPrivatePartConfirmation');
@@ -62,13 +71,14 @@ const PRIVATE_PART_PROTECTION_TIMEOUT: number = 60 * 1000;
 const SUCCESS_COLOR: string = '#D0FFD0';
 const ERROR_COLOR: string = '#FFD0D0';
 
-const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public'];
+const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
 // dafuq!?
 numOutputSizeRange.max = DEFAULT_LENGTH.toString();
 numOutputSizeRange.value = DEFAULT_LENGTH.toString();
 
 let privatePart: string | undefined;
+let passwordPublicPartLastChange: string | undefined;
 
 btnClearPublicPart.addEventListener('click', () => {
     if (txtPublicPart.value.length > 0) {
@@ -79,6 +89,7 @@ btnClearPublicPart.addEventListener('click', () => {
 
     txtPublicPart.value = '';
 
+    updatePasswordPublicPartLastUpdate();
     updatePasswordGenerationParameters();
 });
 
@@ -91,8 +102,19 @@ btnGeneratePublicPart.addEventListener('click', () => {
 
     const randomString: string = crypto.generateRandomString();
     txtPublicPart.value = randomString;
+
+    updatePasswordPublicPartLastUpdate();
+
     run();
 });
+
+function updatePasswordPublicPartLastUpdate(): void {
+    if (txtPublicPart.value.length > 0) {
+        passwordPublicPartLastChange = new Date().toISOString();
+    } else {
+        passwordPublicPartLastChange = undefined;
+    }
+}
 
 function getPrivatePart(): string {
     if (privatePart !== undefined) {
@@ -118,6 +140,7 @@ function protectAndLockPrivatePart(): void {
     txtPrivatePartConfirmation.disabled = true;
 
     btnProtect.innerHTML = 'Clear and unlock';
+    btnProtect.title = btnProtectTitleForClear;
 
     updatePrivatePartsMatching();
 }
@@ -130,6 +153,8 @@ function clearAndUnLockPrivatePart(): void {
     txtPrivatePartConfirmation.disabled = false;
 
     btnProtect.innerHTML = 'Protect and lock';
+    btnProtect.title = btnProtectTitleForProtect;
+    btnProtect.disabled = true;
 }
 
 function togglePrivatePartProtection(): void {
@@ -311,6 +336,7 @@ function updatePasswordGenerationParameters(): void {
     const leaf: PlainObject = chainInfo.tail;
 
     leaf.public = txtPublicPart.value;
+    leaf.datetime = passwordPublicPartLastChange;
 
     const numericValue: number = parseInt(numOutputSizeNum.value, 10);
     if (numericValue !== DEFAULT_LENGTH) {
@@ -430,7 +456,7 @@ async function run() {
     const privatePrivateBytes: ArrayBuffer = stringUtils.stringToArray(privatePartString);
     const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPartString);
 
-    const keyBytes: ArrayBuffer = await crypto.generatePassword(privatePrivateBytes, publicPartBytes, 'Password');
+    const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
 
     const keyString: string = arrayUtils.toCustomBase(keyBytes, txtAlphabet.value);
     txtResultPassword.value = stringUtils.truncate(keyString, parseInt(numOutputSizeRange.value, 10));
@@ -480,6 +506,7 @@ txtPath.addEventListener('input', () => {
 });
 
 txtPublicPart.addEventListener('input', () => {
+    updatePasswordPublicPartLastUpdate();
     updatePasswordGenerationParameters();
     run();
 });
@@ -491,3 +518,4 @@ txtCustomKeys.addEventListener('input', () => {
 updateOutputSizeRangeToNum();
 resetAlphabet();
 updatePrivatePartsMatching();
+btnProtect.title = btnProtectTitleForProtect;
