@@ -57,14 +57,18 @@ const spnCopyResultPasswordFeedback: HTMLInputElement = getElementById('spnCopyR
 const txtParameters: HTMLInputElement = getElementById('txtParameters');
 const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
 
+const btnTabPasswords: HTMLInputElement = getElementById('btnTabPasswords');
+const btnTabCiphers: HTMLInputElement = getElementById('btnTabCiphers');
+const divTabPasswords: HTMLInputElement = getElementById('divTabPasswords');
+const divTabCiphers: HTMLInputElement = getElementById('divTabCiphers');
+
+const txtCipherSource: HTMLInputElement = getElementById('txtCipherSource');
+const txtCipherTarget: HTMLInputElement = getElementById('txtCipherTarget');
+const btnEncrypt: HTMLInputElement = getElementById('btnEncrypt');
+const btnDecrypt: HTMLInputElement = getElementById('btnDecrypt');
+
 const DEFAULT_LENGTH: number = 64;
-
-// Alphabet v1 is screwed, the character { appears twice and } is missing.
-const DEFAULT_ALPHABET_V1: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789`~!@#$%^&*()_-=+[{]{|;:\'",<.>/?';
-// Alphabet v2 is correct and in ASCII order.
-const DEFAULT_ALPHABET_V2: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
-
-const DEFAULT_ALPHABET: string = DEFAULT_ALPHABET_V2;
+const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
 const PRIVATE_PART_PROTECTION_TIMEOUT: number = 60 * 1000;
 
@@ -76,6 +80,63 @@ const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 // dafuq!?
 numOutputSizeRange.max = DEFAULT_LENGTH.toString();
 numOutputSizeRange.value = DEFAULT_LENGTH.toString();
+
+btnTabPasswords.addEventListener('click', () => {
+    btnTabPasswords.style.setProperty('font-weight', 'bold');
+    btnTabPasswords.style.removeProperty('color');
+    btnTabCiphers.style.removeProperty('font-weight');
+    btnTabCiphers.style.setProperty('color', '#C0C0C0');
+    divTabPasswords.style.removeProperty('display');
+    divTabCiphers.style.setProperty('display', 'none');
+});
+
+btnTabCiphers.addEventListener('click', () => {
+    btnTabPasswords.style.removeProperty('font-weight');
+    btnTabPasswords.style.setProperty('color', '#C0C0C0');
+    btnTabCiphers.style.setProperty('font-weight', 'bold');
+    btnTabCiphers.style.removeProperty('color');
+    divTabPasswords.style.setProperty('display', 'none');
+    divTabCiphers.style.removeProperty('display');
+});
+
+btnTabPasswords.style.setProperty('font-weight', 'bold');
+btnTabCiphers.style.setProperty('color', '#C0C0C0');
+
+btnEncrypt.addEventListener('click', async () => {
+    if (txtCipherSource.value.length === 0) {
+        return;
+    }
+
+    const privatePart: string = getPrivatePart();
+    if (privatePart.length === 0) {
+        return;
+    }
+
+    const input: ArrayBuffer = stringUtils.stringToArray(txtCipherSource.value);
+    const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
+
+    const encrypted: ArrayBuffer = await cipher.encrypt(input, password);
+
+    txtCipherTarget.value = arrayUtils.toBase16(encrypted);
+});
+
+btnDecrypt.addEventListener('click', async () => {
+    if (txtCipherSource.value.length === 0) {
+        return;
+    }
+
+    const privatePart: string = getPrivatePart();
+    if (privatePart.length === 0) {
+        return;
+    }
+
+    const input: ArrayBuffer = stringUtils.fromBase16(txtCipherSource.value);
+    const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
+
+    const decrypted: ArrayBuffer = await cipher.decrypt(input, password);
+
+    txtCipherTarget.value = arrayUtils.arrayToString(decrypted);
+});
 
 let privatePart: string | undefined;
 let passwordPublicPartLastChange: string | undefined;

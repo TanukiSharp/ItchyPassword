@@ -12,6 +12,18 @@
     .controlButton {
         margin-left: 2px;
     }
+    .cipherButton {
+        margin-bottom: 2px;
+    }
+    .cipherGrid {
+        display: grid;
+        justify-content: start;
+        gap: 4px;
+        grid-template-columns: repeat(3, auto);
+    }
+    .readonlyText {
+        background-color: #F9F9F9;
+    }
     </style>
 </head>
 <body>
@@ -25,15 +37,28 @@
     <br/>
     <hr/>
     <br/>
-    Password: <input id="txtResultPassword" type="password" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span></br>
+    <button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><br/><br/>
+    <div id="divTabPasswords">
+    Password: <input id="txtResultPassword" type="password" class="readonlyText" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span></br>
     Length:&nbsp;&nbsp;&nbsp;<input id="numOutputSizeRange" type="range" min="4" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
+    </div>
+    <div id="divTabCiphers" style="display: none;">
+        <div class="cipherGrid">
+            <textarea id="txtCipherSource" cols="68" rows="12" style="grid-column: 1;"></textarea>
+            <textarea id="txtCipherTarget" cols="68" rows="12" style="grid-column: 2;" class="readonlyText" readonly></textarea>
+            <div style="grid-column: 3;">
+                <button id="btnEncrypt" class="cipherButton">Encrypt</button><br/>
+                <button id="btnDecrypt" class="cipherButton">Decrypt</button>
+            </div>
+        </div>
+    </div>
     <br/>
     <hr/>
     <br/>
     Storage path: <input id="txtPath" type="text"></input></br>
     <br/>
     Password generation parameters:<br/>
-    <textarea id="txtParameters" cols="150" rows="20" readonly></textarea><br/>
+    <textarea id="txtParameters" cols="150" rows="20" class="readonlyText" readonly></textarea><br/>
     <br/>
     Custom keys:<br/>
     <textarea id="txtCustomKeys" cols="150" rows="10"></textarea>

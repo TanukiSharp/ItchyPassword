@@ -1,3 +1,8 @@
+export function arrayToString(array: ArrayBuffer): string {
+    const decoder = new TextDecoder(/*'utf-8'*/);
+    return decoder.decode(array);
+};
+
 export function copy(source: Uint8Array, sourceIndex: number, target: Uint8Array, targetIndex: number, length: number): void {
     for (let i: number = 0; i < length; i += 1) {
         target[i + targetIndex] = source[i + sourceIndex];
