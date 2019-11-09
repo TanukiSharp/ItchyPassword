@@ -11,6 +11,7 @@ import { CipherV1 } from './ciphers/v1';
 
 import { IStorage } from './storages/IStorage';
 import { GitHubStorage } from './storages/GitHubStorage';
+import { TabControl } from './TabControl';
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 const cipher: crypto.ICipher = new CipherV1();
@@ -57,8 +58,10 @@ const spnCopyResultPasswordFeedback: HTMLInputElement = getElementById('spnCopyR
 const txtParameters: HTMLInputElement = getElementById('txtParameters');
 const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
 
+const btnTabNothing: HTMLInputElement = getElementById('btnTabNothing');
 const btnTabPasswords: HTMLInputElement = getElementById('btnTabPasswords');
 const btnTabCiphers: HTMLInputElement = getElementById('btnTabCiphers');
+const divTabNothing: HTMLInputElement = getElementById('divTabNothing');
 const divTabPasswords: HTMLInputElement = getElementById('divTabPasswords');
 const divTabCiphers: HTMLInputElement = getElementById('divTabCiphers');
 
@@ -81,26 +84,11 @@ const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 numOutputSizeRange.max = DEFAULT_LENGTH.toString();
 numOutputSizeRange.value = DEFAULT_LENGTH.toString();
 
-btnTabPasswords.addEventListener('click', () => {
-    btnTabPasswords.style.setProperty('font-weight', 'bold');
-    btnTabPasswords.style.removeProperty('color');
-    btnTabCiphers.style.removeProperty('font-weight');
-    btnTabCiphers.style.setProperty('color', '#C0C0C0');
-    divTabPasswords.style.removeProperty('display');
-    divTabCiphers.style.setProperty('display', 'none');
-});
-
-btnTabCiphers.addEventListener('click', () => {
-    btnTabPasswords.style.removeProperty('font-weight');
-    btnTabPasswords.style.setProperty('color', '#C0C0C0');
-    btnTabCiphers.style.setProperty('font-weight', 'bold');
-    btnTabCiphers.style.removeProperty('color');
-    divTabPasswords.style.setProperty('display', 'none');
-    divTabCiphers.style.removeProperty('display');
-});
-
-btnTabPasswords.style.setProperty('font-weight', 'bold');
-btnTabCiphers.style.setProperty('color', '#C0C0C0');
+const tabControl: TabControl = new TabControl([
+    { button: btnTabNothing, content: divTabNothing },
+    { button: btnTabPasswords, content: divTabPasswords },
+    { button: btnTabCiphers, content: divTabCiphers }
+]);
 
 btnEncrypt.addEventListener('click', async () => {
     if (txtCipherSource.value.length === 0) {

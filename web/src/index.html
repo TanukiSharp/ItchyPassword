@@ -32,16 +32,27 @@
     <br/>
     <hr/>
     <br/>
-    Public part:&nbsp; <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
-    Alphabet:&nbsp;&nbsp;&nbsp;&nbsp; <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button></br>
-    <br/>
-    <hr/>
-    <br/>
-    <button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><br/><br/>
+    <button id="btnTabNothing" class="controlButton">Nothing</button><button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><br/><br/>
+    <div id="divTabNothing"></div>
     <div id="divTabPasswords">
-    Password: <input id="txtResultPassword" type="password" class="readonlyText" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span></br>
-    Length:&nbsp;&nbsp;&nbsp;<input id="numOutputSizeRange" type="range" min="4" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
-    </div>
+        Public part:&nbsp; <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
+        Alphabet:&nbsp;&nbsp;&nbsp;&nbsp; <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button></br>
+        <br/>
+        <hr/>
+        <br/>
+        Password: <input id="txtResultPassword" type="password" class="readonlyText" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span></br>
+        Length:&nbsp;&nbsp;&nbsp;<input id="numOutputSizeRange" type="range" min="4" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
+        <br/>
+        <hr/>
+        <br/>
+        Storage path: <input id="txtPath" type="text"></input></br>
+        <br/>
+        Password generation parameters:<br/>
+        <textarea id="txtParameters" cols="150" rows="20" class="readonlyText" readonly></textarea><br/>
+        <br/>
+        Custom keys:<br/>
+        <textarea id="txtCustomKeys" cols="150" rows="10"></textarea>
+        </div>
     <div id="divTabCiphers" style="display: none;">
         <div class="cipherGrid">
             <textarea id="txtCipherSource" cols="68" rows="12" style="grid-column: 1;"></textarea>
@@ -52,17 +63,6 @@
             </div>
         </div>
     </div>
-    <br/>
-    <hr/>
-    <br/>
-    Storage path: <input id="txtPath" type="text"></input></br>
-    <br/>
-    Password generation parameters:<br/>
-    <textarea id="txtParameters" cols="150" rows="20" class="readonlyText" readonly></textarea><br/>
-    <br/>
-    Custom keys:<br/>
-    <textarea id="txtCustomKeys" cols="150" rows="10"></textarea>
-
     <script type="text/javascript" src="bundle.js"></script>
 </body>
 </html>
