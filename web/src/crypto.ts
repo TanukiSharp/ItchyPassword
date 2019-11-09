@@ -1,6 +1,4 @@
 import * as arrayUtils from './arrayUtils';
-import { PasswordGeneratorV1 } from './passwordGenerators/v1';
-import { CipherV1 } from './ciphers/v1';
 
 export const BASE62_ALPHABET: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
@@ -16,14 +14,6 @@ export interface ICipher {
     encrypt(input: ArrayBuffer, password: ArrayBuffer): Promise<ArrayBuffer>;
     decrypt(input: ArrayBuffer, password: ArrayBuffer): Promise<ArrayBuffer>;
 }
-
-export const passwordGenerators: IPasswordGenerator[] = [
-    new PasswordGeneratorV1('Password'),
-];
-
-export const ciphers: ICipher[] = [
-    new CipherV1(),
-];
 
 export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer): Promise<ArrayBuffer> {
     const baseKey: CryptoKey = await crypto.subtle.importKey(

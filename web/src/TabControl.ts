@@ -4,19 +4,29 @@ export interface ITabInfo {
 }
 
 export class TabControl {
+    private _activeTabIndex: number = -1;
+
+    public get activeTabIndex(): number {
+        return this._activeTabIndex;
+    }
+    public set activeTabIndex(index: number) {
+        if (index < 0 || index >= this.tabs.length) {
+            throw new Error(`Argument 'index' out of range. Must be in range [0;${this.tabs.length - 1}].`);
+        }
+        this.setActiveTab(index);
+    }
+
     public constructor(private tabs: ITabInfo[]) {
-        let tabInfo: ITabInfo;
-        for (tabInfo of this.tabs) {
-            const localTabInfo: ITabInfo = tabInfo;
-            localTabInfo.button.addEventListener('click', () => {
-                this.setActiveTab(localTabInfo);
+        for (let i = 0; i < this.tabs.length; i += 1) {
+            tabs[i].button.addEventListener('click', () => {
+                this.setActiveTab(i);
             });
         }
 
-        this.setActiveTab(tabs[0]);
+        this.setActiveTab(0);
     }
 
-    private setActiveTab(activeTabInfo: ITabInfo) {
+    private setActiveTab(activeTabIndex: number) {
         let tabInfo: ITabInfo;
 
         for (tabInfo of this.tabs) {
@@ -25,8 +35,10 @@ export class TabControl {
             tabInfo.content.style.setProperty('display', 'none');
         }
 
-        activeTabInfo.button.style.setProperty('font-weight', 'bold');
-        activeTabInfo.button.style.removeProperty('color');
-        activeTabInfo.content.style.removeProperty('display');
+        this.tabs[activeTabIndex].button.style.setProperty('font-weight', 'bold');
+        this.tabs[activeTabIndex].button.style.removeProperty('color');
+        this.tabs[activeTabIndex].content.style.removeProperty('display');
+
+        this._activeTabIndex = activeTabIndex;
     }
 }
