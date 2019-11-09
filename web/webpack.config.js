@@ -1,5 +1,9 @@
 const path = require('path');
+const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
+const GitRevisionPlugin = require('git-revision-webpack-plugin');
+
+const gitRevisionPlugin = new GitRevisionPlugin();
 
 module.exports = {
     entry: './src/index.ts',
@@ -23,5 +27,8 @@ module.exports = {
         new CopyPlugin([
             { context: 'src', from: '*.html', to: '../docs' }
         ]),
+        new webpack.DefinePlugin({
+            'COMMITHASH': JSON.stringify(gitRevisionPlugin.commithash())
+        })
     ]
 };

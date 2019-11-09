@@ -14,6 +14,7 @@
     "license": "MIT",
     "devDependencies": {
         "copy-webpack-plugin": "^5.0.4",
+        "git-revision-webpack-plugin": "^3.0.4",
         "ts-loader": "^6.2.0",
         "typescript": "^3.6.4",
         "webpack": "^4.41.2",

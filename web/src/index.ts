@@ -20,3 +20,6 @@ const tabs: ITabInfo[] = [
 ];
 
 new TabControl(tabs);
+
+declare const COMMITHASH: string;
+getElementById('version').innerHTML = COMMITHASH.substr(0, 11);
