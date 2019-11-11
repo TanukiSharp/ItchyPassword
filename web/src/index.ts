@@ -1,8 +1,8 @@
 import { getElementById } from './ui';
 
-import './PrivatePartComponent';
-import './PasswordComponent';
-import './CipherComponent';
+import './components/privatePartComponent';
+import './components/passwordComponent';
+import './components/cipherComponent';
 
 import { TabControl, ITabInfo } from './TabControl';
 

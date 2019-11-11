@@ -1,14 +1,14 @@
-import { getElementById, ERROR_COLOR } from './ui';
-import * as privatePart from './PrivatePartComponent';
+import { getElementById, ERROR_COLOR } from '../ui';
+import * as privatePart from './privatePartComponent';
 
-import * as crypto from './crypto';
-import * as stringUtils from './stringUtils';
-import * as arrayUtils from './arrayUtils';
+import * as crypto from '../crypto';
+import * as stringUtils from '../stringUtils';
+import * as arrayUtils from '../arrayUtils';
 
-import VisualFeedback from './VisualFeedback';
-import { PlainObject } from './PlainObject';
+import VisualFeedback from '../VisualFeedback';
+import { PlainObject } from '../PlainObject';
 
-import { PasswordGeneratorV1 } from './passwordGenerators/v1';
+import { PasswordGeneratorV1 } from '../passwordGenerators/v1';
 
 privatePart.registerOnChanged(run);
 
