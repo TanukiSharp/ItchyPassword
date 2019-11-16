@@ -1,11 +1,10 @@
-import { getElementById, ERROR_COLOR } from '../ui';
+import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
 import * as privatePart from './privatePartComponent';
 
 import * as crypto from '../crypto';
 import * as stringUtils from '../stringUtils';
 import * as arrayUtils from '../arrayUtils';
 
-import VisualFeedback from '../VisualFeedback';
 import { PlainObject } from '../PlainObject';
 
 import { PasswordGeneratorV1 } from '../passwordGenerators/v1';
@@ -158,37 +157,14 @@ function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
     });
 }
 
-const copyResultPasswordToClipboardFeedbackObject: VisualFeedback = new VisualFeedback(spnCopyResultPasswordFeedback);
-const copyPublicPartToClipboardFeedbackObject: VisualFeedback = new VisualFeedback(spnCopyPublicPartFeedback);
-
-async function writeToClipboard(text: string): Promise<boolean> {
-    try {
-        await navigator.clipboard.writeText(text);
-        return true;
-    } catch (error) {
-        console.error(error.stack || error);
-        return false;
-    }
-}
-
-function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement, feedback: VisualFeedback): void {
-    button.addEventListener('click', async () => {
-        if (await writeToClipboard(txt.value)) {
-            feedback.setText('Copied', 3000);
-        } else {
-            feedback.setText('<span style="color: red">Failed to copy</span>', 3000);
-        }
-    });
-}
-
 function updateResultPasswordLength() {
     spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString().padStart(2, ' ');
 }
 
 setupViewButton(txtResultPassword, 'btnViewResultPassword');
 
-setupCopyButton(txtPublicPart, btnCopyPublicPart, copyPublicPartToClipboardFeedbackObject);
-setupCopyButton(txtResultPassword, btnCopyResultPassword, copyResultPasswordToClipboardFeedbackObject);
+setupCopyButton(txtPublicPart, btnCopyPublicPart, spnCopyPublicPartFeedback);
+setupCopyButton(txtResultPassword, btnCopyResultPassword, spnCopyResultPasswordFeedback);
 
 function isAlphabetValid(alphabet: string): boolean {
     const sortedAlphabet: string[] = alphabet.split('');

@@ -7,7 +7,7 @@ const gitRevisionPlugin = new GitRevisionPlugin();
 
 module.exports = {
     entry: './src/index.ts',
-    devtool: 'inline-source-map',
+    devtool: 'source-map',
     module: {
         rules: [
             {

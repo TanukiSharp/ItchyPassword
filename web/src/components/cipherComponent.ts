@@ -2,7 +2,7 @@ import * as crypto from '../crypto';
 import * as stringUtils from '../stringUtils';
 import * as arrayUtils from '../arrayUtils';
 
-import { getElementById, ERROR_COLOR } from '../ui';
+import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
 import { CipherV1 } from '../ciphers/v1';
@@ -13,6 +13,13 @@ const txtCipherSource: HTMLInputElement = getElementById('txtCipherSource');
 const txtCipherTarget: HTMLInputElement = getElementById('txtCipherTarget');
 const btnEncrypt: HTMLInputElement = getElementById('btnEncrypt');
 const btnDecrypt: HTMLInputElement = getElementById('btnDecrypt');
+
+const btnClearCipherSource: HTMLInputElement = getElementById('btnClearCipherSource');
+const spnCopyCipherTargetFeedback: HTMLInputElement = getElementById('spnCopyCipherTargetFeedback');
+const btnCopyCipherTarget: HTMLInputElement = getElementById('btnCopyCipherTarget');
+const btnClearCipherTarget: HTMLInputElement = getElementById('btnClearCipherTarget');
+
+setupCopyButton(txtCipherTarget, btnCopyCipherTarget, spnCopyCipherTargetFeedback);
 
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
@@ -92,4 +99,12 @@ txtCipherSource.addEventListener('input', () => {
     if (txtCipherSource.value.length > 0) {
         clearSourceVisualCue();
     }
+});
+
+btnClearCipherSource.addEventListener('click', () => {
+    txtCipherSource.value = '';
+});
+
+btnClearCipherTarget.addEventListener('click', () => {
+    txtCipherTarget.value = '';
 });

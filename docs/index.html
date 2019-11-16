@@ -20,6 +20,7 @@
         justify-content: start;
         gap: 4px;
         grid-template-columns: repeat(3, auto);
+        grid-template-rows: repeat(2, auto);
     }
     .readonlyText {
         background-color: #F9F9F9;
@@ -60,14 +61,22 @@
         <br/>
         Custom keys:<br/>
         <textarea id="txtCustomKeys" cols="150" rows="10"></textarea>
-        </div>
+    </div>
     <div id="divTabCiphers" style="display: none;">
         <div class="cipherGrid">
-            <textarea id="txtCipherSource" cols="68" rows="12" style="grid-column: 1;"></textarea>
-            <textarea id="txtCipherTarget" cols="68" rows="12" style="grid-column: 2;" class="readonlyText" readonly></textarea>
-            <div style="grid-column: 3;">
-                <button id="btnEncrypt" class="cipherButton">Encrypt</button><br/>
-                <button id="btnDecrypt" class="cipherButton">Decrypt</button>
+            <textarea id="txtCipherSource" cols="68" rows="12" style="grid-column: 1; grid-row: 1;"></textarea>
+            <button id="btnClearCipherSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
+
+            <div style="grid-column: 2; grid-row: 1;">
+                <button id="btnEncrypt" class="cipherButton">Encrypt -></button><br/>
+                <button id="btnDecrypt" class="cipherButton">Decrypt -></button>
+            </div>
+
+            <textarea id="txtCipherTarget" cols="68" rows="12" style="grid-column: 3; grid-row: 1;" class="readonlyText" readonly></textarea>
+            <div style="grid-column: 3; grid-row: 2; justify-self: end;">
+                <span id="spnCopyCipherTargetFeedback"></span>
+                <button id="btnCopyCipherTarget">Copy</button>
+                <button id="btnClearCipherTarget">Clear</button>
             </div>
         </div>
     </div>
