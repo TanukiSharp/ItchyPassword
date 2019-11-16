@@ -1,10 +1,10 @@
 {
-    "name": "password-generator",
+    "name": "itchy-password",
     "version": "0.1.0",
-    "description": "Password generator/manager web application.",
+    "description": "Secrets management web application.",
     "main": "index.js",
     "repository": {
-        "url": "https://github.com/TanukiSharp/PasswordGenerator"
+        "url": "https://github.com/TanukiSharp/ItchyPassword"
     },
     "scripts": {
         "build-dev": "./node_modules/.bin/tsc && ./node_modules/.bin/webpack --mode development",

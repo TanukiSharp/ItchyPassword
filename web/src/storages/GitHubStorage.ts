@@ -17,7 +17,7 @@ interface IGitHubContent {
 
 export class GitHubStorage implements IStorage {
     static BASE_URL: string = 'https://api.github.com';
-    static AUTHORIZATION_NAME: string = 'PasswordGenerator_aae9385adee54b0c8c16c077f3cee256';
+    static AUTHORIZATION_NAME: string = 'ItchyPassword_aae9385adee54b0c8c16c077f3cee256';
 
     private repositoryOwner: string;
     private basicAuthHeader: string;

@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace PasswordGenerator.Core
+namespace ItchyPassword.Core
 {
     /// <summary>
     /// Generates a derived password based on a master password.
