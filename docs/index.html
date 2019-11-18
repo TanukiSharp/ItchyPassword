@@ -15,9 +15,19 @@
     .cipherButton {
         margin-bottom: 2px;
     }
+    .reEncryptButton {
+        margin-top: 2px;
+        justify-self: center;
+    }
     .cipherGrid {
         display: grid;
         justify-content: start;
+        gap: 4px;
+        grid-template-columns: repeat(3, auto);
+        grid-template-rows: repeat(2, auto);
+    }
+    .reEncryptGrid {
+        display: grid;
         gap: 4px;
         grid-template-columns: repeat(3, auto);
         grid-template-rows: repeat(2, auto);
@@ -43,9 +53,9 @@
     <br/>
     <hr/>
     <br/>
-    <button id="btnTabNothing" class="controlButton">Nothing</button><button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><br/><br/>
+    <button id="btnTabNothing" class="controlButton">Nothing</button><button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><button id="btnTabReEncrypt" class="controlButton">Re-encrypt</button><br/><br/>
     <div id="divTabNothing"></div>
-    <div id="divTabPasswords">
+    <div id="divTabPasswords" style="display: none;">
         Public part:&nbsp; <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
         Alphabet:&nbsp;&nbsp;&nbsp;&nbsp; <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button></br>
         <br/>
@@ -79,6 +89,25 @@
                 <span id="spnCopyCipherTargetFeedback"></span>
                 <button id="btnCopyCipherTarget">Copy</button>
                 <button id="btnClearCipherTarget">Clear</button>
+            </div>
+        </div>
+    </div>
+    <div id="divTabReEncrypt" style="display: none;">
+        <div class="reEncryptGrid">
+            <textarea id="txtReEncryptSource" cols="68" rows="12" style="grid-column: 1; grid-row: 1;"></textarea>
+            <button id="btnClearReEncryptSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
+
+            <div style="grid-column: 2; grid-row: 1;">
+                From: <select id="cboReEncryptFrom"></select><br/>
+                To:&nbsp;&nbsp; <select id="cboReEncryptTo"></select><br/>
+                <button id="btnReEncrypt" class="reEncryptButton">Re-encrypt -></button>
+            </div>
+
+            <textarea id="txtReEncryptTarget" cols="68" rows="12" style="grid-column: 3; grid-row: 1;" class="readonlyText" readonly></textarea>
+            <div style="grid-column: 3; grid-row: 2; justify-self: end;">
+                <span id="spnCopyReEncryptTargetFeedback"></span>
+                <button id="btnCopyReEncryptTarget">Copy</button>
+                <button id="btnClearReEncryptTarget">Clear</button>
             </div>
         </div>
     </div>
