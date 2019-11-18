@@ -3,7 +3,7 @@ import * as arrayUtils from './arrayUtils';
 import * as stringUtils from './stringUtils';
 
 import { PasswordGeneratorV1 } from './passwordGenerators/v1';
-import { CipherV1 } from './ciphers/v1';
+import { CipherV2 } from './ciphers/v2';
 
 const defaultAlphabet: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
@@ -32,7 +32,7 @@ async function postData(url: string = '', data: object = {}): Promise<string> {
 
 async function validate(): Promise<void> {
     const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
-    const cipher: crypto.ICipher = new CipherV1();
+    const cipher: crypto.ICipher = new CipherV2();
 
     for (let i: number = 0; i < 10; i += 1) {
         const privatePartBytes: ArrayBuffer = crypto.generateRandomBytes(64);

@@ -36,7 +36,6 @@ namespace ItchyPassword.Tester
 
             // **************************************************************************************************
 
-
             ////Crypto.GeneratePassword("abc", "testtest", Crypto.DefaultIterations, Crypto.DefaultHashAlgorithm, "Password");
             ////Crypto.GeneratePassword("abc", "testtest", Crypto.DefaultIterations, Crypto.DefaultHashAlgorithm, "Password");
             ////Crypto.GeneratePassword("abc", "testtest", Crypto.DefaultIterations, Crypto.DefaultHashAlgorithm, "Password");
@@ -56,6 +55,21 @@ namespace ItchyPassword.Tester
 
             //if (clear.SequenceEqual(decrypted) == false)
             //    throw new Exception();
+
+            // **************************************************************************************************
+
+            using var rng = RandomNumberGenerator.Create();
+
+            byte[] privatePartBytes = new byte[256];
+            rng.GetBytes(privatePartBytes);
+
+            byte[] password = new byte[256];
+            rng.GetBytes(password);
+
+            byte[] decrypted = Crypto.Decrypt(Crypto.Encrypt(privatePartBytes, password), password);
+
+            if (new Span<byte>(privatePartBytes).SequenceEqual(decrypted) == false)
+                throw new Exception();
         }
     }
 }

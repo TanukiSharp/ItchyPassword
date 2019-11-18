@@ -5,9 +5,9 @@ import * as arrayUtils from '../arrayUtils';
 import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
-import { CipherV1 } from '../ciphers/v1';
+import { CipherV2 } from '../ciphers/v2';
 
-const cipher: crypto.ICipher = new CipherV1();
+const cipher: crypto.ICipher = new CipherV2();
 
 const txtCipherSource: HTMLInputElement = getElementById('txtCipherSource');
 const txtCipherTarget: HTMLInputElement = getElementById('txtCipherTarget');

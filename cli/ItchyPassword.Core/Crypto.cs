@@ -49,22 +49,30 @@ namespace ItchyPassword.Core
         /// </summary>
         public const int AuthenticatedTagLength = 16;
 
-        private static readonly byte[] encryptionKeyDerivationSalt = new byte[] { 0xf2, 0xcf, 0xef, 0x8e, 0x13, 0x40, 0x46, 0x49, 0x92, 0x2a, 0xde, 0x5c, 0xbc, 0x88, 0x38, 0xa8 };
+        /// <summary>
+        /// Length in bytes used for the password hash salt.
+        /// </summary>
+        public const int PasswordHashSaltLength = 16;
 
         /// <summary>
         /// Encrypts data.
         /// </summary>
         /// <param name="input">Data to encrypt.</param>
         /// <param name="password">Encryption key.</param>
-        /// <param name="output">Receives the nonce, auth tag and encrypted value. Must be at least input length + 28 bytes long.</param>
+        /// <param name="output">Receives the nonce, auth tag and encrypted value. Must be at least input length + 44 bytes long.</param>
         /// <returns>Returns encrypted data.</returns>
         public static void Encrypt(ReadOnlySpan<byte> input, ReadOnlySpan<byte> password, Span<byte> output)
         {
-            if (output.Length < input.Length + NonceLength + AuthenticatedTagLength)
-                throw new ArgumentException($"Argument '{nameof(output)}' must be at least {input.Length + NonceLength + AuthenticatedTagLength} bytes long.", nameof(output));
+            int minimumOutputLength = input.Length + NonceLength + AuthenticatedTagLength + PasswordHashSaltLength;
+
+            if (output.Length < minimumOutputLength)
+                throw new ArgumentException($"Argument '{nameof(output)}' must be at least {minimumOutputLength} bytes long.", nameof(output));
+
+            Span<byte> passwordSalt = output.Slice(NonceLength, PasswordHashSaltLength);
+            random.GetBytes(passwordSalt);
 
             // The reason to derive key again is to ensure 32 bytes length.
-            var keyDerivedBytes = new Rfc2898DeriveBytes(password.ToArray(), encryptionKeyDerivationSalt, 100_000, HashAlgorithmName.SHA512);
+            var keyDerivedBytes = new Rfc2898DeriveBytes(password.ToArray(), passwordSalt.ToArray(), 100_000, HashAlgorithmName.SHA512);
 
             using var aes = new AesGcm(keyDerivedBytes.GetBytes(32));
 
@@ -74,8 +82,8 @@ namespace ItchyPassword.Core
             aes.Encrypt(
                 nonce,
                 input,
-                output.Slice(NonceLength, input.Length),
-                output.Slice(NonceLength + input.Length, AuthenticatedTagLength)
+                output.Slice(NonceLength + PasswordHashSaltLength, input.Length),
+                output.Slice(NonceLength + PasswordHashSaltLength + input.Length, AuthenticatedTagLength)
             );
         }
 
@@ -87,7 +95,7 @@ namespace ItchyPassword.Core
         /// <returns>Returns encrypted data.</returns>
         public static byte[] Encrypt(ReadOnlySpan<byte> input, ReadOnlySpan<byte> password)
         {
-            byte[] output = new byte[NonceLength + AuthenticatedTagLength + input.Length];
+            byte[] output = new byte[NonceLength + AuthenticatedTagLength + PasswordHashSaltLength + input.Length];
 
             Encrypt(input, password, output);
 
@@ -99,24 +107,26 @@ namespace ItchyPassword.Core
         /// </summary>
         /// <param name="input">Data to decrypt.</param>
         /// <param name="password">Decryption key.</param>
-        /// <param name="output">Receives the decrypted value. Must be at least input length minus 28 bytes long.</param>
+        /// <param name="output">Receives the decrypted value. Must be at least input length minus 44 bytes long.</param>
         /// <returns>Returns decrypted data.</returns>
         public static void Decrypt(ReadOnlySpan<byte> input, ReadOnlySpan<byte> password, Span<byte> output)
         {
-            int payloadLength = input.Length - NonceLength - AuthenticatedTagLength;
+            int payloadLength = input.Length - NonceLength - AuthenticatedTagLength - PasswordHashSaltLength;
 
             if (output.Length < payloadLength)
                 throw new ArgumentException($"Argument '{nameof(output)}' must be at least {payloadLength} bytes long.", nameof(output));
 
+            ReadOnlySpan<byte> passwordSalt = input.Slice(NonceLength, PasswordHashSaltLength);
+
             // The reason to derive key again is to ensure 32 bytes length.
-            var keyDerivedBytes = new Rfc2898DeriveBytes(password.ToArray(), encryptionKeyDerivationSalt, 100_000, HashAlgorithmName.SHA512);
+            var keyDerivedBytes = new Rfc2898DeriveBytes(password.ToArray(), passwordSalt.ToArray(), 100_000, HashAlgorithmName.SHA512);
 
             using var aes = new AesGcm(keyDerivedBytes.GetBytes(32));
 
             aes.Decrypt(
                 input.Slice(0, NonceLength),
-                input.Slice(NonceLength, payloadLength),
-                input.Slice(NonceLength + payloadLength, AuthenticatedTagLength),
+                input.Slice(NonceLength + PasswordHashSaltLength, payloadLength),
+                input.Slice(NonceLength + PasswordHashSaltLength + payloadLength, AuthenticatedTagLength),
                 output
             );
         }
@@ -129,7 +139,7 @@ namespace ItchyPassword.Core
         /// <returns>Returns decrypted data.</returns>
         public static byte[] Decrypt(ReadOnlySpan<byte> input, ReadOnlySpan<byte> password)
         {
-            byte[] output = new byte[input.Length - NonceLength - AuthenticatedTagLength];
+            byte[] output = new byte[input.Length - NonceLength - AuthenticatedTagLength - PasswordHashSaltLength];
 
             Decrypt(input, password, output);
 
