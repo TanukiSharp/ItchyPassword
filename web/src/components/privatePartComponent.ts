@@ -1,6 +1,6 @@
 import { getElementById, SUCCESS_COLOR, ERROR_COLOR } from '../ui';
 
-import TimedAction from '../TimedAction';
+import { TimedAction } from '../TimedAction';
 
 const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
 const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';

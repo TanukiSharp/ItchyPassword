@@ -1,4 +1,4 @@
-export default class TimedAction {
+export class TimedAction {
     private timeout: number | undefined;
     public constructor(private action: Function, private delay: number) {
     }

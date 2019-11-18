@@ -1,4 +1,4 @@
-export default class VisualFeedback {
+export class VisualFeedback {
     private element: HTMLElement;
     private timeout: number | undefined;
 

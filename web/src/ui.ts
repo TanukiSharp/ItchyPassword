@@ -1,4 +1,4 @@
-import VisualFeedback from './VisualFeedback';
+import { VisualFeedback } from './VisualFeedback';
 
 export function getElementById(elementName: string): HTMLInputElement {
     const element: HTMLElement|null = document.getElementById(elementName);
