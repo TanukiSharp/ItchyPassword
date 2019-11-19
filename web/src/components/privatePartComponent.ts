@@ -102,6 +102,7 @@ function updatePrivatePartsMatching(): void {
 
 txtPrivatePartConfirmation.addEventListener('input', () => {
     spnPrivatePartSizeConfirmation.innerHTML = txtPrivatePartConfirmation.value.length.toString();
+    protectPrivatePartAction.reset();
     updatePrivatePartsMatching();
 });
 

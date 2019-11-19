@@ -27,7 +27,7 @@ const btnClearReEncryptTarget: HTMLInputElement = getElementById('btnClearReEncr
 
 setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget, spnCopyReEncryptTargetFeedback);
 
-function fillCipherComboBox(cbo: HTMLSelectElement): void {
+function fillCipherComboBox(cbo: HTMLSelectElement, initialValue: number): void {
     let cipher: ICipher;
 
     for (cipher of ciphers) {
@@ -36,11 +36,13 @@ function fillCipherComboBox(cbo: HTMLSelectElement): void {
         item.text = `${cipher.description} (v${cipher.version})`;
         cbo.add(item);
     }
+
+    cbo.value = initialValue.toString();
 }
 
 // Mais est-ce que ce monde est serieux?
-fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom);
-fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptTo);
+fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom, ciphers.length - 2);
+fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptTo, ciphers.length - 1);
 
 function clearSourceVisualCue(): void {
     txtReEncryptSource.style.removeProperty('background-color');
