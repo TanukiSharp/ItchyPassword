@@ -22,6 +22,22 @@ export function arrayBufferToUnsignedBigInt(arrayBuffer: ArrayBuffer): bigint {
     return result;
 }
 
+export function unsignedBigIntToArrayBuffer(number: bigint): ArrayBuffer {
+    const result: Array<number> = [];
+
+    while (number > 0n)
+    {
+        const remainder: bigint = number % 256n;
+        number /= 256n;
+
+        const byteValue: number = Number(<any>BigInt.asUintN(64, remainder));
+
+        result.push(byteValue);
+    }
+
+    return new Uint8Array(result).buffer;
+}
+
 export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
     const alphabetLength: bigint = BigInt(alphabet.length);
 
@@ -39,6 +55,22 @@ export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
     }
 
     return result;
+}
+
+export function fromCustomBase(input: string, alphabet: string): ArrayBuffer {
+    const alphabetLength: bigint = BigInt(alphabet.length);
+
+    let number: bigint = 0n;
+    let exponent: bigint = 0n;
+
+    for (let i: number = 0; i < input.length; i += 1) {
+        const value: bigint = BigInt(alphabet.indexOf(input[i]));
+
+        number += value * (alphabetLength ** exponent);
+        exponent += 1n;
+    }
+
+    return unsignedBigIntToArrayBuffer(number);
 }
 
 export function toBase16(buffer: ArrayBuffer): string {
