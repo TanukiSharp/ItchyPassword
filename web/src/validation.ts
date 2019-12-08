@@ -51,7 +51,7 @@ async function validate(): Promise<void> {
 
         const backendData: IValidationResponse = JSON.parse(responseContent);
 
-        const frontendGeneratedPassword: string = arrayUtils.toCustomBase(generatedPasswordBytes, defaultAlphabet);
+        const frontendGeneratedPassword: string = arrayUtils.toCustomBaseOneWay(generatedPasswordBytes, defaultAlphabet);
 
         if (frontendGeneratedPassword !== backendData.generatedPassword) {
             throw new Error(`Passwords mismatch at test ${i}, frontend: ${frontendGeneratedPassword}, backend: ${backendData.generatedPassword}`);

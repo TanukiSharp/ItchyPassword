@@ -348,7 +348,7 @@ async function run() {
 
     const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
 
-    const keyString: string = arrayUtils.toCustomBase(keyBytes, txtAlphabet.value);
+    const keyString: string = arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
     txtResultPassword.value = stringUtils.truncate(keyString, parseInt(numOutputSizeRange.value, 10));
 
     updateResultPasswordLength();

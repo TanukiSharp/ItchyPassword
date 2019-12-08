@@ -56,5 +56,5 @@ export function generateRandomBytes(byteCount: number = 64): ArrayBuffer {
 
 export function generateRandomString(byteCount: number = 64, alphabet: string = BASE62_ALPHABET): string {
     const array: ArrayBuffer = generateRandomBytes(byteCount);
-    return arrayUtils.toCustomBase(array, alphabet);
+    return arrayUtils.toCustomBaseOneWay(array, alphabet);
 }

@@ -40,7 +40,9 @@ export function unsignedBigIntToArrayBuffer(number: bigint): ArrayBuffer {
     return new Uint8Array(result).buffer;
 }
 
-export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
+// This is a one way encoding in the sense that decoding is not always deterministic.
+// This can be used to generate strings where decoding it doesn't matter.
+export function toCustomBaseOneWay(bytes: ArrayBuffer, alphabet: string): string {
     const alphabetLength: bigint = BigInt(alphabet.length);
 
     let result: string = '';
