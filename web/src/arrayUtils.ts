@@ -14,9 +14,11 @@ export function arrayBufferToUnsignedBigInt(arrayBuffer: ArrayBuffer): bigint {
     const arrayView: DataView = new DataView(arrayBuffer, 0);
 
     let result: bigint = 0n;
+    let multiplier: bigint = 1n;
 
     for (let i: number = 0; i < length; i += 1) {
-        result += BigInt(arrayView.getUint8(i)) * (256n ** BigInt(i));
+        result += BigInt(arrayView.getUint8(i)) * multiplier;
+        multiplier *= 256n;
     }
 
     return result;
@@ -30,7 +32,7 @@ export function unsignedBigIntToArrayBuffer(number: bigint): ArrayBuffer {
         const remainder: bigint = number % 256n;
         number /= 256n;
 
-        const byteValue: number = Number(<any>BigInt.asUintN(64, remainder));
+        const byteValue: number = Number(<any>BigInt.asUintN(8, remainder));
 
         result.push(byteValue);
     }
@@ -49,7 +51,7 @@ export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
         const remainder: bigint = number % alphabetLength;
         number /= alphabetLength;
 
-        const index: number = <number><any>BigInt.asUintN(64, remainder);
+        const index: number = <number><any>BigInt.asUintN(8, remainder);
 
         result += alphabet[index];
     }
@@ -61,13 +63,13 @@ export function fromCustomBase(input: string, alphabet: string): ArrayBuffer {
     const alphabetLength: bigint = BigInt(alphabet.length);
 
     let number: bigint = 0n;
-    let exponent: bigint = 0n;
+    let multiplier: bigint = 1n;
 
     for (let i: number = 0; i < input.length; i += 1) {
         const value: bigint = BigInt(alphabet.indexOf(input[i]));
 
-        number += value * (alphabetLength ** exponent);
-        exponent += 1n;
+        number += value * multiplier;
+        multiplier *= alphabetLength;
     }
 
     return unsignedBigIntToArrayBuffer(number);
