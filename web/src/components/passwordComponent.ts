@@ -263,15 +263,15 @@ function updateOutputSizeNumToRange(): void {
     numOutputSizeRange.value = Math.max(min, Math.min(val, max)).toString();
 }
 
-numOutputSizeRange.addEventListener('input', () => {
+numOutputSizeRange.addEventListener('input', async () => {
     updateOutputSizeRangeToNum();
-    run();
+    await run();
 });
 
-numOutputSizeNum.addEventListener('input', () => {
+numOutputSizeNum.addEventListener('input', async () => {
     updateOutputSizeNumToRange();
     updateOutputSizeRangeToNum();
-    run();
+    await run();
 });
 
 function updateAlphabetSize(): void {
@@ -292,7 +292,7 @@ function updateAlphabetValidityDisplay(isAlphabetValid: boolean): void {
     }
 }
 
-txtAlphabet.addEventListener('input', () => {
+txtAlphabet.addEventListener('input', async () => {
     const isAlphabetValidResult: boolean = isAlphabetValid(txtAlphabet.value);
 
     updateAlphabetValidityDisplay(isAlphabetValidResult);
@@ -302,13 +302,13 @@ txtAlphabet.addEventListener('input', () => {
     }
 
     updateAlphabetSize();
-    run();
+    await run();
 });
 
-btnResetAlphabet.addEventListener('click', () => {
+btnResetAlphabet.addEventListener('click', async () => {
     resetAlphabet();
     updateAlphabetSize();
-    run();
+    await run();
 });
 
 function clearOutputs(): void {
@@ -371,10 +371,10 @@ txtPath.addEventListener('input', () => {
     updatePasswordGenerationParameters();
 });
 
-txtPublicPart.addEventListener('input', () => {
+txtPublicPart.addEventListener('input', async () => {
     updatePasswordPublicPartLastUpdate();
     updatePasswordGenerationParameters();
-    run();
+    await run();
 });
 
 txtCustomKeys.addEventListener('input', () => {
