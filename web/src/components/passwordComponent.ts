@@ -228,7 +228,7 @@ function updatePasswordGenerationParameters(): void {
     leaf.public = txtPublicPart.value;
     leaf.datetime = passwordPublicPartLastChange;
 
-    const numericValue: number = parseInt(numOutputSizeNum.value, 10);
+    const numericValue: number = txtResultPassword.value.length;
     if (numericValue !== DEFAULT_LENGTH) {
         leaf.length = numericValue;
     }
@@ -333,8 +333,6 @@ function canRun(): boolean {
 }
 
 async function run() {
-    updatePasswordGenerationParameters();
-
     if (canRun() === false) {
         clearOutputs();
         return;
@@ -349,9 +347,11 @@ async function run() {
     const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
 
     const keyString: string = arrayUtils.toCustomBase(keyBytes, txtAlphabet.value);
-    txtResultPassword.value = stringUtils.truncate(keyString, parseInt(numOutputSizeRange.value, 10));
+    txtResultPassword.value = stringUtils.truncate(keyString, Math.max(4, parseInt(numOutputSizeRange.value, 10)));
 
     updateResultPasswordLength();
+
+    updatePasswordGenerationParameters();
 }
 
 async function resetAlphabet() {
@@ -373,7 +373,6 @@ txtPath.addEventListener('input', () => {
 
 txtPublicPart.addEventListener('input', async () => {
     updatePasswordPublicPartLastUpdate();
-    updatePasswordGenerationParameters();
     await run();
 });
 
