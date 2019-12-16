@@ -1,51 +1,9 @@
 <html>
 <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Itchy Password</title>
-    <style>
-    body, input {
-        font-family: consolas;
-    }
-    input {
-        width: 600px;
-        margin: 2px;
-    }
-    .controlButton {
-        margin-left: 2px;
-    }
-    .cipherButton {
-        margin-bottom: 2px;
-    }
-    .reEncryptButton {
-        margin-top: 2px;
-        justify-self: center;
-    }
-    .cipherGrid {
-        display: grid;
-        justify-content: start;
-        gap: 4px;
-        grid-template-columns: repeat(3, auto);
-        grid-template-rows: repeat(2, auto);
-    }
-    .reEncryptGrid {
-        display: grid;
-        justify-content: start;
-        gap: 4px;
-        grid-template-columns: repeat(3, auto);
-        grid-template-rows: repeat(2, auto);
-    }
-    .readonlyText {
-        background-color: #F9F9F9;
-    }
-    #divInfo {
-        position: fixed;
-        right: 0;
-        top: 0;
-        background-color: white;
-        font-size: 9pt;
-        text-align: right;
-        margin-right: 2px;
-    }
-    </style>
+    <link rel="stylesheet" type="text/css" href="base-styles.css" />
+    <link rel="stylesheet" type="text/css" href="mobile-styles.css" media="screen and (max-width: 40.5em)" />
 </head>
 <body>
     <div id="divInfo"></div>
@@ -70,14 +28,14 @@
         Storage path: <input id="txtPath" type="text"></input></br>
         <br/>
         Password generation parameters:<br/>
-        <textarea id="txtParameters" cols="150" rows="20" class="readonlyText" readonly></textarea><br/>
+        <textarea id="txtParameters" class="readonlyText very-large-textarea" readonly></textarea><br/>
         <br/>
         Custom keys:<br/>
-        <textarea id="txtCustomKeys" cols="150" rows="10"></textarea>
+        <textarea id="txtCustomKeys" class="very-large-textarea"></textarea>
     </div>
     <div id="divTabCiphers" style="display: none;">
         <div class="cipherGrid">
-            <textarea id="txtCipherSource" cols="68" rows="12" style="grid-column: 1; grid-row: 1;"></textarea>
+            <textarea id="txtCipherSource" style="grid-column: 1; grid-row: 1;" class="large-textarea"></textarea>
             <button id="btnClearCipherSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
 
             <div style="grid-column: 2; grid-row: 1;">
@@ -85,7 +43,7 @@
                 <button id="btnDecrypt" class="cipherButton">Decrypt -></button>
             </div>
 
-            <textarea id="txtCipherTarget" cols="68" rows="12" style="grid-column: 3; grid-row: 1;" class="readonlyText" readonly></textarea>
+            <textarea id="txtCipherTarget" style="grid-column: 3; grid-row: 1;" class="readonlyText large-textarea" readonly></textarea>
             <div style="grid-column: 3; grid-row: 2; justify-self: end;">
                 <span id="spnCopyCipherTargetFeedback"></span>
                 <button id="btnCopyCipherTarget">Copy</button>
@@ -95,7 +53,7 @@
     </div>
     <div id="divTabReEncrypt" style="display: none;">
         <div class="reEncryptGrid">
-            <textarea id="txtReEncryptSource" cols="68" rows="12" style="grid-column: 1; grid-row: 1;"></textarea>
+            <textarea id="txtReEncryptSource" style="grid-column: 1; grid-row: 1;" class="large-textarea"></textarea>
             <button id="btnClearReEncryptSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
 
             <div style="grid-column: 2; grid-row: 1;">
@@ -104,7 +62,7 @@
                 <button id="btnReEncrypt" class="reEncryptButton">Re-encrypt -></button>
             </div>
 
-            <textarea id="txtReEncryptTarget" cols="68" rows="12" style="grid-column: 3; grid-row: 1;" class="readonlyText" readonly></textarea>
+            <textarea id="txtReEncryptTarget" style="grid-column: 3; grid-row: 1;" class="readonlyText large-textarea" readonly></textarea>
             <div style="grid-column: 3; grid-row: 2; justify-self: end;">
                 <span id="spnCopyReEncryptTargetFeedback"></span>
                 <button id="btnCopyReEncryptTarget">Copy</button>

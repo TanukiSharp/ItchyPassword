@@ -25,7 +25,8 @@ module.exports = {
     },
     plugins: [
         new CopyPlugin([
-            { context: 'src', from: '*.html', to: '../docs' }
+            { context: 'src', from: '*.html', to: '../docs' },
+            { context: 'src', from: '*.css', to: '../docs' }
         ]),
         new webpack.DefinePlugin({
             'COMMITHASH': JSON.stringify(gitRevisionPlugin.commithash())
