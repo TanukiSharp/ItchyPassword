@@ -1,0 +1,15 @@
+input {
+    width: 90%;
+    margin: 2px;
+    float: left;
+}
+
+.large-textarea {
+    width: 90%;
+    height: 100px;
+}
+
+.very-large-textarea {
+    width: 90%;
+    height: 150px;
+}
