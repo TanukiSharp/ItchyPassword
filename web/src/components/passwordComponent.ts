@@ -256,11 +256,17 @@ function updateOutputSizeRangeToNum(): void {
     numOutputSizeNum.value = numOutputSizeRange.value;
 }
 
-function updateOutputSizeNumToRange(): void {
+function updateOutputSizeNumToRange(): boolean {
     const min: number = parseInt(numOutputSizeRange.min, 10);
     const val: number = parseInt(numOutputSizeNum.value, 10);
     const max: number = parseInt(numOutputSizeRange.max, 10);
-    numOutputSizeRange.value = Math.max(min, Math.min(val, max)).toString();
+
+    if (isNaN(val) === false) {
+        numOutputSizeRange.value = Math.max(min, Math.min(val, max)).toString();
+        return true;
+    }
+
+    return false;
 }
 
 numOutputSizeRange.addEventListener('input', async () => {
@@ -269,8 +275,9 @@ numOutputSizeRange.addEventListener('input', async () => {
 });
 
 numOutputSizeNum.addEventListener('input', async () => {
-    updateOutputSizeNumToRange();
-    updateOutputSizeRangeToNum();
+    if (updateOutputSizeNumToRange()) {
+        updateOutputSizeRangeToNum();
+    }
     await run();
 });
 
