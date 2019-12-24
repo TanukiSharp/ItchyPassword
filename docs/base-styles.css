@@ -24,20 +24,27 @@ input {
     display: grid;
     justify-content: start;
     gap: 4px;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: 1fr auto 1fr;
     grid-template-rows: repeat(2, auto);
 }
 
 .reEncryptGrid {
     display: grid;
-    justify-content: start;
+    justify-content: stretch;
     gap: 4px;
-    grid-template-columns: repeat(3, auto);
+    grid-template-columns: 1fr auto 1fr;
     grid-template-rows: repeat(2, auto);
 }
 
 .readonlyText {
     background-color: #F9F9F9;
+}
+
+.divTab {
+    background-color: #F4F4F4;
+    padding: 8px;
+    border: solid 1px #D8D8D8;
+    border-radius: 3px;
 }
 
 #divInfo {
@@ -51,11 +58,9 @@ input {
 }
 
 .large-textarea {
-    width: 500px;
     height: 200px;
 }
 
 .very-large-textarea {
-    width: 1100px;
     height: 300px;
 }
