@@ -63,7 +63,7 @@ btnEncrypt.addEventListener('click', async () => {
 
     const encrypted: ArrayBuffer = await cipher.encrypt(input, password);
 
-    txtCipherTarget.value = arrayUtils.toBase16(encrypted);
+    txtCipherTarget.value = arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
 });
 
 btnDecrypt.addEventListener('click', async () => {
@@ -83,7 +83,7 @@ btnDecrypt.addEventListener('click', async () => {
     }
 
     try {
-        const input: ArrayBuffer = stringUtils.fromBase16(txtCipherSource.value);
+        const input: ArrayBuffer = arrayUtils.fromCustomBase(txtCipherSource.value, crypto.BASE62_ALPHABET);
         const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
         const decrypted: ArrayBuffer = await cipher.decrypt(input, password);
