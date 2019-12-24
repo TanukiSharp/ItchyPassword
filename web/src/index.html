@@ -14,7 +14,7 @@
     <br/>
     <button id="btnTabNothing" class="controlButton">Nothing</button><button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><button id="btnTabReEncrypt" class="controlButton">Re-encrypt</button><br/><br/>
     <div id="divTabNothing"></div>
-    <div id="divTabPasswords" style="display: none;">
+    <div id="divTabPasswords" class="divTab" style="display: none;">
         Public part:&nbsp; <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
         Alphabet:&nbsp;&nbsp;&nbsp;&nbsp; <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button></br>
         <br/>
@@ -28,12 +28,12 @@
         Storage path: <input id="txtPath" type="text"></input></br>
         <br/>
         Password generation parameters:<br/>
-        <textarea id="txtParameters" class="readonlyText very-large-textarea" readonly></textarea><br/>
+        <textarea id="txtParameters" class="readonlyText very-large-textarea" style="width: 100%" readonly></textarea><br/>
         <br/>
         Custom keys:<br/>
-        <textarea id="txtCustomKeys" class="very-large-textarea"></textarea>
+        <textarea id="txtCustomKeys" class="very-large-textarea" style="width: 100%"></textarea>
     </div>
-    <div id="divTabCiphers" style="display: none;">
+    <div id="divTabCiphers" class="divTab" style="display: none;">
         <div class="cipherGrid">
             <textarea id="txtCipherSource" style="grid-column: 1; grid-row: 1;" class="large-textarea"></textarea>
             <button id="btnClearCipherSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
@@ -51,7 +51,7 @@
             </div>
         </div>
     </div>
-    <div id="divTabReEncrypt" style="display: none;">
+    <div id="divTabReEncrypt" class="divTab" style="display: none;">
         <div class="reEncryptGrid">
             <textarea id="txtReEncryptSource" style="grid-column: 1; grid-row: 1;" class="large-textarea"></textarea>
             <button id="btnClearReEncryptSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
