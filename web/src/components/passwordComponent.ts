@@ -6,10 +6,12 @@ import * as stringUtils from '../stringUtils';
 import * as arrayUtils from '../arrayUtils';
 
 import { PlainObject } from '../PlainObject';
-
 import { PasswordGeneratorV1 } from '../passwordGenerators/v1';
+import { ITabInfo } from '../TabControl';
+import { IComponent } from './IComponent';
 
-privatePart.registerOnChanged(run);
+const btnTabPasswords: HTMLInputElement = getElementById('btnTabPasswords');
+const divTabPasswords: HTMLInputElement = getElementById('divTabPasswords');
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
@@ -40,13 +42,9 @@ const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLM
 
 const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
-// dafuq!?
-numOutputSizeRange.max = DEFAULT_LENGTH.toString();
-numOutputSizeRange.value = DEFAULT_LENGTH.toString();
-
 let passwordPublicPartLastChange: string | undefined;
 
-btnClearPublicPart.addEventListener('click', () => {
+function onClearPublicPartButtonClick(): void {
     if (txtPublicPart.value.length > 0) {
         if (prompt('Are you sure you want to clear the public part ?\nType \'y\' to accept', '') !== 'y') {
             return;
@@ -57,9 +55,9 @@ btnClearPublicPart.addEventListener('click', () => {
 
     updatePasswordPublicPartLastUpdate();
     updatePasswordGenerationParameters();
-});
+}
 
-btnGeneratePublicPart.addEventListener('click', () => {
+function onGeneratePublicPartButtonClick(): void {
     if (txtPublicPart.value.length > 0) {
         if (prompt('Are you sure you want to generate a new public part ?\nType \'y\' to accept', '') !== 'y') {
             return;
@@ -72,7 +70,7 @@ btnGeneratePublicPart.addEventListener('click', () => {
     updatePasswordPublicPartLastUpdate();
 
     run();
-});
+}
 
 function updatePasswordPublicPartLastUpdate(): void {
     if (txtPublicPart.value.length > 0) {
@@ -160,11 +158,6 @@ function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
 function updateResultPasswordLength() {
     spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString().padStart(2, ' ');
 }
-
-setupViewButton(txtResultPassword, 'btnViewResultPassword');
-
-setupCopyButton(txtPublicPart, btnCopyPublicPart, spnCopyPublicPartFeedback);
-setupCopyButton(txtResultPassword, btnCopyResultPassword, spnCopyResultPasswordFeedback);
 
 function isAlphabetValid(alphabet: string): boolean {
     const sortedAlphabet: string[] = alphabet.split('');
@@ -269,17 +262,17 @@ function updateOutputSizeNumToRange(): boolean {
     return false;
 }
 
-numOutputSizeRange.addEventListener('input', async () => {
+async function onOutputSizeRangeInput(): Promise<void> {
     updateOutputSizeRangeToNum();
     await run();
-});
+}
 
-numOutputSizeNum.addEventListener('input', async () => {
+async function onOutputSizeNumInput(): Promise<void> {
     if (updateOutputSizeNumToRange()) {
         updateOutputSizeRangeToNum();
     }
     await run();
-});
+}
 
 function updateAlphabetSize(): void {
     spnAlphabetSize.innerHTML = txtAlphabet.value.length.toString();
@@ -299,7 +292,7 @@ function updateAlphabetValidityDisplay(isAlphabetValid: boolean): void {
     }
 }
 
-txtAlphabet.addEventListener('input', async () => {
+async function onAlphabetTextInput(): Promise<void> {
     const isAlphabetValidResult: boolean = isAlphabetValid(txtAlphabet.value);
 
     updateAlphabetValidityDisplay(isAlphabetValidResult);
@@ -310,13 +303,13 @@ txtAlphabet.addEventListener('input', async () => {
 
     updateAlphabetSize();
     await run();
-});
+}
 
-btnResetAlphabet.addEventListener('click', async () => {
+async function onResetAlphabetButtonClick(): Promise<void> {
     resetAlphabet();
     updateAlphabetSize();
     await run();
-});
+}
 
 function clearOutputs(): void {
     txtResultPassword.value = '';
@@ -374,18 +367,57 @@ async function resetAlphabet() {
     }
 }
 
-txtPath.addEventListener('input', () => {
+function onPathTextInput() {
     updatePasswordGenerationParameters();
-});
+}
 
-txtPublicPart.addEventListener('input', async () => {
+async function onPublicPartTextInput(): Promise<void> {
     updatePasswordPublicPartLastUpdate();
     await run();
-});
+}
 
-txtCustomKeys.addEventListener('input', () => {
+function onCustomKeysTextInput(): void {
     updatePasswordGenerationParameters();
-});
+}
 
-updateOutputSizeRangeToNum();
-resetAlphabet();
+export class PasswordComponent implements IComponent, ITabInfo {
+    getTabButton(): HTMLInputElement {
+        return btnTabPasswords;
+    }
+    getTabContent(): HTMLInputElement {
+        return divTabPasswords;
+    }
+    onTabSelected(): void {
+    }
+
+    init(): void {
+        privatePart.registerOnChanged(run);
+
+        // dafuq!?
+        numOutputSizeRange.max = DEFAULT_LENGTH.toString();
+        numOutputSizeRange.value = DEFAULT_LENGTH.toString();
+
+        btnClearPublicPart.addEventListener('click', onClearPublicPartButtonClick);
+        btnGeneratePublicPart.addEventListener('click', onGeneratePublicPartButtonClick);
+
+        setupViewButton(txtResultPassword, 'btnViewResultPassword');
+
+        setupCopyButton(txtPublicPart, btnCopyPublicPart, spnCopyPublicPartFeedback);
+        setupCopyButton(txtResultPassword, btnCopyResultPassword, spnCopyResultPasswordFeedback);
+
+        numOutputSizeRange.addEventListener('input', onOutputSizeRangeInput);
+        numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);
+
+        txtAlphabet.addEventListener('input', onAlphabetTextInput);
+        btnResetAlphabet.addEventListener('click', onResetAlphabetButtonClick);
+
+        txtPath.addEventListener('input', onPathTextInput);
+
+        txtPublicPart.addEventListener('input', onPublicPartTextInput);
+
+        txtCustomKeys.addEventListener('input', onCustomKeysTextInput);
+
+        updateOutputSizeRangeToNum();
+        resetAlphabet();
+    }
+};

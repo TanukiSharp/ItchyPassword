@@ -1,6 +1,7 @@
 import { getElementById, SUCCESS_COLOR, ERROR_COLOR } from '../ui';
 
 import { TimedAction } from '../TimedAction';
+import { IComponent } from './IComponent';
 
 const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
 const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';
@@ -17,7 +18,7 @@ const PRIVATE_PART_PROTECTION_TIMEOUT: number = 60 * 1000;
 
 let privatePart: string | undefined;
 
-let onChangedHandlers: (() => void)[] = [];
+const onChangedHandlers: (() => void)[] = [];
 
 export function registerOnChanged(onChanged: () => void) {
     onChangedHandlers.push(onChanged);
@@ -72,13 +73,13 @@ function togglePrivatePartProtection(): void {
     }
 }
 
-btnProtect.addEventListener('click', () => {
+function onProtectButtonClick() {
     togglePrivatePartProtection();
-});
+}
 
 const protectPrivatePartAction: TimedAction = new TimedAction(protectAndLockPrivatePart, PRIVATE_PART_PROTECTION_TIMEOUT);
 
-txtPrivatePart.addEventListener('input', () => {
+function onPrivatePartTextInput(): void {
     btnProtect.disabled = txtPrivatePart.value.length === 0;
 
     spnPrivatePartSize.innerHTML = txtPrivatePart.value.length.toString();
@@ -90,7 +91,7 @@ txtPrivatePart.addEventListener('input', () => {
     }
 
     protectPrivatePartAction.reset();
-});
+}
 
 function updatePrivatePartsMatching(): void {
     if (txtPrivatePartConfirmation.value === txtPrivatePart.value) {
@@ -100,11 +101,19 @@ function updatePrivatePartsMatching(): void {
     }
 };
 
-txtPrivatePartConfirmation.addEventListener('input', () => {
+function onPrivatePartConfirmationTextInput(): void {
     spnPrivatePartSizeConfirmation.innerHTML = txtPrivatePartConfirmation.value.length.toString();
     protectPrivatePartAction.reset();
     updatePrivatePartsMatching();
-});
+}
 
-updatePrivatePartsMatching();
-btnProtect.title = btnProtectTitleForProtect;
+export class PrivatePartComponent implements IComponent {
+    init(): void {
+        btnProtect.addEventListener('click', onProtectButtonClick);
+        txtPrivatePart.addEventListener('input', onPrivatePartTextInput);
+        txtPrivatePartConfirmation.addEventListener('input', onPrivatePartConfirmationTextInput);
+
+        updatePrivatePartsMatching();
+        btnProtect.title = btnProtectTitleForProtect;
+    }
+}

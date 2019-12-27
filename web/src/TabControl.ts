@@ -1,6 +1,7 @@
 export interface ITabInfo {
-    button: HTMLInputElement,
-    content: HTMLInputElement
+    getTabButton(): HTMLInputElement;
+    getTabContent(): HTMLInputElement;
+    onTabSelected: Function;
 }
 
 export class TabControl {
@@ -18,7 +19,7 @@ export class TabControl {
 
     public constructor(private tabs: ITabInfo[]) {
         for (let i = 0; i < this.tabs.length; i += 1) {
-            tabs[i].button.addEventListener('click', () => {
+            tabs[i].getTabButton().addEventListener('click', () => {
                 this.setActiveTab(i);
             });
         }
@@ -27,18 +28,28 @@ export class TabControl {
     }
 
     private setActiveTab(activeTabIndex: number) {
+        if (activeTabIndex === this._activeTabIndex) {
+            return;
+        }
+
         let tabInfo: ITabInfo;
 
         for (tabInfo of this.tabs) {
-            tabInfo.button.style.removeProperty('font-weight');
-            tabInfo.button.style.setProperty('color', '#C0C0C0');
-            tabInfo.content.style.setProperty('display', 'none');
+            const button = tabInfo.getTabButton();
+            button.style.removeProperty('font-weight');
+            button.style.setProperty('color', '#C0C0C0');
+
+            tabInfo.getTabContent().style.setProperty('display', 'none');
         }
 
-        this.tabs[activeTabIndex].button.style.setProperty('font-weight', 'bold');
-        this.tabs[activeTabIndex].button.style.removeProperty('color');
-        this.tabs[activeTabIndex].content.style.removeProperty('display');
+        const button = this.tabs[activeTabIndex].getTabButton();
+        button.style.setProperty('font-weight', 'bold');
+        button.style.removeProperty('color');
+
+        this.tabs[activeTabIndex].getTabContent().style.removeProperty('display');
 
         this._activeTabIndex = activeTabIndex;
+
+        this.tabs[activeTabIndex].onTabSelected();
     }
 }

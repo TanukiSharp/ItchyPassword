@@ -6,6 +6,11 @@ import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
 import { CipherV2 } from '../ciphers/v2';
+import { ITabInfo } from '../TabControl';
+import { IComponent } from './IComponent';
+
+const btnTabCiphers: HTMLInputElement = getElementById('btnTabCiphers');
+const divTabCiphers: HTMLInputElement = getElementById('divTabCiphers');
 
 const cipher: crypto.ICipher = new CipherV2();
 
@@ -18,8 +23,6 @@ const btnClearCipherSource: HTMLInputElement = getElementById('btnClearCipherSou
 const spnCopyCipherTargetFeedback: HTMLInputElement = getElementById('spnCopyCipherTargetFeedback');
 const btnCopyCipherTarget: HTMLInputElement = getElementById('btnCopyCipherTarget');
 const btnClearCipherTarget: HTMLInputElement = getElementById('btnClearCipherTarget');
-
-setupCopyButton(txtCipherTarget, btnCopyCipherTarget, spnCopyCipherTargetFeedback);
 
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
@@ -42,7 +45,7 @@ function clearAllVisualCues(): void {
     clearTargetVisualCue();
 }
 
-btnEncrypt.addEventListener('click', async () => {
+async function onEncryptButtonClick(): Promise<void> {
     txtCipherSource.focus();
     txtCipherTarget.value = '';
     clearAllVisualCues();
@@ -64,9 +67,9 @@ btnEncrypt.addEventListener('click', async () => {
     const encrypted: ArrayBuffer = await cipher.encrypt(input, password);
 
     txtCipherTarget.value = arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
-});
+}
 
-btnDecrypt.addEventListener('click', async () => {
+async function onDecryptButtonClick(): Promise<void> {
     txtCipherSource.focus();
     txtCipherTarget.value = '';
     clearAllVisualCues();
@@ -93,18 +96,36 @@ btnDecrypt.addEventListener('click', async () => {
         console.warn(`Failed to decrypt${error.message ? `, error: ${error.message}` : ', no error message'}`);
         setTargetVisualCueError();
     }
-});
+}
 
-txtCipherSource.addEventListener('input', () => {
-    if (txtCipherSource.value.length > 0) {
-        clearSourceVisualCue();
+export class CipherComponent implements IComponent, ITabInfo {
+    getTabButton(): HTMLInputElement {
+        return btnTabCiphers;
     }
-});
+    getTabContent(): HTMLInputElement {
+        return divTabCiphers;
+    }
+    onTabSelected(): void {
+    }
 
-btnClearCipherSource.addEventListener('click', () => {
-    txtCipherSource.value = '';
-});
+    init(): void {
+        setupCopyButton(txtCipherTarget, btnCopyCipherTarget, spnCopyCipherTargetFeedback);
 
-btnClearCipherTarget.addEventListener('click', () => {
-    txtCipherTarget.value = '';
-});
+        btnEncrypt.addEventListener('click', onEncryptButtonClick);
+        btnDecrypt.addEventListener('click', onDecryptButtonClick);
+
+        txtCipherSource.addEventListener('input', () => {
+            if (txtCipherSource.value.length > 0) {
+                clearSourceVisualCue();
+            }
+        });
+
+        btnClearCipherSource.addEventListener('click', () => {
+            txtCipherSource.value = '';
+        });
+
+        btnClearCipherTarget.addEventListener('click', () => {
+            txtCipherTarget.value = '';
+        });
+    }
+}

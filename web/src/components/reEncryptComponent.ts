@@ -1,17 +1,21 @@
 import { ICipher } from '../crypto';
 import * as stringUtils from '../stringUtils';
 import * as arrayUtils from '../arrayUtils';
-
+import { ITabInfo } from '../TabControl';
 import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
 import { CipherV1 } from '../ciphers/v1';
 import { CipherV2 } from '../ciphers/v2';
+import { IComponent } from './IComponent';
 
 const ciphers: ICipher[] = [
     new CipherV1(),
     new CipherV2()
 ];
+
+const btnTabReEncrypt: HTMLInputElement = getElementById('btnTabReEncrypt');
+const divTabReEncrypt: HTMLInputElement = getElementById('divTabReEncrypt');
 
 const txtReEncryptSource: HTMLInputElement = getElementById('txtReEncryptSource');
 const txtReEncryptTarget: HTMLInputElement = getElementById('txtReEncryptTarget');
@@ -25,8 +29,6 @@ const spnCopyReEncryptTargetFeedback: HTMLInputElement = getElementById('spnCopy
 const btnCopyReEncryptTarget: HTMLInputElement = getElementById('btnCopyReEncryptTarget');
 const btnClearReEncryptTarget: HTMLInputElement = getElementById('btnClearReEncryptTarget');
 
-setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget, spnCopyReEncryptTargetFeedback);
-
 function fillCipherComboBox(cbo: HTMLSelectElement, initialValue: number): void {
     let cipher: ICipher;
 
@@ -39,10 +41,6 @@ function fillCipherComboBox(cbo: HTMLSelectElement, initialValue: number): void 
 
     cbo.value = initialValue.toString();
 }
-
-// Mais est-ce que ce monde est serieux?
-fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom, ciphers.length - 2);
-fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptTo, ciphers.length - 1);
 
 function clearSourceVisualCue(): void {
     txtReEncryptSource.style.removeProperty('background-color');
@@ -65,7 +63,7 @@ function clearAllVisualCues(): void {
     clearTargetVisualCue();
 }
 
-btnReEncrypt.addEventListener('click', async () => {
+async function onReEncryptButtonClick(): Promise<void> {
     txtReEncryptTarget.value = '';
     clearAllVisualCues();
 
@@ -95,18 +93,39 @@ btnReEncrypt.addEventListener('click', async () => {
     const reEncrypted: ArrayBuffer = await ciphers[targetCipherIndex].encrypt(decrypted, password);
 
     txtReEncryptTarget.value = arrayUtils.toBase16(reEncrypted);
-});
+}
 
-txtReEncryptSource.addEventListener('input', () => {
-    if (txtReEncryptSource.value.length > 0) {
-        clearSourceVisualCue();
+export class ReEncryptComponent implements IComponent, ITabInfo {
+    getTabButton(): HTMLInputElement {
+        return btnTabReEncrypt;
     }
-});
+    getTabContent(): HTMLInputElement {
+        return divTabReEncrypt;
+    }
+    onTabSelected() {
+    }
 
-btnClearReEncryptSource.addEventListener('click', () => {
-    txtReEncryptSource.value = '';
-});
+    init(): void {
+        setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget, spnCopyReEncryptTargetFeedback);
 
-btnClearReEncryptTarget.addEventListener('click', () => {
-    txtReEncryptTarget.value = '';
-});
+        // Mais est-ce que ce monde est serieux?
+        fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom, ciphers.length - 2);
+        fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptTo, ciphers.length - 1);
+
+        txtReEncryptSource.addEventListener('input', () => {
+            if (txtReEncryptSource.value.length > 0) {
+                clearSourceVisualCue();
+            }
+        });
+
+        btnClearReEncryptSource.addEventListener('click', () => {
+            txtReEncryptSource.value = '';
+        });
+
+        btnClearReEncryptTarget.addEventListener('click', () => {
+            txtReEncryptTarget.value = '';
+        });
+
+        btnReEncrypt.addEventListener('click', onReEncryptButtonClick);
+    }
+}
