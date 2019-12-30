@@ -7,30 +7,32 @@
 </head>
 <body>
     <div id="divInfo"></div>
-    Master key: <input id="txtPrivatePart" type="password"></input> <span id="spnPrivatePartSize">0</span><button id="btnProtect" class="controlButton" disabled="ture">Protect and lock</button> <span id="spnProtectedConfirmation"></span></br>
-    Master key: <input id="txtPrivatePartConfirmation" type="password" title="Just for your convenience to confirm the private part has been input correctly the first time."></input> <span id="spnPrivatePartSizeConfirmation">0</span></br>
-    </br>
-    </br>
-    <button id="btnTabNothing" class="controlButton">Nothing</button><button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><button id="btnTabReEncrypt" class="controlButton">Re-encrypt</button></br></br>
+    Master key: <input id="txtPrivatePart" type="password"></input> <span id="spnPrivatePartSize">0</span><button id="btnProtect" class="controlButton" disabled="ture">Protect and lock</button> <span id="spnProtectedConfirmation"></span><br>
+    Master key: <input id="txtPrivatePartConfirmation" type="password" title="Just for your convenience to confirm the private part has been input correctly the first time."></input> <span id="spnPrivatePartSizeConfirmation">0</span><br>
+    <br>
+    <br>
+    <button id="btnTabNothing" class="controlButton">Nothing</button><button id="btnTabPasswords" class="controlButton">Password</button><button id="btnTabCiphers" class="controlButton">Ciphers</button><button id="btnTabReEncrypt" class="controlButton">Re-encrypt</button><br><br>
 
     <div id="divTabNothing"></div>
 
     <div id="divTabPasswords" class="divTab" style="display: none;">
-        Public part: <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span></br>
-        Alphabet: <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button></br>
-        Length: <input id="numOutputSizeRange" type="range" min="0" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input></br>
-        </br>
-        Password: <input id="txtResultPassword" type="password" class="readonlyText" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span></br>
+        Public part: <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span><br>
+        Alphabet: <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button><br>
+        Length: <input id="numOutputSizeRange" type="range" min="0" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input><br>
+        <br>
+        Password: <input id="txtResultPassword" type="password" class="readonlyText" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span><br>
     </div>
 
     <div id="divTabCiphers" class="divTab" style="display: none;">
-        Cipher name: <input id="txtCipherName" type="text"></input></br></br>
+        Cipher name: <input id="txtCipherName" type="text"></input>
+        <br>
+        <br>
         <div class="cipherGrid">
             <textarea id="txtCipherSource" style="grid-column: 1; grid-row: 1;" class="large-textarea"></textarea>
             <button id="btnClearCipherSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
 
             <div style="grid-column: 2; grid-row: 1;">
-                <button id="btnEncrypt" class="cipherButton">Encrypt -></button></br>
+                <button id="btnEncrypt" class="cipherButton">Encrypt -></button><br>
                 <button id="btnDecrypt" class="cipherButton">Decrypt -></button>
             </div>
 
@@ -49,8 +51,8 @@
             <button id="btnClearReEncryptSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
 
             <div style="grid-column: 2; grid-row: 1;">
-                From: <select id="cboReEncryptFrom"></select></br>
-                To:&nbsp;&nbsp; <select id="cboReEncryptTo"></select></br>
+                From: <select id="cboReEncryptFrom"></select><br>
+                To:&nbsp;&nbsp; <select id="cboReEncryptTo"></select><br>
                 <button id="btnReEncrypt" class="reEncryptButton">Re-encrypt -></button>
             </div>
 
@@ -64,13 +66,13 @@
     </div>
 
     <div id="divStorageOutput">
-        </br>
-        Storage path: <input id="txtPath" type="text"></input></br>
-        </br>
-        Password generation parameters:</br>
-        <textarea id="txtParameters" class="readonlyText very-large-textarea" style="width: 100%" readonly></textarea></br>
-        </br>
-        Custom keys:</br>
+        <br>
+        Storage path: <input id="txtPath" type="text"></input><br>
+        <br>
+        Password generation parameters:<br>
+        <textarea id="txtParameters" class="readonlyText very-large-textarea" style="width: 100%" readonly></textarea><br>
+        <br>
+        Custom keys:<br>
         <textarea id="txtCustomKeys" class="very-large-textarea" style="width: 100%"></textarea>
     </div>
 
