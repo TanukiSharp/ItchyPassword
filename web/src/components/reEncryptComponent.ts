@@ -9,6 +9,8 @@ import { CipherV1 } from '../ciphers/v1';
 import { CipherV2 } from '../ciphers/v2';
 import { IComponent } from './IComponent';
 
+import * as storageOutputComponent from './storageOutputComponent';
+
 const ciphers: ICipher[] = [
     new CipherV1(),
     new CipherV2()
@@ -103,6 +105,7 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
         return divTabReEncrypt;
     }
     onTabSelected() {
+        storageOutputComponent.hide();
     }
 
     init(): void {

@@ -10,12 +10,13 @@ import { PasswordGeneratorV1 } from '../passwordGenerators/v1';
 import { ITabInfo } from '../TabControl';
 import { IComponent } from './IComponent';
 
+import * as storageOutputComponent from './storageOutputComponent';
+
 const btnTabPasswords: HTMLInputElement = getElementById('btnTabPasswords');
 const divTabPasswords: HTMLInputElement = getElementById('divTabPasswords');
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
-const txtPath: HTMLInputElement = getElementById('txtPath');
 const txtPublicPart: HTMLInputElement = getElementById('txtPublicPart');
 const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
 const btnClearPublicPart: HTMLInputElement = getElementById('btnClearPublicPart');
@@ -33,9 +34,6 @@ const txtResultPassword: HTMLInputElement = getElementById('txtResultPassword');
 const spnResultPasswordLength: HTMLInputElement = getElementById('spnResultPasswordLength');
 const btnCopyResultPassword: HTMLInputElement = getElementById('btnCopyResultPassword');
 const spnCopyResultPasswordFeedback: HTMLInputElement = getElementById('spnCopyResultPasswordFeedback');
-
-const txtParameters: HTMLInputElement = getElementById('txtParameters');
-const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
 
 const DEFAULT_LENGTH: number = 64;
 const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
@@ -78,51 +76,6 @@ function updatePasswordPublicPartLastUpdate(): void {
     } else {
         passwordPublicPartLastChange = undefined;
     }
-}
-
-function updateCustomKeysDisplay(isValid: boolean): void {
-    if (isValid) {
-        txtCustomKeys.style.removeProperty('background');
-        return;
-    }
-
-    txtCustomKeys.style.setProperty('background', ERROR_COLOR);
-}
-
-function parseCustomKeys(): PlainObject | null {
-    if (txtCustomKeys.value === '') {
-        return {};
-    }
-
-    try {
-        const obj: any = JSON.parse(txtCustomKeys.value);
-        if (obj === null || obj.constructor.name !== 'Object') {
-            return null;
-        }
-        return obj as PlainObject;
-    } catch {
-        return null;
-    }
-}
-
-function shallowMerge(source: PlainObject | null, target: PlainObject | null): PlainObject {
-    const result: PlainObject = {};
-
-    if (source !== null) {
-        for (const [key, value] of Object.entries(source)) {
-            if (RESERVED_KEYS.includes(key) === false) {
-                result[key] = value;
-            }
-        }
-    }
-
-    if (target !== null) {
-        for (const [key, value] of Object.entries(target)) {
-            result[key] = value;
-        }
-    }
-
-    return result;
 }
 
 function deepMerge(source: PlainObject, target: PlainObject): void {
@@ -172,77 +125,28 @@ function isAlphabetValid(alphabet: string): boolean {
     return true;
 }
 
-type IChainInfo = {
-    head: PlainObject,
-    tailParent: PlainObject,
-    tail: PlainObject
-};
-
-// Transforms a path like "a/b/c/d" into a hierarchy of objects like { "a": { "b": { "c": { "d": {} } } } }
-// From the result object, head is the root object that contains "a", tail is the value of "d", and tailParent is the value of "c"
-function pathToObjectChain(path: string, chainInfo: IChainInfo | undefined = undefined): IChainInfo {
-    const separatorIndex: number = path.indexOf('/');
-
-    const tail: PlainObject = {};
-
-    const firstPath: string = separatorIndex >= 0 ? path.substr(0, separatorIndex) : path;
-    const remainingPath: string | undefined = separatorIndex >= 0 ? path.substr(separatorIndex + 1) : undefined;
-
-    if (chainInfo === undefined) {
-        const node: PlainObject = {};
-        node[firstPath] = tail;
-        chainInfo = {
-            head: node,
-            tailParent: node,
-            tail
-        };
-    } else {
-        chainInfo.tail[firstPath] = tail;
-        chainInfo.tailParent = chainInfo.tail;
-        chainInfo.tail = tail;
-    }
-
-    if (remainingPath) {
-        return pathToObjectChain(remainingPath, chainInfo);
-    }
-
-    return chainInfo;
-}
-
 function updatePasswordGenerationParameters(): void {
     if (canRun() === false) {
         clearOutputs();
         return;
     }
 
-    const chainInfo: IChainInfo = pathToObjectChain(txtPath.value);
-    const leaf: PlainObject = chainInfo.tail;
-
-    leaf.public = txtPublicPart.value;
-    leaf.datetime = passwordPublicPartLastChange;
+    const passwordParamters: PlainObject = {
+        public: txtPublicPart.value,
+        datetime: passwordPublicPartLastChange
+    };
 
     const numericValue: number = txtResultPassword.value.length;
     if (numericValue !== DEFAULT_LENGTH) {
-        leaf.length = numericValue;
+        passwordParamters.length = numericValue;
     }
 
     const alphabet: string = txtAlphabet.value;
     if (alphabet !== DEFAULT_ALPHABET) {
-        leaf.alphabet = alphabet;
+        passwordParamters.alphabet = alphabet;
     }
 
-    const customKeys: PlainObject | null = parseCustomKeys();
-    updateCustomKeysDisplay(customKeys !== null);
-    const resultParameters: PlainObject = shallowMerge(customKeys, leaf);
-
-    if (Object.keys(resultParameters).length === 0) {
-        // Set the value of the first (single) property of the object to null.
-        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = null;
-    } else {
-        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = resultParameters;
-    }
-
-    txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4);
+    storageOutputComponent.setParameters(passwordParamters, 'password', RESERVED_KEYS);
 }
 
 function updateOutputSizeRangeToNum(): void {
@@ -313,8 +217,7 @@ async function onResetAlphabetButtonClick(): Promise<void> {
 
 function clearOutputs(): void {
     txtResultPassword.value = '';
-    txtParameters.value = '';
-
+    storageOutputComponent.clearOutputs();
     updateResultPasswordLength();
 }
 
@@ -367,17 +270,9 @@ async function resetAlphabet() {
     }
 }
 
-function onPathTextInput() {
-    updatePasswordGenerationParameters();
-}
-
 async function onPublicPartTextInput(): Promise<void> {
     updatePasswordPublicPartLastUpdate();
     await run();
-}
-
-function onCustomKeysTextInput(): void {
-    updatePasswordGenerationParameters();
 }
 
 export class PasswordComponent implements IComponent, ITabInfo {
@@ -388,6 +283,8 @@ export class PasswordComponent implements IComponent, ITabInfo {
         return divTabPasswords;
     }
     onTabSelected(): void {
+        storageOutputComponent.show();
+        updatePasswordGenerationParameters();
     }
 
     init(): void {
@@ -411,11 +308,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
         txtAlphabet.addEventListener('input', onAlphabetTextInput);
         btnResetAlphabet.addEventListener('click', onResetAlphabetButtonClick);
 
-        txtPath.addEventListener('input', onPathTextInput);
-
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
-
-        txtCustomKeys.addEventListener('input', onCustomKeysTextInput);
 
         updateOutputSizeRangeToNum();
         resetAlphabet();

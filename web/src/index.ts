@@ -7,6 +7,8 @@ import { PasswordComponent } from './components/passwordComponent';
 import { CipherComponent } from './components/cipherComponent';
 import { ReEncryptComponent } from './components/reEncryptComponent';
 
+import * as storageOutputComponent from './components/storageOutputComponent';
+
 const nothingTabInfo: ITabInfo = {
     getTabButton(): HTMLInputElement {
         return getElementById('btnTabNothing');
@@ -15,6 +17,7 @@ const nothingTabInfo: ITabInfo = {
         return getElementById('divTabNothing');
     },
     onTabSelected(): void {
+        storageOutputComponent.hide();
     }
 }
 
@@ -24,6 +27,7 @@ const elements: any[] = [
     new PasswordComponent(),
     new CipherComponent(),
     new ReEncryptComponent(),
+    new storageOutputComponent.StorageOutputComponent(),
 ];
 
 const tabs: ITabInfo[] = elements.filter(e => (e as ITabInfo).getTabButton !== undefined);
