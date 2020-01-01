@@ -141,7 +141,7 @@ export class CipherComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        setupCopyButton(txtCipherTarget, btnCopyCipherTarget, spnCopyCipherTargetFeedback);
+        setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
 
         btnEncrypt.addEventListener('click', onEncryptButtonClick);
         btnDecrypt.addEventListener('click', onDecryptButtonClick);

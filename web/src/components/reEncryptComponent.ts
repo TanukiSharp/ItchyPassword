@@ -27,7 +27,6 @@ const cboReEncryptTo: HTMLInputElement = getElementById('cboReEncryptTo');
 const btnReEncrypt: HTMLInputElement = getElementById('btnReEncrypt');
 
 const btnClearReEncryptSource: HTMLInputElement = getElementById('btnClearReEncryptSource');
-const spnCopyReEncryptTargetFeedback: HTMLInputElement = getElementById('spnCopyReEncryptTargetFeedback');
 const btnCopyReEncryptTarget: HTMLInputElement = getElementById('btnCopyReEncryptTarget');
 const btnClearReEncryptTarget: HTMLInputElement = getElementById('btnClearReEncryptTarget');
 
@@ -109,7 +108,7 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget, spnCopyReEncryptTargetFeedback);
+        setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget);
 
         // Mais est-ce que ce monde est serieux?
         fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom, ciphers.length - 2);

@@ -21,7 +21,6 @@ const txtPublicPart: HTMLInputElement = getElementById('txtPublicPart');
 const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
 const btnClearPublicPart: HTMLInputElement = getElementById('btnClearPublicPart');
 const btnCopyPublicPart: HTMLInputElement = getElementById('btnCopyPublicPart');
-const spnCopyPublicPartFeedback: HTMLInputElement = getElementById('spnCopyPublicPartFeedback');
 
 const numOutputSizeRange: HTMLInputElement = getElementById('numOutputSizeRange');
 const numOutputSizeNum: HTMLInputElement = getElementById('numOutputSizeNum');
@@ -33,7 +32,6 @@ const btnResetAlphabet: HTMLInputElement = getElementById('btnResetAlphabet');
 const txtResultPassword: HTMLInputElement = getElementById('txtResultPassword');
 const spnResultPasswordLength: HTMLInputElement = getElementById('spnResultPasswordLength');
 const btnCopyResultPassword: HTMLInputElement = getElementById('btnCopyResultPassword');
-const spnCopyResultPasswordFeedback: HTMLInputElement = getElementById('spnCopyResultPasswordFeedback');
 
 const DEFAULT_LENGTH: number = 64;
 const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
@@ -299,8 +297,8 @@ export class PasswordComponent implements IComponent, ITabInfo {
 
         setupViewButton(txtResultPassword, 'btnViewResultPassword');
 
-        setupCopyButton(txtPublicPart, btnCopyPublicPart, spnCopyPublicPartFeedback);
-        setupCopyButton(txtResultPassword, btnCopyResultPassword, spnCopyResultPasswordFeedback);
+        setupCopyButton(txtPublicPart, btnCopyPublicPart);
+        setupCopyButton(txtResultPassword, btnCopyResultPassword);
 
         numOutputSizeRange.addEventListener('input', onOutputSizeRangeInput);
         numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);

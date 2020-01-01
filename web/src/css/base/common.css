@@ -65,3 +65,31 @@ input {
 .very-large-textarea {
     height: 300px;
 }
+
+@keyframes kf_good_flash {
+    from { background-color: initial }
+    to { background-color: #80D080 }
+}
+
+@keyframes kf_bad_flash {
+    from { background-color: initial }
+    to { background-color: #D08080 }
+}
+
+.good-flash {
+    background-color: transparent;
+    animation-name: kf_good_flash;
+    animation-duration: 100ms;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+.bad-flash {
+    background-color: transparent;
+    animation-name: kf_bad_flash;
+    animation-duration: 100ms;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}

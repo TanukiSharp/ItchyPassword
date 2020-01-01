@@ -20,14 +20,29 @@ async function writeToClipboard(text: string): Promise<boolean> {
     }
 }
 
-export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement, feedback: HTMLInputElement): void {
-    const visualFeedback: VisualFeedback = new VisualFeedback(feedback);
+function createSafeTimeout(f: Function, duration: number): Function {
+    let timeout: number | undefined;
+    return () => {
+        if (timeout) {
+            clearTimeout(timeout);
+        }
+        timeout = setTimeout(f, duration);
+    };
+}
+
+export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement): void {
+    const setupStopAnimationTimer = createSafeTimeout(() => {
+        button.classList.remove('good-flash');
+        button.classList.remove('bad-flash');
+    }, 1000);
+
     button.addEventListener('click', async () => {
         if (await writeToClipboard(txt.value)) {
-            visualFeedback.setText('Copied', 3000);
+            button.classList.add('good-flash');
         } else {
-            visualFeedback.setText('<span style="color: red">Failed to copy</span>', 3000);
+            button.classList.add('bad-flash');
         }
+        setupStopAnimationTimer();
     });
 }
 
