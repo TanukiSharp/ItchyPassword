@@ -4,8 +4,10 @@
     <title>Itchy Password</title>
     <link rel="stylesheet" type="text/css" href="css/base/common.css" />
     <link rel="stylesheet" type="text/css" href="css/base/masterKey.css" />
+    <link rel="stylesheet" type="text/css" href="css/base/password.css" />
     <link rel="stylesheet" type="text/css" href="css/mobile/common.css" media="screen and (max-width: 40.5em)" />
     <link rel="stylesheet" type="text/css" href="css/mobile/masterKey.css" media="screen and (max-width: 40.5em)" />
+    <link rel="stylesheet" type="text/css" href="css/mobile/password.css" media="screen and (max-width: 40.5em)" />
 </head>
 <body>
     <div id="divInfo"></div>
@@ -26,15 +28,30 @@
 
     <div id="divTabNothing"></div>
 
-    <div id="divTabPasswords" class="divTab" style="display: none;">
-        Public part: <input id="txtPublicPart" type="text"></input><button id="btnGeneratePublicPart" class="controlButton">Generate</button><button id="btnClearPublicPart" class="controlButton">Clear</button><button id="btnCopyPublicPart" class="controlButton">Copy</button> <span id="spnCopyPublicPartFeedback"></span><br>
-        Alphabet: <input id="txtAlphabet" type="text" value=""></input><span id="spnAlphabetSize"></span><button id="btnResetAlphabet" class="controlButton">Reset</button><br>
-        Length: <input id="numOutputSizeRange" type="range" min="0" style="width: 200px"></input><input id="numOutputSizeNum" type="number" style="width: 50px"></input><br>
-        <br>
-        Password: <input id="txtResultPassword" type="password" class="readonlyText" readonly></input><span id="spnResultPasswordLength"></span><button id="btnViewResultPassword" class="controlButton">View</button><button id="btnCopyResultPassword" class="controlButton">Copy</button> <span id="spnCopyResultPasswordFeedback"></span><br>
+    <div id="divTabPasswords" class="divTab">
+        <span id="lblPublicPart">Public part:</span>
+        <input id="txtPublicPart" type="text"></input>
+        <button id="btnGeneratePublicPart" class="controlButton">Generate</button>
+        <button id="btnClearPublicPart" class="controlButton">Clear</button>
+        <button id="btnCopyPublicPart" class="controlButton">Copy</button>
+
+        <span id="lblAlphabet">Alphabet:</span>
+        <input id="txtAlphabet" type="text" value=""></input>
+        <span id="spnAlphabetSize"></span>
+        <button id="btnResetAlphabet" class="controlButton">Reset</button>
+
+        <span id="lblAlphabetLength">Length:</span>
+        <input id="numOutputSizeRange" type="range" min="0"></input>
+        <input id="numOutputSizeNum" type="number" style="width: 50px"></input>
+
+        <span id="lblPassword">Password:</span>
+        <input id="txtResultPassword" type="password" class="readonlyText" readonly></input>
+        <span id="spnResultPasswordLength"></span>
+        <button id="btnViewResultPassword" class="controlButton">View</button>
+        <button id="btnCopyResultPassword" class="controlButton">Copy</button>
     </div>
 
-    <div id="divTabCiphers" class="divTab" style="display: none;">
+    <div id="divTabCiphers" class="divTab">
         Cipher name: <input id="txtCipherName" type="text"></input>
         <br>
         <br>
@@ -56,7 +73,7 @@
         </div>
     </div>
 
-    <div id="divTabReEncrypt" class="divTab" style="display: none;">
+    <div id="divTabReEncrypt" class="divTab">
         <div class="reEncryptGrid">
             <textarea id="txtReEncryptSource" style="grid-column: 1; grid-row: 1;" class="large-textarea"></textarea>
             <button id="btnClearReEncryptSource" style="grid-column: 1; grid-row: 2; justify-self: end;" class="cipherButton">Clear</button>
@@ -69,7 +86,6 @@
 
             <textarea id="txtReEncryptTarget" style="grid-column: 3; grid-row: 1;" class="readonlyText large-textarea" readonly></textarea>
             <div style="grid-column: 3; grid-row: 2; justify-self: end;">
-                <span id="spnCopyReEncryptTargetFeedback"></span>
                 <button id="btnCopyReEncryptTarget">Copy</button>
                 <button id="btnClearReEncryptTarget">Clear</button>
             </div>
