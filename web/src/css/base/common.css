@@ -45,6 +45,7 @@ input {
     padding: 8px;
     border: solid 1px #D8D8D8;
     border-radius: 3px;
+    max-width: 900px;
 }
 
 #divInfo {

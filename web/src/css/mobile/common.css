@@ -1,7 +1,15 @@
 input {
     width: 100%;
-    margin: 2px;
-    float: left;
+    margin: 1px;
+    zoom: 1.2;
+}
+
+button {
+    zoom: 1.2;
+    margin: 1px;
+    font-size: 0.75em;
+    align-self: stretch;
+    justify-self: start;
 }
 
 .large-textarea {
