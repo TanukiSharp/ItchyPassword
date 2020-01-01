@@ -3,8 +3,54 @@ body, input {
 }
 
 input {
-    width: 600px;
+    /*width: 600px;*/
     margin: 2px;
+}
+
+#divMasterKey {
+    display: grid;
+    align-items: center;
+    justify-items: stretch;
+    column-gap: 4px;
+    grid-template-columns: auto 1fr auto auto auto;
+    grid-template-rows: auto auto;
+}
+
+#masterKeyTitle {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#txtPrivatePart {
+    justify-self: stretch;
+    grid-column: 2;
+    grid-row: 1;
+}
+
+#spnPrivatePartSize {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+#btnProtect {
+    grid-column: 4;
+    grid-row: 1;
+}
+
+#spnProtectedConfirmation {
+    align-self: center;
+    grid-column: 5;
+    grid-row: 1;
+}
+
+#txtPrivatePartConfirmation {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+#spnPrivatePartSizeConfirmation {
+    grid-column: 3;
+    grid-row: 2;
 }
 
 .controlButton {
@@ -50,10 +96,11 @@ input {
 #divInfo {
     position: fixed;
     right: 0;
-    top: 0;
+    bottom: 0;
     background-color: white;
     font-size: 9pt;
     text-align: right;
+    margin-bottom: 2px;
     margin-right: 2px;
 }
 
