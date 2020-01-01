@@ -1,9 +1,3 @@
-input {
-    width: 100%;
-    margin: 2px;
-    float: left;
-}
-
 #divMasterKey {
     display: grid;
     align-items: center;
@@ -49,14 +43,4 @@ input {
 #spnPrivatePartSizeConfirmation {
     grid-column: 2;
     grid-row: 3;
-}
-
-.large-textarea {
-    width: 100%;
-    height: 100px;
-}
-
-.very-large-textarea {
-    width: 100%;
-    height: 150px;
 }

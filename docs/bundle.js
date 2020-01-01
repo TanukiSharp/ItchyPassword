@@ -1,2 +1,1449 @@
-!function(t){var e={};function n(r){if(e[r])return e[r].exports;var a=e[r]={i:r,l:!1,exports:{}};return t[r].call(a.exports,a,a.exports,n),a.l=!0,a.exports}n.m=t,n.c=e,n.d=function(t,e,r){n.o(t,e)||Object.defineProperty(t,e,{enumerable:!0,get:r})},n.r=function(t){"undefined"!=typeof Symbol&&Symbol.toStringTag&&Object.defineProperty(t,Symbol.toStringTag,{value:"Module"}),Object.defineProperty(t,"__esModule",{value:!0})},n.t=function(t,e){if(1&e&&(t=n(t)),8&e)return t;if(4&e&&"object"==typeof t&&t&&t.__esModule)return t;var r=Object.create(null);if(n.r(r),Object.defineProperty(r,"default",{enumerable:!0,value:t}),2&e&&"string"!=typeof t)for(var a in t)n.d(r,a,function(e){return t[e]}.bind(null,a));return r},n.n=function(t){var e=t&&t.__esModule?function(){return t.default}:function(){return t};return n.d(e,"a",e),e},n.o=function(t,e){return Object.prototype.hasOwnProperty.call(t,e)},n.p="",n(n.s=0)}([function(t,e,n){"use strict";n.r(e);class r{constructor(t){this.element=t}setText(t,e){this.element.innerHTML=t,this.timeout&&clearTimeout(this.timeout),this.timeout=setTimeout(()=>this.element.innerHTML="",e)}}function a(t){const e=document.getElementById(t);if(null===t)throw new Error(`DOM element '${t}' not found.`);return e}function i(t,e,n){const a=new r(n);e.addEventListener("click",async()=>{await async function(t){try{return await navigator.clipboard.writeText(t),!0}catch(t){return console.error(t.stack||t),!1}}(t.value)?a.setText("Copied",3e3):a.setText('<span style="color: red">Failed to copy</span>',3e3)})}const o="#D0FFD0",s="#FFD0D0";const c="Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.",u="Removes the string form memory and re-enables the UI component.",l=a("txtPrivatePart"),d=a("txtPrivatePartConfirmation"),p=a("btnProtect"),y=a("spnProtectedConfirmation"),v=a("spnPrivatePartSize"),f=a("spnPrivatePartSizeConfirmation");let b;const g=[];function h(){return void 0!==b?b:l.value}function w(){0!==l.value.length&&(b=l.value,y.innerHTML="Protected",l.value="",d.value="",v.innerHTML="0",f.innerHTML="0",l.disabled=!0,d.disabled=!0,p.innerHTML="Clear and unlock",p.title=u,C())}function m(){void 0===b?w():(b=void 0,y.innerHTML="",l.disabled=!1,d.disabled=!1,p.innerHTML="Protect and lock",p.title=c,p.disabled=!0)}function P(){m()}const T=new class{constructor(t,e){this.action=t,this.delay=e}reset(t){void 0!==this.timeout&&clearTimeout(this.timeout);const e=void 0!==t?t:this.delay;this.timeout=setTimeout(()=>{this.action(),this.timeout=void 0},e)}}(w,6e4);function E(){let t;for(t of(p.disabled=0===l.value.length,v.innerHTML=l.value.length.toString(),C(),g))t();T.reset()}function C(){d.value===l.value?d.style.setProperty("background",o):d.style.setProperty("background",s)}function L(){f.innerHTML=d.value.length.toString(),T.reset(),C()}function S(t){const e=(t=function(t){if(t.byteLength>65535)throw new Error(`Buffer too large: ${t.byteLength} bytes`);let e=t.byteLength;const n=new Uint8Array(2+t.byteLength);for(let t=0;t<2;t+=1)n[t]=e%256,e/=256;return n.set(new Uint8Array(t),2),n.buffer}(t)).byteLength,n=new DataView(t,0);let r=0n,a=1n;for(let t=0;t<e;t+=1)r+=BigInt(n.getUint8(t))*a,a*=256n;return r}function A(t,e){const n=BigInt(e.length);let r="",a=function(t){const e=t.byteLength,n=new DataView(t,0);let r=0n,a=1n;for(let t=0;t<e;t+=1)r+=BigInt(n.getUint8(t))*a,a*=256n;return r}(t);for(;a>0n;){const t=a%n;a/=n,r+=e[BigInt.asUintN(8,t)]}return r}function k(t,e){const n=BigInt(e.length);let r=0n,a=1n;for(let i=0;i<t.length;i+=1){r+=BigInt(e.indexOf(t[i]))*a,a*=n}return function(t){const e=[];for(;t>0n;){const n=t%256n;t/=256n;const r=Number(BigInt.asUintN(8,n));e.push(r)}let n=e[0];e.length>1&&(n+=256*e[1]);const r=n-(e.length-2);for(let t=0;t<r;t+=1)e.push(0);return new Uint8Array(e.slice(2)).buffer}(r)}const x="abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";async function M(t,e){const n=await crypto.subtle.importKey("raw",t,"PBKDF2",!1,["deriveKey"]),r={name:"PBKDF2",hash:"SHA-512",iterations:1e5,salt:e},a=await crypto.subtle.deriveKey(r,n,{name:"AES-CBC",length:256},!0,["encrypt"]);return await crypto.subtle.exportKey("raw",a)}function I(t=64,e=x){return A(function(t=64){const e=new Uint8Array(t);return crypto.getRandomValues(e).buffer}(t),e)}function B(t){return(new TextEncoder).encode(t).buffer}const H=a("divStorageOutput"),U=a("txtPath"),O=a("txtParameters"),R=a("txtCustomKeys");function D(){K()}function F(){K()}function K(){if(void 0===N||void 0===_||void 0===G)return;const t=function t(e,n){const r=e.indexOf("/"),a={},i=r>=0?e.substr(0,r):e,o=r>=0?e.substr(r+1):void 0;if(void 0===n){const t={};t[i]=a,n={head:t,tailParent:t,tail:a}}else n.tail[i]=a,n.tailParent=n.tail,n.tail=a;return o?t(o,n):n}(`${U.value}/${_}`),e=t.tail;for(const[t,n]of Object.entries(N))e[t]=n;const n=function(){if(""===R.value)return{};try{const t=JSON.parse(R.value);return null===t||"Object"!==t.constructor.name?null:t}catch{return null}}();null!==n?R.style.removeProperty("background"):R.style.setProperty("background",s);const r=function(t,e,n){const r={};if(null!==t)for(const[e,a]of Object.entries(t))!1===n.includes(e)&&(r[e]=a);if(null!==e)for(const[t,n]of Object.entries(e))r[t]=n;return r}(n,e,G);0===Object.keys(r).length?t.tailParent[Object.keys(t.tailParent)[0]]=null:t.tailParent[Object.keys(t.tailParent)[0]]=r,O.value=JSON.stringify(t.head,void 0,4)}function j(){N=void 0,_=void 0,G=void 0,O.value=""}let N,_,G;function V(t,e,n){N=t,_=e,G=n,K()}function $(){H.style.setProperty("display","initial")}function z(){H.style.setProperty("display","none")}const J=a("btnTabPasswords"),q=a("divTabPasswords"),Q=new class{constructor(t){this.hkdfPurpose=B(t),this._description=`HKDF(PBKDF2, HMAC512) [purpose: ${t}]`}get version(){return 1}get description(){return this._description}async generatePassword(t,e){const n=await M(t,e),r=await crypto.subtle.importKey("raw",n,{name:"HMAC",hash:{name:"SHA-512"}},!1,["sign"]);return await crypto.subtle.sign("HMAC",r,this.hkdfPurpose)}}("Password"),W=a("txtPublicPart"),X=a("btnGeneratePublicPart"),Y=a("btnClearPublicPart"),Z=a("btnCopyPublicPart"),tt=a("spnCopyPublicPartFeedback"),et=a("numOutputSizeRange"),nt=a("numOutputSizeNum"),rt=a("txtAlphabet"),at=a("spnAlphabetSize"),it=a("btnResetAlphabet"),ot=a("txtResultPassword"),st=a("spnResultPasswordLength"),ct=a("btnCopyResultPassword"),ut=a("spnCopyResultPasswordFeedback"),lt=64,dt="!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~",pt=["alphabet","length","public","datetime"];let yt;function vt(){W.value.length>0&&"y"!==prompt("Are you sure you want to clear the public part ?\nType 'y' to accept","")||(W.value="",bt(),wt())}function ft(){if(W.value.length>0&&"y"!==prompt("Are you sure you want to generate a new public part ?\nType 'y' to accept",""))return;const t=I();W.value=t,bt(),xt()}function bt(){yt=W.value.length>0?(new Date).toISOString():void 0}function gt(){st.innerHTML=ot.value.length.toString().padStart(2," ")}function ht(t){const e=t.split("");e.sort();for(let t=1;t<e.length;t+=1)if(e[t-1]===e[t])return!1;return!0}function wt(){if(!1===kt())return void At();const t={public:W.value,datetime:yt},e=ot.value.length;e!==lt&&(t.length=e);const n=rt.value;n!==dt&&(t.alphabet=n),V(t,"password",pt)}function mt(){nt.value=et.value}async function Pt(){mt(),await xt()}async function Tt(){(function(){const t=parseInt(et.min,10),e=parseInt(nt.value,10),n=parseInt(et.max,10);return!1===isNaN(e)&&(et.value=Math.max(t,Math.min(e,n)).toString(),!0)})()&&mt(),await xt()}function Et(){at.innerHTML=rt.value.length.toString(),rt.value.length.toString().length<2&&(at.innerHTML=at.innerHTML.padStart(2," "))}function Ct(t){t?rt.style.removeProperty("background"):rt.style.setProperty("background",s)}async function Lt(){const t=ht(rt.value);Ct(t),!1!==t&&(Et(),await xt())}async function St(){Mt(),Et(),await xt()}function At(){ot.value="",j(),gt()}function kt(){const t=rt.value;return!1!==ht(t)&&!(h().length<=0||W.value.length<8||t.length<2)}async function xt(){if(!1===kt())return void At();const t=h(),e=W.value,n=B(t),r=B(e),a=A(await Q.generatePassword(n,r),rt.value);var i,o;ot.value=(i=a,o=Math.max(4,parseInt(et.value,10)),i.length<=o?i:i.substr(0,o)),gt(),wt()}async function Mt(){rt.value=dt,Et();const t=ht(rt.value);Ct(t),t&&await xt()}async function It(){bt(),await xt()}class Bt{get version(){return 2}get description(){return"PBKDF2 + AES-GCM"}async encrypt(t,e){const n=new ArrayBuffer(44+t.byteLength),r=crypto.getRandomValues(new Uint8Array(n,0,12)),a=crypto.getRandomValues(new Uint8Array(n,12,16)),i={name:"AES-GCM",iv:r},o=await crypto.subtle.importKey("raw",await M(e,a),{name:"AES-GCM",length:256},!1,["encrypt"]),s=await crypto.subtle.encrypt(i,o,t);return new Uint8Array(n).set(new Uint8Array(s),28),n}async decrypt(t,e){const n=new Uint8Array(t,0,12),r=new Uint8Array(t,12,16),a=new Uint8Array(t,28),i={name:"AES-GCM",iv:n},o=await M(e,r),s=await crypto.subtle.importKey("raw",o,{name:"AES-GCM",length:256},!1,["decrypt"]);return await crypto.subtle.decrypt(i,s,a)}}const Ht=["version","value"],Ut=a("btnTabCiphers"),Ot=a("divTabCiphers"),Rt=new Bt,Dt=a("txtCipherName"),Ft=a("txtCipherSource"),Kt=a("txtCipherTarget"),jt=a("btnEncrypt"),Nt=a("btnDecrypt"),_t=a("btnClearCipherSource"),Gt=a("spnCopyCipherTargetFeedback"),Vt=a("btnCopyCipherTarget"),$t=a("btnClearCipherTarget");function zt(){Ft.style.removeProperty("background-color")}function Jt(){Ft.style.setProperty("background-color",s)}function qt(){zt(),Kt.style.removeProperty("background-color")}function Qt(t){Kt.value=t,Wt()}function Wt(){if(""===Kt.value||""===Dt.value)return void j();V({version:Rt.version,value:Kt.value},`ciphers/${Dt.value}`,Ht)}async function Xt(){if(Ft.focus(),Qt(""),qt(),0===Ft.value.length)return void Jt();const t=h();if(0===t.length)return void console.warn("Private part is empty");const e=B(Ft.value),n=B(t);Qt(function(t,e){const n=BigInt(e.length);let r="",a=S(t);for(;a>0n;){const t=a%n;a/=n,r+=e[BigInt.asUintN(8,t)]}return r}(await Rt.encrypt(e,n),x))}async function Yt(){if(Ft.focus(),Qt(""),qt(),0===Ft.value.length)return void Jt();const t=h();var e;if(0!==t.length)try{const n=k(Ft.value,x),r=B(t),a=await Rt.decrypt(n,r);Qt((e=a,(new TextDecoder).decode(e)))}catch(t){console.warn(`Failed to decrypt${t.message?`, error: ${t.message}`:", no error message"}`),Kt.style.setProperty("background-color",s)}else console.warn("Private part is empty")}const Zt=new Uint8Array([242,207,239,142,19,64,70,73,146,42,222,92,188,136,56,168]).buffer;const te=[new class{get version(){return 1}get description(){return"PBKDF2 + AES-GCM"}async encrypt(t,e){const n=new ArrayBuffer(28+t.byteLength),r=new DataView(n,0,12);crypto.getRandomValues(new Uint8Array(n,0,12));const a={name:"AES-GCM",iv:r},i=await crypto.subtle.importKey("raw",await M(e,Zt),{name:"AES-GCM",length:256},!1,["encrypt"]),o=await crypto.subtle.encrypt(a,i,t);return new Uint8Array(n).set(new Uint8Array(o),12),n}async decrypt(t,e){const n=new DataView(t,0,12),r=new DataView(t,12),a={name:"AES-GCM",iv:n},i=await M(e,Zt),o=await crypto.subtle.importKey("raw",i,{name:"AES-GCM",length:256},!1,["decrypt"]);return await crypto.subtle.decrypt(a,o,r)}},new Bt],ee=a("btnTabReEncrypt"),ne=a("divTabReEncrypt"),re=a("txtReEncryptSource"),ae=a("txtReEncryptTarget"),ie=a("cboReEncryptFrom"),oe=a("cboReEncryptTo"),se=a("btnReEncrypt"),ce=a("btnClearReEncryptSource"),ue=a("spnCopyReEncryptTargetFeedback"),le=a("btnCopyReEncryptTarget"),de=a("btnClearReEncryptTarget");function pe(t,e){let n;for(n of te){const e=document.createElement("option");e.value=t.childNodes.length.toString(),e.text=`${n.description} (v${n.version})`,t.add(e)}t.value=e.toString()}function ye(){re.style.removeProperty("background-color")}function ve(){ye(),ae.style.removeProperty("background-color")}async function fe(){if(ae.value="",ve(),0===re.value.length)return void re.style.setProperty("background-color",s);if(ie.value===oe.value)return void ae.style.setProperty("background-color",s);const t=h();if(0===t.length)return void console.warn("Private part is empty");const e=parseInt(ie.value,10),n=parseInt(oe.value,10),r=B(t),a=function(t){t.length%2!=0&&(t="0"+t);const e=new Uint8Array(t.length/2);for(let n=0;n<e.byteLength;n+=1)e[n]=parseInt(t.substr(2*n,2),16);return e.buffer}(re.value),i=await te[e].decrypt(a,r),o=await te[n].encrypt(i,r);var c;ae.value=(c=o,Array.prototype.map.call(new Uint8Array(c),t=>("00"+t.toString(16)).slice(-2)).join(""))}const be=[{getTabButton:()=>a("btnTabNothing"),getTabContent:()=>a("divTabNothing"),onTabSelected(){z()}},new class{init(){p.addEventListener("click",P),l.addEventListener("input",E),d.addEventListener("input",L),C(),p.title=c}},new class{getTabButton(){return J}getTabContent(){return q}onTabSelected(){$(),wt()}init(){var t;t=xt,g.push(t),et.max=lt.toString(),et.value=lt.toString(),Y.addEventListener("click",vt),X.addEventListener("click",ft),function(t,e){const n=a(e);n.addEventListener("click",()=>{"password"===t.type?(t.type="input",n.innerHTML="Hide"):(t.type="password",n.innerHTML="View")})}(ot,"btnViewResultPassword"),i(W,Z,tt),i(ot,ct,ut),et.addEventListener("input",Pt),nt.addEventListener("input",Tt),rt.addEventListener("input",Lt),it.addEventListener("click",St),W.addEventListener("input",It),mt(),Mt()}},new class{getTabButton(){return Ut}getTabContent(){return Ot}onTabSelected(){$(),Wt()}init(){i(Kt,Vt,Gt),jt.addEventListener("click",Xt),Nt.addEventListener("click",Yt),Dt.addEventListener("input",()=>{Wt()}),Ft.addEventListener("input",()=>{Ft.value.length>0&&zt()}),_t.addEventListener("click",()=>{Ft.value=""}),$t.addEventListener("click",()=>{Qt("")})}},new class{getTabButton(){return ee}getTabContent(){return ne}onTabSelected(){z()}init(){i(ae,le,ue),pe(ie,te.length-2),pe(oe,te.length-1),re.addEventListener("input",()=>{re.value.length>0&&ye()}),ce.addEventListener("click",()=>{re.value=""}),de.addEventListener("click",()=>{ae.value=""}),se.addEventListener("click",fe)}},new class{init(){R.addEventListener("input",F),U.addEventListener("input",D)}}],ge=be.filter(t=>void 0!==t.getTabButton),he=be.filter(t=>void 0!==t.init);new class{constructor(t){this.tabs=t,this._activeTabIndex=-1;for(let e=0;e<this.tabs.length;e+=1)t[e].getTabButton().addEventListener("click",()=>{this.setActiveTab(e)});this.setActiveTab(0)}get activeTabIndex(){return this._activeTabIndex}set activeTabIndex(t){if(t<0||t>=this.tabs.length)throw new Error(`Argument 'index' out of range. Must be in range [0;${this.tabs.length-1}].`);this.setActiveTab(t)}setActiveTab(t){if(t===this._activeTabIndex)return;let e;for(e of this.tabs){const t=e.getTabButton();t.style.removeProperty("font-weight"),t.style.setProperty("color","#C0C0C0"),e.getTabContent().style.setProperty("display","none")}const n=this.tabs[t].getTabButton();n.style.setProperty("font-weight","bold"),n.style.removeProperty("color"),this.tabs[t].getTabContent().style.removeProperty("display"),this._activeTabIndex=t,this.tabs[t].onTabSelected()}}(ge);const we="ddb07cbe8b74a70addc9df92edcd1308dec4c50f".substr(0,11);let me;for(me of(a("divInfo").innerHTML=`${we}<br/><a href="https://github.com/TanukiSharp/ItchyPassword" target="_blank">github</a>`,he))me.init()}]);
+/******/ (function(modules) { // webpackBootstrap
+/******/ 	// The module cache
+/******/ 	var installedModules = {};
+/******/
+/******/ 	// The require function
+/******/ 	function __webpack_require__(moduleId) {
+/******/
+/******/ 		// Check if module is in cache
+/******/ 		if(installedModules[moduleId]) {
+/******/ 			return installedModules[moduleId].exports;
+/******/ 		}
+/******/ 		// Create a new module (and put it into the cache)
+/******/ 		var module = installedModules[moduleId] = {
+/******/ 			i: moduleId,
+/******/ 			l: false,
+/******/ 			exports: {}
+/******/ 		};
+/******/
+/******/ 		// Execute the module function
+/******/ 		modules[moduleId].call(module.exports, module, module.exports, __webpack_require__);
+/******/
+/******/ 		// Flag the module as loaded
+/******/ 		module.l = true;
+/******/
+/******/ 		// Return the exports of the module
+/******/ 		return module.exports;
+/******/ 	}
+/******/
+/******/
+/******/ 	// expose the modules object (__webpack_modules__)
+/******/ 	__webpack_require__.m = modules;
+/******/
+/******/ 	// expose the module cache
+/******/ 	__webpack_require__.c = installedModules;
+/******/
+/******/ 	// define getter function for harmony exports
+/******/ 	__webpack_require__.d = function(exports, name, getter) {
+/******/ 		if(!__webpack_require__.o(exports, name)) {
+/******/ 			Object.defineProperty(exports, name, { enumerable: true, get: getter });
+/******/ 		}
+/******/ 	};
+/******/
+/******/ 	// define __esModule on exports
+/******/ 	__webpack_require__.r = function(exports) {
+/******/ 		if(typeof Symbol !== 'undefined' && Symbol.toStringTag) {
+/******/ 			Object.defineProperty(exports, Symbol.toStringTag, { value: 'Module' });
+/******/ 		}
+/******/ 		Object.defineProperty(exports, '__esModule', { value: true });
+/******/ 	};
+/******/
+/******/ 	// create a fake namespace object
+/******/ 	// mode & 1: value is a module id, require it
+/******/ 	// mode & 2: merge all properties of value into the ns
+/******/ 	// mode & 4: return value when already ns object
+/******/ 	// mode & 8|1: behave like require
+/******/ 	__webpack_require__.t = function(value, mode) {
+/******/ 		if(mode & 1) value = __webpack_require__(value);
+/******/ 		if(mode & 8) return value;
+/******/ 		if((mode & 4) && typeof value === 'object' && value && value.__esModule) return value;
+/******/ 		var ns = Object.create(null);
+/******/ 		__webpack_require__.r(ns);
+/******/ 		Object.defineProperty(ns, 'default', { enumerable: true, value: value });
+/******/ 		if(mode & 2 && typeof value != 'string') for(var key in value) __webpack_require__.d(ns, key, function(key) { return value[key]; }.bind(null, key));
+/******/ 		return ns;
+/******/ 	};
+/******/
+/******/ 	// getDefaultExport function for compatibility with non-harmony modules
+/******/ 	__webpack_require__.n = function(module) {
+/******/ 		var getter = module && module.__esModule ?
+/******/ 			function getDefault() { return module['default']; } :
+/******/ 			function getModuleExports() { return module; };
+/******/ 		__webpack_require__.d(getter, 'a', getter);
+/******/ 		return getter;
+/******/ 	};
+/******/
+/******/ 	// Object.prototype.hasOwnProperty.call
+/******/ 	__webpack_require__.o = function(object, property) { return Object.prototype.hasOwnProperty.call(object, property); };
+/******/
+/******/ 	// __webpack_public_path__
+/******/ 	__webpack_require__.p = "";
+/******/
+/******/
+/******/ 	// Load entry module and return exports
+/******/ 	return __webpack_require__(__webpack_require__.s = "./src/index.ts");
+/******/ })
+/************************************************************************/
+/******/ ({
+
+/***/ "./src/TabControl.ts":
+/*!***************************!*\
+  !*** ./src/TabControl.ts ***!
+  \***************************/
+/*! exports provided: TabControl */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TabControl", function() { return TabControl; });
+class TabControl {
+    constructor(tabs) {
+        this.tabs = tabs;
+        this._activeTabIndex = -1;
+        for (let i = 0; i < this.tabs.length; i += 1) {
+            tabs[i].getTabButton().addEventListener('click', () => {
+                this.setActiveTab(i);
+            });
+        }
+        this.setActiveTab(0);
+    }
+    get activeTabIndex() {
+        return this._activeTabIndex;
+    }
+    set activeTabIndex(index) {
+        if (index < 0 || index >= this.tabs.length) {
+            throw new Error(`Argument 'index' out of range. Must be in range [0;${this.tabs.length - 1}].`);
+        }
+        this.setActiveTab(index);
+    }
+    setActiveTab(activeTabIndex) {
+        if (activeTabIndex === this._activeTabIndex) {
+            return;
+        }
+        let tabInfo;
+        for (tabInfo of this.tabs) {
+            const button = tabInfo.getTabButton();
+            button.style.removeProperty('font-weight');
+            button.style.setProperty('color', '#C0C0C0');
+            tabInfo.getTabContent().style.setProperty('display', 'none');
+        }
+        const button = this.tabs[activeTabIndex].getTabButton();
+        button.style.setProperty('font-weight', 'bold');
+        button.style.removeProperty('color');
+        this.tabs[activeTabIndex].getTabContent().style.removeProperty('display');
+        this._activeTabIndex = activeTabIndex;
+        this.tabs[activeTabIndex].onTabSelected();
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/TimedAction.ts":
+/*!****************************!*\
+  !*** ./src/TimedAction.ts ***!
+  \****************************/
+/*! exports provided: TimedAction */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "TimedAction", function() { return TimedAction; });
+class TimedAction {
+    constructor(action, delay) {
+        this.action = action;
+        this.delay = delay;
+    }
+    reset(overrideDelay = undefined) {
+        if (this.timeout !== undefined) {
+            clearTimeout(this.timeout);
+        }
+        const delay = overrideDelay !== undefined ? overrideDelay : this.delay;
+        this.timeout = setTimeout(() => {
+            this.action();
+            this.timeout = undefined;
+        }, delay);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/VisualFeedback.ts":
+/*!*******************************!*\
+  !*** ./src/VisualFeedback.ts ***!
+  \*******************************/
+/*! exports provided: VisualFeedback */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "VisualFeedback", function() { return VisualFeedback; });
+class VisualFeedback {
+    constructor(element) {
+        this.element = element;
+    }
+    setText(text, duration) {
+        this.element.innerHTML = text;
+        if (this.timeout) {
+            clearTimeout(this.timeout);
+        }
+        this.timeout = setTimeout(() => this.element.innerHTML = '', duration);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/arrayUtils.ts":
+/*!***************************!*\
+  !*** ./src/arrayUtils.ts ***!
+  \***************************/
+/*! exports provided: arrayToString, copy, unsignedBigIntToArrayBuffer, toCustomBaseOneWay, toCustomBase, fromCustomBase, toBase16 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "arrayToString", function() { return arrayToString; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "copy", function() { return copy; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "unsignedBigIntToArrayBuffer", function() { return unsignedBigIntToArrayBuffer; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "toCustomBaseOneWay", function() { return toCustomBaseOneWay; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "toCustomBase", function() { return toCustomBase; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fromCustomBase", function() { return fromCustomBase; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "toBase16", function() { return toBase16; });
+function arrayToString(array) {
+    const decoder = new TextDecoder( /*'utf-8'*/);
+    return decoder.decode(array);
+}
+;
+function copy(source, sourceIndex, target, targetIndex, length) {
+    for (let i = 0; i < length; i += 1) {
+        target[i + targetIndex] = source[i + sourceIndex];
+    }
+}
+function createHeaderedBuffer(buffer) {
+    if (buffer.byteLength > 0xFFFF) {
+        throw new Error(`Buffer too large: ${buffer.byteLength} bytes`);
+    }
+    let length = buffer.byteLength;
+    const headeredBuffer = new Uint8Array(2 + buffer.byteLength);
+    for (let i = 0; i < 2; i += 1) {
+        headeredBuffer[i] = length % 256;
+        length /= 256;
+    }
+    headeredBuffer.set(new Uint8Array(buffer), 2);
+    return headeredBuffer.buffer;
+}
+function arrayBufferToUnsignedBigIntWithoutHeader(arrayBuffer) {
+    const length = arrayBuffer.byteLength;
+    const arrayView = new DataView(arrayBuffer, 0);
+    let result = 0n;
+    let multiplier = 1n;
+    for (let i = 0; i < length; i += 1) {
+        result += BigInt(arrayView.getUint8(i)) * multiplier;
+        multiplier *= 256n;
+    }
+    return result;
+}
+function arrayBufferToUnsignedBigInt(arrayBuffer) {
+    arrayBuffer = createHeaderedBuffer(arrayBuffer);
+    const length = arrayBuffer.byteLength;
+    const arrayView = new DataView(arrayBuffer, 0);
+    let result = 0n;
+    let multiplier = 1n;
+    for (let i = 0; i < length; i += 1) {
+        result += BigInt(arrayView.getUint8(i)) * multiplier;
+        multiplier *= 256n;
+    }
+    return result;
+}
+function unsignedBigIntToArrayBuffer(number) {
+    const result = [];
+    while (number > 0n) {
+        const remainder = number % 256n;
+        number /= 256n;
+        const byteValue = Number(BigInt.asUintN(8, remainder));
+        result.push(byteValue);
+    }
+    let totalLength = result[0];
+    if (result.length > 1) { // For case where original buffer is of length 1 and contains 0.
+        totalLength += result[1] * 256;
+    }
+    // The varable 'result' contains 2 bytes of size header.
+    const diff = totalLength - (result.length - 2);
+    for (let i = 0; i < diff; i += 1) {
+        result.push(0);
+    }
+    return new Uint8Array(result.slice(2)).buffer;
+}
+// This is a one way encoding in the sense that decoding is not always deterministic.
+// This can be used to generate strings where decoding it doesn't matter.
+function toCustomBaseOneWay(bytes, alphabet) {
+    const alphabetLength = BigInt(alphabet.length);
+    let result = '';
+    let number = arrayBufferToUnsignedBigIntWithoutHeader(bytes);
+    while (number > 0n) {
+        const remainder = number % alphabetLength;
+        number /= alphabetLength;
+        const index = BigInt.asUintN(8, remainder);
+        result += alphabet[index];
+    }
+    return result;
+}
+function toCustomBase(bytes, alphabet) {
+    const alphabetLength = BigInt(alphabet.length);
+    let result = '';
+    let number = arrayBufferToUnsignedBigInt(bytes);
+    while (number > 0n) {
+        const remainder = number % alphabetLength;
+        number /= alphabetLength;
+        const index = BigInt.asUintN(8, remainder);
+        result += alphabet[index];
+    }
+    return result;
+}
+function fromCustomBase(input, alphabet) {
+    const alphabetLength = BigInt(alphabet.length);
+    let number = 0n;
+    let multiplier = 1n;
+    for (let i = 0; i < input.length; i += 1) {
+        const value = BigInt(alphabet.indexOf(input[i]));
+        number += value * multiplier;
+        multiplier *= alphabetLength;
+    }
+    return unsignedBigIntToArrayBuffer(number);
+}
+function toBase16(buffer) {
+    return Array.prototype.map.call(new Uint8Array(buffer), x => ('00' + x.toString(16)).slice(-2)).join('');
+}
+
+
+/***/ }),
+
+/***/ "./src/ciphers/v1.ts":
+/*!***************************!*\
+  !*** ./src/ciphers/v1.ts ***!
+  \***************************/
+/*! exports provided: CipherV1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CipherV1", function() { return CipherV1; });
+/* harmony import */ var _crypto__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../crypto */ "./src/crypto.ts");
+
+const encryptionKeyDerivationSalt = new Uint8Array([0xf2, 0xcf, 0xef, 0x8e, 0x13, 0x40, 0x46, 0x49, 0x92, 0x2a, 0xde, 0x5c, 0xbc, 0x88, 0x38, 0xa8]).buffer;
+class CipherV1 {
+    get version() {
+        return 1;
+    }
+    get description() {
+        return 'PBKDF2 + AES-GCM';
+    }
+    async encrypt(input, password) {
+        const output = new ArrayBuffer(12 + 16 + input.byteLength);
+        const nonce = new DataView(output, 0, 12);
+        crypto.getRandomValues(new Uint8Array(output, 0, 12));
+        const aesGcmParams = {
+            name: 'AES-GCM',
+            iv: nonce
+        };
+        const aesKeyAlgorithm = {
+            name: 'AES-GCM',
+            length: 256
+        };
+        const passwordKey = await crypto.subtle.importKey('raw', await Object(_crypto__WEBPACK_IMPORTED_MODULE_0__["getDerivedBytes"])(password, encryptionKeyDerivationSalt), aesKeyAlgorithm, false, ['encrypt']);
+        const result = await crypto.subtle.encrypt(aesGcmParams, passwordKey, input);
+        new Uint8Array(output).set(new Uint8Array(result), 12);
+        return output;
+    }
+    async decrypt(input, password) {
+        const nonce = new DataView(input, 0, 12);
+        const payload = new DataView(input, 12);
+        const aesGcmParams = {
+            name: 'AES-GCM',
+            iv: nonce
+        };
+        const aesKeyAlgorithm = {
+            name: 'AES-GCM',
+            length: 256
+        };
+        const derivedKey = await Object(_crypto__WEBPACK_IMPORTED_MODULE_0__["getDerivedBytes"])(password, encryptionKeyDerivationSalt);
+        const passwordKey = await crypto.subtle.importKey('raw', derivedKey, aesKeyAlgorithm, false, ['decrypt']);
+        return await crypto.subtle.decrypt(aesGcmParams, passwordKey, payload);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/ciphers/v2.ts":
+/*!***************************!*\
+  !*** ./src/ciphers/v2.ts ***!
+  \***************************/
+/*! exports provided: CipherV2 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CipherV2", function() { return CipherV2; });
+/* harmony import */ var _crypto__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../crypto */ "./src/crypto.ts");
+
+class CipherV2 {
+    get version() {
+        return 2;
+    }
+    get description() {
+        return 'PBKDF2 + AES-GCM';
+    }
+    async encrypt(input, password) {
+        const output = new ArrayBuffer(12 + 16 + 16 + input.byteLength);
+        const nonce = crypto.getRandomValues(new Uint8Array(output, 0, 12));
+        const passwordSalt = crypto.getRandomValues(new Uint8Array(output, 12, 16));
+        const aesGcmParams = {
+            name: 'AES-GCM',
+            iv: nonce
+        };
+        const aesKeyAlgorithm = {
+            name: 'AES-GCM',
+            length: 256
+        };
+        const passwordKey = await crypto.subtle.importKey('raw', await Object(_crypto__WEBPACK_IMPORTED_MODULE_0__["getDerivedBytes"])(password, passwordSalt), aesKeyAlgorithm, false, ['encrypt']);
+        const result = await crypto.subtle.encrypt(aesGcmParams, passwordKey, input);
+        new Uint8Array(output).set(new Uint8Array(result), 12 + 16);
+        return output;
+    }
+    async decrypt(input, password) {
+        const nonce = new Uint8Array(input, 0, 12);
+        const passwordSalt = new Uint8Array(input, 12, 16);
+        const payload = new Uint8Array(input, 12 + 16);
+        const aesGcmParams = {
+            name: 'AES-GCM',
+            iv: nonce
+        };
+        const aesKeyAlgorithm = {
+            name: 'AES-GCM',
+            length: 256
+        };
+        const derivedKey = await Object(_crypto__WEBPACK_IMPORTED_MODULE_0__["getDerivedBytes"])(password, passwordSalt);
+        const passwordKey = await crypto.subtle.importKey('raw', derivedKey, aesKeyAlgorithm, false, ['decrypt']);
+        return await crypto.subtle.decrypt(aesGcmParams, passwordKey, payload);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/components/cipherComponent.ts":
+/*!*******************************************!*\
+  !*** ./src/components/cipherComponent.ts ***!
+  \*******************************************/
+/*! exports provided: CipherComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "CipherComponent", function() { return CipherComponent; });
+/* harmony import */ var _crypto__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../crypto */ "./src/crypto.ts");
+/* harmony import */ var _stringUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../stringUtils */ "./src/stringUtils.ts");
+/* harmony import */ var _arrayUtils__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../arrayUtils */ "./src/arrayUtils.ts");
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../ui */ "./src/ui.ts");
+/* harmony import */ var _privatePartComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./privatePartComponent */ "./src/components/privatePartComponent.ts");
+/* harmony import */ var _ciphers_v2__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../ciphers/v2 */ "./src/ciphers/v2.ts");
+/* harmony import */ var _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./storageOutputComponent */ "./src/components/storageOutputComponent.ts");
+
+
+
+
+
+
+
+const RESERVED_KEYS = ['version', 'value'];
+const btnTabCiphers = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('btnTabCiphers');
+const divTabCiphers = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('divTabCiphers');
+const cipher = new _ciphers_v2__WEBPACK_IMPORTED_MODULE_5__["CipherV2"]();
+const txtCipherName = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('txtCipherName');
+const txtCipherSource = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('txtCipherSource');
+const txtCipherTarget = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('txtCipherTarget');
+const btnEncrypt = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('btnEncrypt');
+const btnDecrypt = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('btnDecrypt');
+const btnClearCipherSource = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('btnClearCipherSource');
+const spnCopyCipherTargetFeedback = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('spnCopyCipherTargetFeedback');
+const btnCopyCipherTarget = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('btnCopyCipherTarget');
+const btnClearCipherTarget = Object(_ui__WEBPACK_IMPORTED_MODULE_3__["getElementById"])('btnClearCipherTarget');
+function clearSourceVisualCue() {
+    txtCipherSource.style.removeProperty('background-color');
+}
+function clearTargetVisualCue() {
+    txtCipherTarget.style.removeProperty('background-color');
+}
+function setSourceVisualCueError() {
+    txtCipherSource.style.setProperty('background-color', _ui__WEBPACK_IMPORTED_MODULE_3__["ERROR_COLOR"]);
+}
+function setTargetVisualCueError() {
+    txtCipherTarget.style.setProperty('background-color', _ui__WEBPACK_IMPORTED_MODULE_3__["ERROR_COLOR"]);
+}
+function clearAllVisualCues() {
+    clearSourceVisualCue();
+    clearTargetVisualCue();
+}
+function setCipherTargetValue(value) {
+    txtCipherTarget.value = value;
+    onCipherTargetChanged();
+}
+function onCipherTargetChanged() {
+    updateCipherParameters();
+}
+function updateCipherParameters() {
+    if (txtCipherTarget.value === '' || txtCipherName.value === '') {
+        _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["clearOutputs"]();
+        return;
+    }
+    const cipherParameters = {
+        version: cipher.version,
+        value: txtCipherTarget.value
+    };
+    const path = `ciphers/${txtCipherName.value}`;
+    _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["setParameters"](cipherParameters, path, RESERVED_KEYS);
+}
+async function onEncryptButtonClick() {
+    txtCipherSource.focus();
+    setCipherTargetValue('');
+    clearAllVisualCues();
+    if (txtCipherSource.value.length === 0) {
+        setSourceVisualCueError();
+        return;
+    }
+    const privatePart = Object(_privatePartComponent__WEBPACK_IMPORTED_MODULE_4__["getPrivatePart"])();
+    if (privatePart.length === 0) {
+        console.warn('Private part is empty');
+        return;
+    }
+    const input = _stringUtils__WEBPACK_IMPORTED_MODULE_1__["stringToArray"](txtCipherSource.value);
+    const password = _stringUtils__WEBPACK_IMPORTED_MODULE_1__["stringToArray"](privatePart);
+    const encrypted = await cipher.encrypt(input, password);
+    setCipherTargetValue(_arrayUtils__WEBPACK_IMPORTED_MODULE_2__["toCustomBase"](encrypted, _crypto__WEBPACK_IMPORTED_MODULE_0__["BASE62_ALPHABET"]));
+}
+async function onDecryptButtonClick() {
+    txtCipherSource.focus();
+    setCipherTargetValue('');
+    clearAllVisualCues();
+    if (txtCipherSource.value.length === 0) {
+        setSourceVisualCueError();
+        return;
+    }
+    const privatePart = Object(_privatePartComponent__WEBPACK_IMPORTED_MODULE_4__["getPrivatePart"])();
+    if (privatePart.length === 0) {
+        console.warn('Private part is empty');
+        return;
+    }
+    try {
+        const input = _arrayUtils__WEBPACK_IMPORTED_MODULE_2__["fromCustomBase"](txtCipherSource.value, _crypto__WEBPACK_IMPORTED_MODULE_0__["BASE62_ALPHABET"]);
+        const password = _stringUtils__WEBPACK_IMPORTED_MODULE_1__["stringToArray"](privatePart);
+        const decrypted = await cipher.decrypt(input, password);
+        setCipherTargetValue(_arrayUtils__WEBPACK_IMPORTED_MODULE_2__["arrayToString"](decrypted));
+    }
+    catch (error) {
+        console.warn(`Failed to decrypt${error.message ? `, error: ${error.message}` : ', no error message'}`);
+        setTargetVisualCueError();
+    }
+}
+class CipherComponent {
+    getTabButton() {
+        return btnTabCiphers;
+    }
+    getTabContent() {
+        return divTabCiphers;
+    }
+    onTabSelected() {
+        _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["show"]();
+        updateCipherParameters();
+    }
+    init() {
+        Object(_ui__WEBPACK_IMPORTED_MODULE_3__["setupCopyButton"])(txtCipherTarget, btnCopyCipherTarget, spnCopyCipherTargetFeedback);
+        btnEncrypt.addEventListener('click', onEncryptButtonClick);
+        btnDecrypt.addEventListener('click', onDecryptButtonClick);
+        txtCipherName.addEventListener('input', () => {
+            updateCipherParameters();
+        });
+        txtCipherSource.addEventListener('input', () => {
+            if (txtCipherSource.value.length > 0) {
+                clearSourceVisualCue();
+            }
+        });
+        btnClearCipherSource.addEventListener('click', () => {
+            txtCipherSource.value = '';
+        });
+        btnClearCipherTarget.addEventListener('click', () => {
+            setCipherTargetValue('');
+        });
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/components/passwordComponent.ts":
+/*!*********************************************!*\
+  !*** ./src/components/passwordComponent.ts ***!
+  \*********************************************/
+/*! exports provided: PasswordComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PasswordComponent", function() { return PasswordComponent; });
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ui */ "./src/ui.ts");
+/* harmony import */ var _privatePartComponent__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./privatePartComponent */ "./src/components/privatePartComponent.ts");
+/* harmony import */ var _crypto__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../crypto */ "./src/crypto.ts");
+/* harmony import */ var _stringUtils__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ../stringUtils */ "./src/stringUtils.ts");
+/* harmony import */ var _arrayUtils__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../arrayUtils */ "./src/arrayUtils.ts");
+/* harmony import */ var _passwordGenerators_v1__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../passwordGenerators/v1 */ "./src/passwordGenerators/v1.ts");
+/* harmony import */ var _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./storageOutputComponent */ "./src/components/storageOutputComponent.ts");
+
+
+
+
+
+
+
+const btnTabPasswords = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnTabPasswords');
+const divTabPasswords = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('divTabPasswords');
+const passwordGenerator = new _passwordGenerators_v1__WEBPACK_IMPORTED_MODULE_5__["PasswordGeneratorV1"]('Password');
+const txtPublicPart = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtPublicPart');
+const btnGeneratePublicPart = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnGeneratePublicPart');
+const btnClearPublicPart = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnClearPublicPart');
+const btnCopyPublicPart = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnCopyPublicPart');
+const spnCopyPublicPartFeedback = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnCopyPublicPartFeedback');
+const numOutputSizeRange = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('numOutputSizeRange');
+const numOutputSizeNum = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('numOutputSizeNum');
+const txtAlphabet = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtAlphabet');
+const spnAlphabetSize = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnAlphabetSize');
+const btnResetAlphabet = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnResetAlphabet');
+const txtResultPassword = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtResultPassword');
+const spnResultPasswordLength = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnResultPasswordLength');
+const btnCopyResultPassword = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnCopyResultPassword');
+const spnCopyResultPasswordFeedback = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnCopyResultPasswordFeedback');
+const DEFAULT_LENGTH = 64;
+const DEFAULT_ALPHABET = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+const RESERVED_KEYS = ['alphabet', 'length', 'public', 'datetime'];
+let passwordPublicPartLastChange;
+function onClearPublicPartButtonClick() {
+    if (txtPublicPart.value.length > 0) {
+        if (prompt('Are you sure you want to clear the public part ?\nType \'y\' to accept', '') !== 'y') {
+            return;
+        }
+    }
+    txtPublicPart.value = '';
+    updatePasswordPublicPartLastUpdate();
+    updatePasswordGenerationParameters();
+}
+function onGeneratePublicPartButtonClick() {
+    if (txtPublicPart.value.length > 0) {
+        if (prompt('Are you sure you want to generate a new public part ?\nType \'y\' to accept', '') !== 'y') {
+            return;
+        }
+    }
+    const randomString = _crypto__WEBPACK_IMPORTED_MODULE_2__["generateRandomString"]();
+    txtPublicPart.value = randomString;
+    updatePasswordPublicPartLastUpdate();
+    run();
+}
+function updatePasswordPublicPartLastUpdate() {
+    if (txtPublicPart.value.length > 0) {
+        passwordPublicPartLastChange = new Date().toISOString();
+    }
+    else {
+        passwordPublicPartLastChange = undefined;
+    }
+}
+function deepMerge(source, target) {
+    for (const sourceKey of Object.keys(source)) {
+        const targetValue = target[sourceKey];
+        const sourceValue = source[sourceKey];
+        if (targetValue === undefined ||
+            targetValue === null ||
+            targetValue.constructor.name !== 'Object' ||
+            sourceValue.constructor.name !== 'Object') {
+            target[sourceKey] = sourceValue;
+            continue;
+        }
+        deepMerge(sourceValue, targetValue);
+    }
+}
+function setupViewButton(txt, buttonName) {
+    const btn = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])(buttonName);
+    btn.addEventListener('click', () => {
+        if (txt.type === 'password') {
+            txt.type = 'input';
+            btn.innerHTML = 'Hide';
+        }
+        else {
+            txt.type = 'password';
+            btn.innerHTML = 'View';
+        }
+    });
+}
+function updateResultPasswordLength() {
+    spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString().padStart(2, ' ');
+}
+function isAlphabetValid(alphabet) {
+    const sortedAlphabet = alphabet.split('');
+    sortedAlphabet.sort();
+    for (let i = 1; i < sortedAlphabet.length; i += 1) {
+        if (sortedAlphabet[i - 1] === sortedAlphabet[i]) {
+            return false;
+        }
+    }
+    return true;
+}
+function updatePasswordGenerationParameters() {
+    if (canRun() === false) {
+        clearOutputs();
+        return;
+    }
+    const passwordParamters = {
+        public: txtPublicPart.value,
+        datetime: passwordPublicPartLastChange
+    };
+    const numericValue = txtResultPassword.value.length;
+    if (numericValue !== DEFAULT_LENGTH) {
+        passwordParamters.length = numericValue;
+    }
+    const alphabet = txtAlphabet.value;
+    if (alphabet !== DEFAULT_ALPHABET) {
+        passwordParamters.alphabet = alphabet;
+    }
+    _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["setParameters"](passwordParamters, 'password', RESERVED_KEYS);
+}
+function updateOutputSizeRangeToNum() {
+    numOutputSizeNum.value = numOutputSizeRange.value;
+}
+function updateOutputSizeNumToRange() {
+    const min = parseInt(numOutputSizeRange.min, 10);
+    const val = parseInt(numOutputSizeNum.value, 10);
+    const max = parseInt(numOutputSizeRange.max, 10);
+    if (isNaN(val) === false) {
+        numOutputSizeRange.value = Math.max(min, Math.min(val, max)).toString();
+        return true;
+    }
+    return false;
+}
+async function onOutputSizeRangeInput() {
+    updateOutputSizeRangeToNum();
+    await run();
+}
+async function onOutputSizeNumInput() {
+    if (updateOutputSizeNumToRange()) {
+        updateOutputSizeRangeToNum();
+    }
+    await run();
+}
+function updateAlphabetSize() {
+    spnAlphabetSize.innerHTML = txtAlphabet.value.length.toString();
+    const alphabetSizeDigitCount = txtAlphabet.value.length.toString().length;
+    if (alphabetSizeDigitCount < 2) {
+        // Add a space to keep a nice visual alignment.
+        spnAlphabetSize.innerHTML = spnAlphabetSize.innerHTML.padStart(2, ' ');
+    }
+}
+function updateAlphabetValidityDisplay(isAlphabetValid) {
+    if (isAlphabetValid) {
+        txtAlphabet.style.removeProperty('background');
+    }
+    else {
+        txtAlphabet.style.setProperty('background', _ui__WEBPACK_IMPORTED_MODULE_0__["ERROR_COLOR"]);
+    }
+}
+async function onAlphabetTextInput() {
+    const isAlphabetValidResult = isAlphabetValid(txtAlphabet.value);
+    updateAlphabetValidityDisplay(isAlphabetValidResult);
+    if (isAlphabetValidResult === false) {
+        return;
+    }
+    updateAlphabetSize();
+    await run();
+}
+async function onResetAlphabetButtonClick() {
+    resetAlphabet();
+    updateAlphabetSize();
+    await run();
+}
+function clearOutputs() {
+    txtResultPassword.value = '';
+    _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["clearOutputs"]();
+    updateResultPasswordLength();
+}
+function canRun() {
+    const alphabet = txtAlphabet.value;
+    if (isAlphabetValid(alphabet) === false) {
+        return false;
+    }
+    if (_privatePartComponent__WEBPACK_IMPORTED_MODULE_1__["getPrivatePart"]().length <= 0 || txtPublicPart.value.length < 8 || alphabet.length < 2) {
+        return false;
+    }
+    return true;
+}
+async function run() {
+    if (canRun() === false) {
+        clearOutputs();
+        return;
+    }
+    const privatePartString = _privatePartComponent__WEBPACK_IMPORTED_MODULE_1__["getPrivatePart"]();
+    const publicPartString = txtPublicPart.value;
+    const privatePrivateBytes = _stringUtils__WEBPACK_IMPORTED_MODULE_3__["stringToArray"](privatePartString);
+    const publicPartBytes = _stringUtils__WEBPACK_IMPORTED_MODULE_3__["stringToArray"](publicPartString);
+    const keyBytes = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
+    const keyString = _arrayUtils__WEBPACK_IMPORTED_MODULE_4__["toCustomBaseOneWay"](keyBytes, txtAlphabet.value);
+    txtResultPassword.value = _stringUtils__WEBPACK_IMPORTED_MODULE_3__["truncate"](keyString, Math.max(4, parseInt(numOutputSizeRange.value, 10)));
+    updateResultPasswordLength();
+    updatePasswordGenerationParameters();
+}
+async function resetAlphabet() {
+    txtAlphabet.value = DEFAULT_ALPHABET;
+    updateAlphabetSize();
+    const isAlphabetValidResult = isAlphabetValid(txtAlphabet.value);
+    updateAlphabetValidityDisplay(isAlphabetValidResult);
+    if (isAlphabetValidResult) {
+        await run();
+    }
+}
+async function onPublicPartTextInput() {
+    updatePasswordPublicPartLastUpdate();
+    await run();
+}
+class PasswordComponent {
+    getTabButton() {
+        return btnTabPasswords;
+    }
+    getTabContent() {
+        return divTabPasswords;
+    }
+    onTabSelected() {
+        _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["show"]();
+        updatePasswordGenerationParameters();
+    }
+    init() {
+        _privatePartComponent__WEBPACK_IMPORTED_MODULE_1__["registerOnChanged"](run);
+        // dafuq!?
+        numOutputSizeRange.max = DEFAULT_LENGTH.toString();
+        numOutputSizeRange.value = DEFAULT_LENGTH.toString();
+        btnClearPublicPart.addEventListener('click', onClearPublicPartButtonClick);
+        btnGeneratePublicPart.addEventListener('click', onGeneratePublicPartButtonClick);
+        setupViewButton(txtResultPassword, 'btnViewResultPassword');
+        Object(_ui__WEBPACK_IMPORTED_MODULE_0__["setupCopyButton"])(txtPublicPart, btnCopyPublicPart, spnCopyPublicPartFeedback);
+        Object(_ui__WEBPACK_IMPORTED_MODULE_0__["setupCopyButton"])(txtResultPassword, btnCopyResultPassword, spnCopyResultPasswordFeedback);
+        numOutputSizeRange.addEventListener('input', onOutputSizeRangeInput);
+        numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);
+        txtAlphabet.addEventListener('input', onAlphabetTextInput);
+        btnResetAlphabet.addEventListener('click', onResetAlphabetButtonClick);
+        txtPublicPart.addEventListener('input', onPublicPartTextInput);
+        updateOutputSizeRangeToNum();
+        resetAlphabet();
+    }
+}
+;
+
+
+/***/ }),
+
+/***/ "./src/components/privatePartComponent.ts":
+/*!************************************************!*\
+  !*** ./src/components/privatePartComponent.ts ***!
+  \************************************************/
+/*! exports provided: registerOnChanged, getPrivatePart, PrivatePartComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "registerOnChanged", function() { return registerOnChanged; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getPrivatePart", function() { return getPrivatePart; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PrivatePartComponent", function() { return PrivatePartComponent; });
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ui */ "./src/ui.ts");
+/* harmony import */ var _TimedAction__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../TimedAction */ "./src/TimedAction.ts");
+
+
+const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
+const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';
+const txtPrivatePart = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtPrivatePart');
+const txtPrivatePartConfirmation = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtPrivatePartConfirmation');
+const btnProtect = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnProtect');
+const spnProtectedConfirmation = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnProtectedConfirmation');
+const spnPrivatePartSize = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnPrivatePartSize');
+const spnPrivatePartSizeConfirmation = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('spnPrivatePartSizeConfirmation');
+const PRIVATE_PART_PROTECTION_TIMEOUT = 60 * 1000;
+let privatePart;
+const onChangedHandlers = [];
+function registerOnChanged(onChanged) {
+    onChangedHandlers.push(onChanged);
+}
+function getPrivatePart() {
+    if (privatePart !== undefined) {
+        return privatePart;
+    }
+    return txtPrivatePart.value;
+}
+function protectAndLockPrivatePart() {
+    if (txtPrivatePart.value.length === 0) {
+        return;
+    }
+    privatePart = txtPrivatePart.value;
+    spnProtectedConfirmation.innerHTML = 'Protected';
+    txtPrivatePart.value = '';
+    txtPrivatePartConfirmation.value = '';
+    spnPrivatePartSize.innerHTML = '0';
+    spnPrivatePartSizeConfirmation.innerHTML = '0';
+    txtPrivatePart.disabled = true;
+    txtPrivatePartConfirmation.disabled = true;
+    btnProtect.innerHTML = 'Clear and unlock';
+    btnProtect.title = btnProtectTitleForClear;
+    updatePrivatePartsMatching();
+}
+function clearAndUnLockPrivatePart() {
+    privatePart = undefined;
+    spnProtectedConfirmation.innerHTML = '';
+    txtPrivatePart.disabled = false;
+    txtPrivatePartConfirmation.disabled = false;
+    btnProtect.innerHTML = 'Protect and lock';
+    btnProtect.title = btnProtectTitleForProtect;
+    btnProtect.disabled = true;
+}
+function togglePrivatePartProtection() {
+    if (privatePart === undefined) {
+        protectAndLockPrivatePart();
+    }
+    else {
+        clearAndUnLockPrivatePart();
+    }
+}
+function onProtectButtonClick() {
+    togglePrivatePartProtection();
+}
+const protectPrivatePartAction = new _TimedAction__WEBPACK_IMPORTED_MODULE_1__["TimedAction"](protectAndLockPrivatePart, PRIVATE_PART_PROTECTION_TIMEOUT);
+function onPrivatePartTextInput() {
+    btnProtect.disabled = txtPrivatePart.value.length === 0;
+    spnPrivatePartSize.innerHTML = txtPrivatePart.value.length.toString();
+    updatePrivatePartsMatching();
+    let onChangedHandler;
+    for (onChangedHandler of onChangedHandlers) {
+        onChangedHandler();
+    }
+    protectPrivatePartAction.reset();
+}
+function updatePrivatePartsMatching() {
+    if (txtPrivatePartConfirmation.value === txtPrivatePart.value) {
+        txtPrivatePartConfirmation.style.setProperty('background', _ui__WEBPACK_IMPORTED_MODULE_0__["SUCCESS_COLOR"]);
+    }
+    else {
+        txtPrivatePartConfirmation.style.setProperty('background', _ui__WEBPACK_IMPORTED_MODULE_0__["ERROR_COLOR"]);
+    }
+}
+;
+function onPrivatePartConfirmationTextInput() {
+    spnPrivatePartSizeConfirmation.innerHTML = txtPrivatePartConfirmation.value.length.toString();
+    protectPrivatePartAction.reset();
+    updatePrivatePartsMatching();
+}
+class PrivatePartComponent {
+    init() {
+        btnProtect.addEventListener('click', onProtectButtonClick);
+        txtPrivatePart.addEventListener('input', onPrivatePartTextInput);
+        txtPrivatePartConfirmation.addEventListener('input', onPrivatePartConfirmationTextInput);
+        updatePrivatePartsMatching();
+        btnProtect.title = btnProtectTitleForProtect;
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/components/reEncryptComponent.ts":
+/*!**********************************************!*\
+  !*** ./src/components/reEncryptComponent.ts ***!
+  \**********************************************/
+/*! exports provided: ReEncryptComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ReEncryptComponent", function() { return ReEncryptComponent; });
+/* harmony import */ var _stringUtils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../stringUtils */ "./src/stringUtils.ts");
+/* harmony import */ var _arrayUtils__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../arrayUtils */ "./src/arrayUtils.ts");
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ../ui */ "./src/ui.ts");
+/* harmony import */ var _privatePartComponent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./privatePartComponent */ "./src/components/privatePartComponent.ts");
+/* harmony import */ var _ciphers_v1__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ../ciphers/v1 */ "./src/ciphers/v1.ts");
+/* harmony import */ var _ciphers_v2__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ../ciphers/v2 */ "./src/ciphers/v2.ts");
+/* harmony import */ var _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./storageOutputComponent */ "./src/components/storageOutputComponent.ts");
+
+
+
+
+
+
+
+const ciphers = [
+    new _ciphers_v1__WEBPACK_IMPORTED_MODULE_4__["CipherV1"](),
+    new _ciphers_v2__WEBPACK_IMPORTED_MODULE_5__["CipherV2"]()
+];
+const btnTabReEncrypt = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('btnTabReEncrypt');
+const divTabReEncrypt = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('divTabReEncrypt');
+const txtReEncryptSource = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('txtReEncryptSource');
+const txtReEncryptTarget = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('txtReEncryptTarget');
+const cboReEncryptFrom = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('cboReEncryptFrom');
+const cboReEncryptTo = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('cboReEncryptTo');
+const btnReEncrypt = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('btnReEncrypt');
+const btnClearReEncryptSource = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('btnClearReEncryptSource');
+const spnCopyReEncryptTargetFeedback = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('spnCopyReEncryptTargetFeedback');
+const btnCopyReEncryptTarget = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('btnCopyReEncryptTarget');
+const btnClearReEncryptTarget = Object(_ui__WEBPACK_IMPORTED_MODULE_2__["getElementById"])('btnClearReEncryptTarget');
+function fillCipherComboBox(cbo, initialValue) {
+    let cipher;
+    for (cipher of ciphers) {
+        const item = document.createElement('option');
+        item.value = cbo.childNodes.length.toString();
+        item.text = `${cipher.description} (v${cipher.version})`;
+        cbo.add(item);
+    }
+    cbo.value = initialValue.toString();
+}
+function clearSourceVisualCue() {
+    txtReEncryptSource.style.removeProperty('background-color');
+}
+function clearTargetVisualCue() {
+    txtReEncryptTarget.style.removeProperty('background-color');
+}
+function setSourceVisualCueError() {
+    txtReEncryptSource.style.setProperty('background-color', _ui__WEBPACK_IMPORTED_MODULE_2__["ERROR_COLOR"]);
+}
+function setTargetVisualCueError() {
+    txtReEncryptTarget.style.setProperty('background-color', _ui__WEBPACK_IMPORTED_MODULE_2__["ERROR_COLOR"]);
+}
+function clearAllVisualCues() {
+    clearSourceVisualCue();
+    clearTargetVisualCue();
+}
+async function onReEncryptButtonClick() {
+    txtReEncryptTarget.value = '';
+    clearAllVisualCues();
+    if (txtReEncryptSource.value.length === 0) {
+        setSourceVisualCueError();
+        return;
+    }
+    if (cboReEncryptFrom.value === cboReEncryptTo.value) {
+        setTargetVisualCueError();
+        return;
+    }
+    const privatePart = Object(_privatePartComponent__WEBPACK_IMPORTED_MODULE_3__["getPrivatePart"])();
+    if (privatePart.length === 0) {
+        console.warn('Private part is empty');
+        return;
+    }
+    const sourceCipherIndex = parseInt(cboReEncryptFrom.value, 10);
+    const targetCipherIndex = parseInt(cboReEncryptTo.value, 10);
+    const password = _stringUtils__WEBPACK_IMPORTED_MODULE_0__["stringToArray"](privatePart);
+    const input = _stringUtils__WEBPACK_IMPORTED_MODULE_0__["fromBase16"](txtReEncryptSource.value);
+    const decrypted = await ciphers[sourceCipherIndex].decrypt(input, password);
+    const reEncrypted = await ciphers[targetCipherIndex].encrypt(decrypted, password);
+    txtReEncryptTarget.value = _arrayUtils__WEBPACK_IMPORTED_MODULE_1__["toBase16"](reEncrypted);
+}
+class ReEncryptComponent {
+    getTabButton() {
+        return btnTabReEncrypt;
+    }
+    getTabContent() {
+        return divTabReEncrypt;
+    }
+    onTabSelected() {
+        _storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["hide"]();
+    }
+    init() {
+        Object(_ui__WEBPACK_IMPORTED_MODULE_2__["setupCopyButton"])(txtReEncryptTarget, btnCopyReEncryptTarget, spnCopyReEncryptTargetFeedback);
+        // Mais est-ce que ce monde est serieux?
+        fillCipherComboBox(cboReEncryptFrom, ciphers.length - 2);
+        fillCipherComboBox(cboReEncryptTo, ciphers.length - 1);
+        txtReEncryptSource.addEventListener('input', () => {
+            if (txtReEncryptSource.value.length > 0) {
+                clearSourceVisualCue();
+            }
+        });
+        btnClearReEncryptSource.addEventListener('click', () => {
+            txtReEncryptSource.value = '';
+        });
+        btnClearReEncryptTarget.addEventListener('click', () => {
+            txtReEncryptTarget.value = '';
+        });
+        btnReEncrypt.addEventListener('click', onReEncryptButtonClick);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/components/storageOutputComponent.ts":
+/*!**************************************************!*\
+  !*** ./src/components/storageOutputComponent.ts ***!
+  \**************************************************/
+/*! exports provided: clearOutputs, setParameters, show, hide, StorageOutputComponent */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "clearOutputs", function() { return clearOutputs; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setParameters", function() { return setParameters; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "show", function() { return show; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "hide", function() { return hide; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "StorageOutputComponent", function() { return StorageOutputComponent; });
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../ui */ "./src/ui.ts");
+
+const divStorageOutput = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('divStorageOutput');
+const txtPath = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtPath');
+const txtParameters = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtParameters');
+const txtCustomKeys = Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('txtCustomKeys');
+function shallowMerge(source, target, reservedKeys) {
+    const result = {};
+    if (source !== null) {
+        for (const [key, value] of Object.entries(source)) {
+            if (reservedKeys.includes(key) === false) {
+                result[key] = value;
+            }
+        }
+    }
+    if (target !== null) {
+        for (const [key, value] of Object.entries(target)) {
+            result[key] = value;
+        }
+    }
+    return result;
+}
+// Transforms a path like "a/b/c/d" into a hierarchy of objects like { "a": { "b": { "c": { "d": {} } } } }
+// From the result object, head is the root object that contains "a", tail is the value of "d", and tailParent is the value of "c"
+function pathToObjectChain(path, chainInfo = undefined) {
+    const separatorIndex = path.indexOf('/');
+    const tail = {};
+    const firstPath = separatorIndex >= 0 ? path.substr(0, separatorIndex) : path;
+    const remainingPath = separatorIndex >= 0 ? path.substr(separatorIndex + 1) : undefined;
+    if (chainInfo === undefined) {
+        const node = {};
+        node[firstPath] = tail;
+        chainInfo = {
+            head: node,
+            tailParent: node,
+            tail
+        };
+    }
+    else {
+        chainInfo.tail[firstPath] = tail;
+        chainInfo.tailParent = chainInfo.tail;
+        chainInfo.tail = tail;
+    }
+    if (remainingPath) {
+        return pathToObjectChain(remainingPath, chainInfo);
+    }
+    return chainInfo;
+}
+function onPathTextInput() {
+    update();
+}
+function onCustomKeysTextInput() {
+    update();
+}
+function updateCustomKeysDisplay(isValid) {
+    if (isValid) {
+        txtCustomKeys.style.removeProperty('background');
+        return;
+    }
+    txtCustomKeys.style.setProperty('background', _ui__WEBPACK_IMPORTED_MODULE_0__["ERROR_COLOR"]);
+}
+function parseCustomKeys() {
+    if (txtCustomKeys.value === '') {
+        return {};
+    }
+    try {
+        const obj = JSON.parse(txtCustomKeys.value);
+        if (obj === null || obj.constructor.name !== 'Object') {
+            return null;
+        }
+        return obj;
+    }
+    catch {
+        return null;
+    }
+}
+function update() {
+    if (_parameterKeys === undefined || _parameterPath === undefined || _reservedKeys === undefined) {
+        return;
+    }
+    const chainInfo = pathToObjectChain(`${txtPath.value}/${_parameterPath}`);
+    const leaf = chainInfo.tail;
+    for (const [key, value] of Object.entries(_parameterKeys)) {
+        leaf[key] = value;
+    }
+    const customKeys = parseCustomKeys();
+    updateCustomKeysDisplay(customKeys !== null);
+    const resultParameters = shallowMerge(customKeys, leaf, _reservedKeys);
+    if (Object.keys(resultParameters).length === 0) {
+        // Set the value of the first (single) property of the object to null.
+        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = null;
+    }
+    else {
+        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = resultParameters;
+    }
+    txtParameters.value = JSON.stringify(chainInfo.head, undefined, 4);
+}
+function clearOutputs() {
+    _parameterKeys = undefined;
+    _parameterPath = undefined;
+    _reservedKeys = undefined;
+    txtParameters.value = '';
+}
+let _parameterKeys;
+let _parameterPath;
+let _reservedKeys;
+function setParameters(parameterKeys, parameterPath, reservedKeys) {
+    _parameterKeys = parameterKeys;
+    _parameterPath = parameterPath;
+    _reservedKeys = reservedKeys;
+    update();
+}
+function show() {
+    divStorageOutput.style.setProperty('display', 'initial');
+}
+function hide() {
+    divStorageOutput.style.setProperty('display', 'none');
+}
+class StorageOutputComponent {
+    init() {
+        txtCustomKeys.addEventListener('input', onCustomKeysTextInput);
+        txtPath.addEventListener('input', onPathTextInput);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/crypto.ts":
+/*!***********************!*\
+  !*** ./src/crypto.ts ***!
+  \***********************/
+/*! exports provided: BASE62_ALPHABET, getDerivedBytes, generateRandomBytes, generateRandomString */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "BASE62_ALPHABET", function() { return BASE62_ALPHABET; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getDerivedBytes", function() { return getDerivedBytes; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "generateRandomBytes", function() { return generateRandomBytes; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "generateRandomString", function() { return generateRandomString; });
+/* harmony import */ var _arrayUtils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./arrayUtils */ "./src/arrayUtils.ts");
+
+const BASE62_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+async function getDerivedBytes(password, salt) {
+    const baseKey = await crypto.subtle.importKey('raw', password, 'PBKDF2', false, ['deriveKey']);
+    const algorithm = {
+        name: 'PBKDF2',
+        hash: 'SHA-512',
+        iterations: 100000,
+        salt
+    };
+    const derivedKeyType = {
+        name: 'AES-CBC',
+        length: 256
+    };
+    const result = await crypto.subtle.deriveKey(algorithm, baseKey, derivedKeyType, true, ['encrypt']);
+    const key = await crypto.subtle.exportKey('raw', result);
+    return key;
+}
+function generateRandomBytes(byteCount = 64) {
+    const array = new Uint8Array(byteCount);
+    return crypto.getRandomValues(array).buffer;
+}
+function generateRandomString(byteCount = 64, alphabet = BASE62_ALPHABET) {
+    const array = generateRandomBytes(byteCount);
+    return _arrayUtils__WEBPACK_IMPORTED_MODULE_0__["toCustomBaseOneWay"](array, alphabet);
+}
+
+
+/***/ }),
+
+/***/ "./src/index.ts":
+/*!**********************!*\
+  !*** ./src/index.ts ***!
+  \**********************/
+/*! no exports provided */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony import */ var _ui__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./ui */ "./src/ui.ts");
+/* harmony import */ var _TabControl__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./TabControl */ "./src/TabControl.ts");
+/* harmony import */ var _components_privatePartComponent__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./components/privatePartComponent */ "./src/components/privatePartComponent.ts");
+/* harmony import */ var _components_passwordComponent__WEBPACK_IMPORTED_MODULE_3__ = __webpack_require__(/*! ./components/passwordComponent */ "./src/components/passwordComponent.ts");
+/* harmony import */ var _components_cipherComponent__WEBPACK_IMPORTED_MODULE_4__ = __webpack_require__(/*! ./components/cipherComponent */ "./src/components/cipherComponent.ts");
+/* harmony import */ var _components_reEncryptComponent__WEBPACK_IMPORTED_MODULE_5__ = __webpack_require__(/*! ./components/reEncryptComponent */ "./src/components/reEncryptComponent.ts");
+/* harmony import */ var _components_storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__ = __webpack_require__(/*! ./components/storageOutputComponent */ "./src/components/storageOutputComponent.ts");
+
+
+
+
+
+
+
+const nothingTabInfo = {
+    getTabButton() {
+        return Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('btnTabNothing');
+    },
+    getTabContent() {
+        return Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('divTabNothing');
+    },
+    onTabSelected() {
+        _components_storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["hide"]();
+    }
+};
+const elements = [
+    nothingTabInfo,
+    new _components_privatePartComponent__WEBPACK_IMPORTED_MODULE_2__["PrivatePartComponent"](),
+    new _components_passwordComponent__WEBPACK_IMPORTED_MODULE_3__["PasswordComponent"](),
+    new _components_cipherComponent__WEBPACK_IMPORTED_MODULE_4__["CipherComponent"](),
+    new _components_reEncryptComponent__WEBPACK_IMPORTED_MODULE_5__["ReEncryptComponent"](),
+    new _components_storageOutputComponent__WEBPACK_IMPORTED_MODULE_6__["StorageOutputComponent"](),
+];
+const tabs = elements.filter(e => e.getTabButton !== undefined);
+const components = elements.filter(e => e.init !== undefined);
+new _TabControl__WEBPACK_IMPORTED_MODULE_1__["TabControl"](tabs);
+const version = "14e6b862af11053d684d93de480af6f4100113bc".substr(0, 11);
+const githubLink = '<a href="https://github.com/TanukiSharp/ItchyPassword" target="_blank">github</a>';
+Object(_ui__WEBPACK_IMPORTED_MODULE_0__["getElementById"])('divInfo').innerHTML = `${version}<br/>${githubLink}`;
+let component;
+for (component of components) {
+    component.init();
+}
+
+
+/***/ }),
+
+/***/ "./src/passwordGenerators/v1.ts":
+/*!**************************************!*\
+  !*** ./src/passwordGenerators/v1.ts ***!
+  \**************************************/
+/*! exports provided: PasswordGeneratorV1 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "PasswordGeneratorV1", function() { return PasswordGeneratorV1; });
+/* harmony import */ var _stringUtils__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../stringUtils */ "./src/stringUtils.ts");
+/* harmony import */ var _crypto__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ../crypto */ "./src/crypto.ts");
+
+
+class PasswordGeneratorV1 {
+    constructor(hkdfPurpose) {
+        this.hkdfPurpose = Object(_stringUtils__WEBPACK_IMPORTED_MODULE_0__["stringToArray"])(hkdfPurpose);
+        this._description = `HKDF(PBKDF2, HMAC512) [purpose: ${hkdfPurpose}]`;
+    }
+    get version() {
+        return 1;
+    }
+    get description() {
+        return this._description;
+    }
+    async generatePassword(privatePart, publicPart) {
+        const derivedKey = await Object(_crypto__WEBPACK_IMPORTED_MODULE_1__["getDerivedBytes"])(privatePart, publicPart);
+        const hmacParameters = {
+            name: 'HMAC',
+            hash: { name: 'SHA-512' }
+        };
+        const hkdfKey = await crypto.subtle.importKey('raw', derivedKey, hmacParameters, false, ['sign']);
+        return await crypto.subtle.sign('HMAC', hkdfKey, this.hkdfPurpose);
+    }
+}
+
+
+/***/ }),
+
+/***/ "./src/stringUtils.ts":
+/*!****************************!*\
+  !*** ./src/stringUtils.ts ***!
+  \****************************/
+/*! exports provided: truncate, stringToArray, fromBase16 */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "truncate", function() { return truncate; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "stringToArray", function() { return stringToArray; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "fromBase16", function() { return fromBase16; });
+function truncate(input, length) {
+    if (input.length <= length) {
+        return input;
+    }
+    return input.substr(0, length);
+}
+function stringToArray(str) {
+    const encoder = new TextEncoder( /*'utf-8'*/);
+    return encoder.encode(str).buffer;
+}
+function fromBase16(str) {
+    if (str.length % 2 !== 0) {
+        str = '0' + str;
+    }
+    const result = new Uint8Array(str.length / 2);
+    for (let i = 0; i < result.byteLength; i += 1) {
+        result[i] = parseInt(str.substr(i * 2, 2), 16);
+    }
+    return result.buffer;
+}
+
+
+/***/ }),
+
+/***/ "./src/ui.ts":
+/*!*******************!*\
+  !*** ./src/ui.ts ***!
+  \*******************/
+/*! exports provided: getElementById, setupCopyButton, SUCCESS_COLOR, ERROR_COLOR */
+/***/ (function(module, __webpack_exports__, __webpack_require__) {
+
+"use strict";
+__webpack_require__.r(__webpack_exports__);
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "getElementById", function() { return getElementById; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "setupCopyButton", function() { return setupCopyButton; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "SUCCESS_COLOR", function() { return SUCCESS_COLOR; });
+/* harmony export (binding) */ __webpack_require__.d(__webpack_exports__, "ERROR_COLOR", function() { return ERROR_COLOR; });
+/* harmony import */ var _VisualFeedback__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./VisualFeedback */ "./src/VisualFeedback.ts");
+
+function getElementById(elementName) {
+    const element = document.getElementById(elementName);
+    if (elementName === null) {
+        throw new Error(`DOM element '${elementName}' not found.`);
+    }
+    return element;
+}
+async function writeToClipboard(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    }
+    catch (error) {
+        console.error(error.stack || error);
+        return false;
+    }
+}
+function setupCopyButton(txt, button, feedback) {
+    const visualFeedback = new _VisualFeedback__WEBPACK_IMPORTED_MODULE_0__["VisualFeedback"](feedback);
+    button.addEventListener('click', async () => {
+        if (await writeToClipboard(txt.value)) {
+            visualFeedback.setText('Copied', 3000);
+        }
+        else {
+            visualFeedback.setText('<span style="color: red">Failed to copy</span>', 3000);
+        }
+    });
+}
+const SUCCESS_COLOR = '#D0FFD0';
+const ERROR_COLOR = '#FFD0D0';
+
+
+/***/ })
+
+/******/ });
 //# sourceMappingURL=bundle.js.map
