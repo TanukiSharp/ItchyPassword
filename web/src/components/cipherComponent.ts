@@ -25,7 +25,6 @@ const btnEncrypt: HTMLInputElement = getElementById('btnEncrypt');
 const btnDecrypt: HTMLInputElement = getElementById('btnDecrypt');
 
 const btnClearCipherSource: HTMLInputElement = getElementById('btnClearCipherSource');
-const spnCopyCipherTargetFeedback: HTMLInputElement = getElementById('spnCopyCipherTargetFeedback');
 const btnCopyCipherTarget: HTMLInputElement = getElementById('btnCopyCipherTarget');
 const btnClearCipherTarget: HTMLInputElement = getElementById('btnClearCipherTarget');
 

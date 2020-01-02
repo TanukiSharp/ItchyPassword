@@ -6,12 +6,8 @@ input {
     margin: 2px;
 }
 
-.controlButton {
-    margin-left: 2px;
-}
-
-.cipherButton {
-    margin-bottom: 2px;
+button {
+    margin: 1px;
 }
 
 .reEncryptButton {
