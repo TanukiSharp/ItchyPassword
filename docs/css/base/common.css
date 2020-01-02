@@ -6,33 +6,8 @@ input {
     margin: 2px;
 }
 
-.controlButton {
-    margin-left: 2px;
-}
-
-.cipherButton {
-    margin-bottom: 2px;
-}
-
-.reEncryptButton {
-    margin-top: 2px;
-    justify-self: center;
-}
-
-.cipherGrid {
-    display: grid;
-    justify-content: start;
-    gap: 4px;
-    grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: repeat(2, auto);
-}
-
-.reEncryptGrid {
-    display: grid;
-    justify-content: stretch;
-    gap: 4px;
-    grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: repeat(2, auto);
+button {
+    margin: 1px;
 }
 
 .readonlyText {
