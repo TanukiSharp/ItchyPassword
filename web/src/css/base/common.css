@@ -10,27 +10,6 @@ button {
     margin: 1px;
 }
 
-.reEncryptButton {
-    margin-top: 2px;
-    justify-self: center;
-}
-
-.cipherGrid {
-    display: grid;
-    justify-content: start;
-    gap: 4px;
-    grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: repeat(2, auto);
-}
-
-.reEncryptGrid {
-    display: grid;
-    justify-content: stretch;
-    gap: 4px;
-    grid-template-columns: 1fr auto 1fr;
-    grid-template-rows: repeat(2, auto);
-}
-
 .readonlyText {
     background-color: #F9F9F9;
 }
