@@ -109,7 +109,7 @@ function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
     });
 }
 
-function updateResultPasswordLength() {
+function updateResultPasswordLength(): void {
     spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString();
 }
 
@@ -234,7 +234,7 @@ function canRun(): boolean {
     return true;
 }
 
-async function run() {
+async function run(): Promise<void> {
     if (canRun() === false) {
         clearOutputs();
         return;
@@ -256,7 +256,7 @@ async function run() {
     updatePasswordGenerationParameters();
 }
 
-async function resetAlphabet() {
+async function resetAlphabet(): Promise<void> {
     txtAlphabet.value = DEFAULT_ALPHABET;
     updateAlphabetSize();
 
