@@ -1,4 +1,4 @@
-import { IStorage } from './IStorage';
+import { IVaultStorage } from './IVaultStorage';
 import { PlainObject } from '../PlainObject';
 
 interface IApp {
@@ -15,9 +15,16 @@ interface IGitHubContent {
     content: string;
 }
 
-export class GitHubStorage implements IStorage {
+export interface IKeyValueStorage {
+    removeValue(key: string): void;
+    getValue(key: string): Promise<string | null>;
+    setValue(key: string, value: string): Promise<void>;
+}
+
+export class GitHubVaultStorage implements IVaultStorage {
     static BASE_URL: string = 'https://api.github.com';
-    static AUTHORIZATION_NAME: string = 'ItchyPassword_aae9385adee54b0c8c16c077f3cee256';
+    static AUTHORIZATION_NAME: string = 'github.com/TanukiSharp/ItchyPassword';
+    static KEY_VALUE_STORAGE_TOKEN_KEY_NAME: string = 'GitHubVaultStorage.Token';
 
     private repositoryOwner: string;
     private basicAuthHeader: string;
@@ -26,7 +33,7 @@ export class GitHubStorage implements IStorage {
     private oneTimePassword: string | null = null;
     private currentVaultContentHash: string | null = null;
 
-    public constructor(username: string, password: string, private repositoryName: string, private vaultFilename: string) {
+    public constructor(username: string, password: string, private repositoryName: string, private vaultFilename: string, private keyValueStorage: IKeyValueStorage) {
         this.repositoryOwner = username;
         this.basicAuthHeader = this.constructBasicAuthString(username, password);
     }
@@ -42,6 +49,7 @@ export class GitHubStorage implements IStorage {
 
     private constructFetchRequest(method: string, authHeader: string, body: any): RequestInit {
         const headers: PlainObject = {
+            'Accept': 'application/vnd.github.v3+json',
             'Content-Type': 'application/json',
             'Authorization': authHeader
         };
@@ -58,30 +66,30 @@ export class GitHubStorage implements IStorage {
     }
 
     private constructUrl(relativeUrl: string): string {
-        return `${GitHubStorage.BASE_URL}${relativeUrl}`;
+        return `${GitHubVaultStorage.BASE_URL}${relativeUrl}`;
     }
 
-    private async request(method: string, relativeUrl: string, authHeader: string, body: any = undefined): Promise<Response | null> {
+    private async request(retryOnUnauthorized: boolean, method: string, relativeUrl: string, authHeader: string, body: any = undefined): Promise<Response | null> {
         const url: string = this.constructUrl(relativeUrl);
         const requestInfo: RequestInit = this.constructFetchRequest(method, authHeader, body);
 
         let response: Response = await fetch(url, requestInfo);
 
-        if (response.status === 401) {
+        if (response.status === 401 && retryOnUnauthorized) {
             this.oneTimePassword = prompt('Input your 2FA code:');
 
-            if (this.oneTimePassword === null) {
+            if (!this.oneTimePassword) {
                 return null;
             }
 
-            return await this.request(method, relativeUrl, authHeader, body);
+            return await this.request(retryOnUnauthorized, method, relativeUrl, authHeader, body);
         }
 
         return response;
     }
 
     private async listAuthorizations(): Promise<IAuthorization[] | null> {
-        const response: Response | null = await this.request('GET', '/authorizations', this.basicAuthHeader);
+        const response: Response | null = await this.request(true, 'GET', '/authorizations', this.basicAuthHeader);
 
         if (response === null) {
             console.warn('List authorizations aborted.');
@@ -97,7 +105,7 @@ export class GitHubStorage implements IStorage {
     }
 
     private async deleteAuthorization(authorization: IAuthorization): Promise<boolean> {
-        const response: Response | null = await this.request('DELETE', `/authorizations/${authorization.id}`, this.basicAuthHeader);
+        const response: Response | null = await this.request(true, 'DELETE', `/authorizations/${authorization.id}`, this.basicAuthHeader);
 
         if (response === null) {
             console.warn('Delete authorization aborted.');
@@ -114,10 +122,10 @@ export class GitHubStorage implements IStorage {
     private async createAuthorization(): Promise<string | null> {
         const body: PlainObject = {
             scopes: ['repo'],
-            note: GitHubStorage.AUTHORIZATION_NAME
+            note: GitHubVaultStorage.AUTHORIZATION_NAME
         };
 
-        const response: Response | null = await this.request('POST', '/authorizations', this.basicAuthHeader, body);
+        const response: Response | null = await this.request(true, 'POST', '/authorizations', this.basicAuthHeader, body);
 
         if (response === null) {
             console.warn('Create new authorization aborted.');
@@ -134,7 +142,7 @@ export class GitHubStorage implements IStorage {
 
     private findAuthorization(authorizations: IAuthorization[]): IAuthorization | null {
         for (const authorization of authorizations) {
-            if (authorization.app && authorization.app.name === GitHubStorage.AUTHORIZATION_NAME) {
+            if (authorization.app && authorization.app.name === GitHubVaultStorage.AUTHORIZATION_NAME) {
                 return authorization;
             }
         }
@@ -143,6 +151,12 @@ export class GitHubStorage implements IStorage {
     }
 
     private async getToken(): Promise<string | null> {
+        const storedToken: string | null = await this.keyValueStorage.getValue(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME);
+
+        if (storedToken !== null) {
+            return storedToken;
+        }
+
         const authorizations: IAuthorization[] | null = await this.listAuthorizations();
 
         if (authorizations === null) {
@@ -157,7 +171,15 @@ export class GitHubStorage implements IStorage {
             }
         }
 
-        return await this.createAuthorization();
+        const token: string | null = await this.createAuthorization();
+
+        if (token === null) {
+            return null;
+        }
+
+        await this.keyValueStorage.setValue(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME, token);
+
+        return token;
     }
 
     private async ensureToken(): Promise<boolean> {
@@ -178,7 +200,7 @@ export class GitHubStorage implements IStorage {
         }
 
         const url: string = this.constructVaultFileUrl();
-        const response: Response | null = await this.request('GET', url, this.constructTokenAuthString());
+        const response: Response | null = await this.request(false, 'GET', url, this.constructTokenAuthString());
 
         if (response === null) {
             console.warn('Fetching vault content aborted.');
@@ -186,7 +208,15 @@ export class GitHubStorage implements IStorage {
         }
 
         if (response.ok === false) {
+            if (response.status === 401) {
+                this.keyValueStorage.removeValue(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME);
+                this.token = null;
+                this.oneTimePassword = null;
+                return await this.getVaultContent();
+            }
+
             console.error(`Failed to fetch vault file '${this.vaultFilename}'.`, response);
+
             return null;
         }
 
@@ -209,7 +239,7 @@ export class GitHubStorage implements IStorage {
         };
 
         const url: string = this.constructVaultFileUrl();
-        const response: Response | null = await this.request('PUT', url, this.constructTokenAuthString(), body);
+        const response: Response | null = await this.request(false, 'PUT', url, this.constructTokenAuthString(), body);
 
         if (response === null) {
             console.warn('Push new vault content aborted.');

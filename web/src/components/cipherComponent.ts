@@ -74,6 +74,41 @@ function updateCipherParameters(): void {
     storageOutputComponent.setParameters(cipherParameters, path, RESERVED_KEYS);
 }
 
+export async function encryptString(value: string): Promise<string | null> {
+    const privatePart: string = getPrivatePart();
+    if (privatePart.length === 0) {
+        console.warn('Private part is empty');
+        return null;
+    }
+
+    const input: ArrayBuffer = stringUtils.stringToArray(value);
+    const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
+
+    const encrypted: ArrayBuffer = await cipher.encrypt(input, password);
+
+    return arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
+}
+
+export async function decryptString(value: string): Promise<string | null> {
+    const privatePart: string = getPrivatePart();
+    if (privatePart.length === 0) {
+        console.warn('Private part is empty');
+        return null;
+    }
+
+    try {
+        const input: ArrayBuffer = arrayUtils.fromCustomBase(value, crypto.BASE62_ALPHABET);
+        const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
+
+        const decrypted: ArrayBuffer = await cipher.decrypt(input, password);
+
+        return arrayUtils.arrayToString(decrypted);
+    } catch (error) {
+        console.warn(`Failed to decrypt${error.message ? `, error: ${error.message}` : ', no error message'}`);
+        return null;
+    }
+}
+
 async function onEncryptButtonClick(): Promise<void> {
     txtCipherSource.focus();
     setCipherTargetValue('');
@@ -84,18 +119,13 @@ async function onEncryptButtonClick(): Promise<void> {
         return;
     }
 
-    const privatePart: string = getPrivatePart();
-    if (privatePart.length === 0) {
-        console.warn('Private part is empty');
+    const encryptedString: string | null = await encryptString(txtCipherSource.value);
+
+    if (encryptedString === null) {
         return;
     }
 
-    const input: ArrayBuffer = stringUtils.stringToArray(txtCipherSource.value);
-    const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
-
-    const encrypted: ArrayBuffer = await cipher.encrypt(input, password);
-
-    setCipherTargetValue(arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET));
+    setCipherTargetValue(encryptedString);
 }
 
 async function onDecryptButtonClick(): Promise<void> {
@@ -108,23 +138,14 @@ async function onDecryptButtonClick(): Promise<void> {
         return;
     }
 
-    const privatePart: string = getPrivatePart();
-    if (privatePart.length === 0) {
-        console.warn('Private part is empty');
+    const decryptedString: string | null = await decryptString(txtCipherSource.value);
+
+    if (decryptedString === null) {
+        setTargetVisualCueError();
         return;
     }
 
-    try {
-        const input: ArrayBuffer = arrayUtils.fromCustomBase(txtCipherSource.value, crypto.BASE62_ALPHABET);
-        const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
-
-        const decrypted: ArrayBuffer = await cipher.decrypt(input, password);
-
-        setCipherTargetValue(arrayUtils.arrayToString(decrypted));
-    } catch (error) {
-        console.warn(`Failed to decrypt${error.message ? `, error: ${error.message}` : ', no error message'}`);
-        setTargetVisualCueError();
-    }
+    setCipherTargetValue(decryptedString);
 }
 
 export class CipherComponent implements IComponent, ITabInfo {

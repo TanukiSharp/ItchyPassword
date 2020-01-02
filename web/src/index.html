@@ -7,11 +7,13 @@
     <link rel="stylesheet" type="text/css" href="css/base/password.css" />
     <link rel="stylesheet" type="text/css" href="css/base/cipher.css" />
     <link rel="stylesheet" type="text/css" href="css/base/reEncrypt.css" />
+    <link rel="stylesheet" type="text/css" href="css/base/vault.css" />
     <link rel="stylesheet" type="text/css" href="css/mobile/common.css" media="screen and (max-width: 40.5em)" />
     <link rel="stylesheet" type="text/css" href="css/mobile/masterKey.css" media="screen and (max-width: 40.5em)" />
     <link rel="stylesheet" type="text/css" href="css/mobile/password.css" media="screen and (max-width: 40.5em)" />
     <link rel="stylesheet" type="text/css" href="css/mobile/cipher.css" media="screen and (max-width: 40.5em)" />
     <link rel="stylesheet" type="text/css" href="css/mobile/reEncrypt.css" media="screen and (max-width: 40.5em)" />
+    <link rel="stylesheet" type="text/css" href="css/mobile/vault.css" media="screen and (max-width: 40.5em)" />
 </head>
 <body>
     <div id="divInfo"></div>
@@ -30,7 +32,7 @@
     <br/>
     <br/>
 
-    <button id="btnTabNothing">Nothing</button><button id="btnTabPasswords">Password</button><button id="btnTabCiphers">Ciphers</button><button id="btnTabReEncrypt">Re-encrypt</button>
+    <button id="btnTabNothing">Nothing</button><button id="btnTabPasswords">Password</button><button id="btnTabCiphers">Ciphers</button><button id="btnTabReEncrypt">Re-encrypt</button><button id="btnTabVault">Vault</button>
 
     <br/>
     <br/>
@@ -109,6 +111,11 @@
             <button id="btnCopyReEncryptTarget">Copy</button><!--
             --><button id="btnClearReEncryptTarget">Clear</button>
         </div>
+    </div>
+
+    <div id="divTabVault" class="divTab">
+        <button id="btnRefreshVault">Refresh</button><button id="btnClearVaultSettings">Clear settings</button><br/>
+        <textarea id="txtVault" class="readonlyText very-large-textarea" readonly></textarea><br/>
     </div>
 
     <div id="divStorageOutput">

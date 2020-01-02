@@ -1,5 +1,5 @@
 import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
-import * as privatePart from './privatePartComponent';
+import * as privatePartComponent from './privatePartComponent';
 
 import * as crypto from '../crypto';
 import * as stringUtils from '../stringUtils';
@@ -220,18 +220,33 @@ function clearOutputs(): void {
     updateResultPasswordLength();
 }
 
-function canRun(): boolean {
+function canRun(publicPart?: string): boolean {
     const alphabet: string = txtAlphabet.value;
 
     if (isAlphabetValid(alphabet) === false) {
         return false;
     }
 
-    if (privatePart.getPrivatePart().length <= 0 || txtPublicPart.value.length < 8 || alphabet.length < 2) {
+    publicPart = publicPart || txtPublicPart.value;
+
+    if (privatePartComponent.getPrivatePart().length <= 0 || publicPart.length < 8 || alphabet.length < 2) {
         return false;
     }
 
     return true;
+}
+
+export async function generatePasswordString(publicPart: string): Promise<string | null> {
+    if (canRun(publicPart) === false) {
+        return null;
+    }
+
+    const privatePartString: string = privatePartComponent.getPrivatePart();
+    const privatePrivateBytes: ArrayBuffer = stringUtils.stringToArray(privatePartString);
+    const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPart);
+    const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
+
+    return arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
 }
 
 async function run(): Promise<void> {
@@ -240,15 +255,11 @@ async function run(): Promise<void> {
         return;
     }
 
-    const privatePartString: string = privatePart.getPrivatePart();
-    const publicPartString = txtPublicPart.value;
+    const keyString: string | null = await generatePasswordString(txtPublicPart.value);
+    if (keyString === null) {
+        return;
+    }
 
-    const privatePrivateBytes: ArrayBuffer = stringUtils.stringToArray(privatePartString);
-    const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPartString);
-
-    const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
-
-    const keyString: string = arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
     txtResultPassword.value = stringUtils.truncate(keyString, Math.max(4, parseInt(numOutputSizeRange.value, 10)));
 
     updateResultPasswordLength();
@@ -288,7 +299,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        privatePart.registerOnChanged(run);
+        privatePartComponent.registerOnChanged(run);
 
         // dafuq!?
         numOutputSizeRange.max = DEFAULT_LENGTH.toString();

@@ -15,6 +15,7 @@ button {
 }
 
 .divTab {
+    display: none;
     background-color: #F4F4F4;
     padding: 8px;
     border: solid 1px #D8D8D8;

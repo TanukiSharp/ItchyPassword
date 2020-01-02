@@ -6,6 +6,7 @@ import { PrivatePartComponent } from './components/privatePartComponent';
 import { PasswordComponent } from './components/passwordComponent';
 import { CipherComponent } from './components/cipherComponent';
 import { ReEncryptComponent } from './components/reEncryptComponent';
+import { VaultComponent } from './components/vault';
 
 import * as storageOutputComponent from './components/storageOutputComponent';
 
@@ -28,6 +29,7 @@ const elements: any[] = [
     new CipherComponent(),
     new ReEncryptComponent(),
     new storageOutputComponent.StorageOutputComponent(),
+    new VaultComponent(),
 ];
 
 const tabs: ITabInfo[] = elements.filter(e => (e as ITabInfo).getTabButton !== undefined);
