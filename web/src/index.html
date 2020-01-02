@@ -31,14 +31,19 @@
     <div id="divTabPasswords" class="divTab">
         <span id="lblPublicPart">Public part:</span>
         <input id="txtPublicPart" type="text"></input>
-        <button id="btnGeneratePublicPart" class="controlButton">Generate</button>
-        <button id="btnClearPublicPart" class="controlButton">Clear</button>
-        <button id="btnCopyPublicPart" class="controlButton">Copy</button>
+        <span id="spnPublicPartSize"></span>
+        <div id="divPasswordPublicPartActions">
+            <button id="btnGeneratePublicPart" class="controlButton">Generate</button><!--
+            --><button id="btnClearPublicPart" class="controlButton">Clear</button><!--
+            --><button id="btnCopyPublicPart" class="controlButton">Copy</button>
+        </div>
 
         <span id="lblAlphabet">Alphabet:</span>
         <input id="txtAlphabet" type="text" value=""></input>
         <span id="spnAlphabetSize"></span>
-        <button id="btnResetAlphabet" class="controlButton">Reset</button>
+        <div id="divPasswordAlphabetActions">
+            <button id="btnResetAlphabet" class="controlButton">Reset</button>
+        </div>
 
         <span id="lblAlphabetLength">Length:</span>
         <input id="numOutputSizeRange" type="range" min="0"></input>
@@ -47,8 +52,10 @@
         <span id="lblPassword">Password:</span>
         <input id="txtResultPassword" type="password" class="readonlyText" readonly></input>
         <span id="spnResultPasswordLength"></span>
-        <button id="btnViewResultPassword" class="controlButton">View</button>
-        <button id="btnCopyResultPassword" class="controlButton">Copy</button>
+        <div id="divResultPasswordActions">
+            <button id="btnViewResultPassword" class="controlButton">View</button><!--
+            --><button id="btnCopyResultPassword" class="controlButton">Copy</button>
+        </div>
     </div>
 
     <div id="divTabCiphers" class="divTab">

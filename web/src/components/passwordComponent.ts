@@ -18,6 +18,7 @@ const divTabPasswords: HTMLInputElement = getElementById('divTabPasswords');
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
 const txtPublicPart: HTMLInputElement = getElementById('txtPublicPart');
+const spnPublicPartSize: HTMLInputElement = getElementById('spnPublicPartSize');
 const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
 const btnClearPublicPart: HTMLInputElement = getElementById('btnClearPublicPart');
 const btnCopyPublicPart: HTMLInputElement = getElementById('btnCopyPublicPart');
@@ -48,6 +49,7 @@ function onClearPublicPartButtonClick(): void {
     }
 
     txtPublicPart.value = '';
+    updatePublicPartSize();
 
     updatePasswordPublicPartLastUpdate();
     updatePasswordGenerationParameters();
@@ -62,6 +64,7 @@ function onGeneratePublicPartButtonClick(): void {
 
     const randomString: string = crypto.generateRandomString();
     txtPublicPart.value = randomString;
+    updatePublicPartSize();
 
     updatePasswordPublicPartLastUpdate();
 
@@ -107,7 +110,7 @@ function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
 }
 
 function updateResultPasswordLength() {
-    spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString().padStart(2, ' ');
+    spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString();
 }
 
 function isAlphabetValid(alphabet: string): boolean {
@@ -176,14 +179,12 @@ async function onOutputSizeNumInput(): Promise<void> {
     await run();
 }
 
+function updatePublicPartSize(): void {
+    spnPublicPartSize.innerHTML = txtPublicPart.value.length.toString();
+}
+
 function updateAlphabetSize(): void {
     spnAlphabetSize.innerHTML = txtAlphabet.value.length.toString();
-
-    const alphabetSizeDigitCount: number = txtAlphabet.value.length.toString().length;
-    if (alphabetSizeDigitCount < 2) {
-        // Add a space to keep a nice visual alignment.
-        spnAlphabetSize.innerHTML = spnAlphabetSize.innerHTML.padStart(2, ' ');
-    }
 }
 
 function updateAlphabetValidityDisplay(isAlphabetValid: boolean): void {
@@ -269,6 +270,7 @@ async function resetAlphabet() {
 }
 
 async function onPublicPartTextInput(): Promise<void> {
+    updatePublicPartSize();
     updatePasswordPublicPartLastUpdate();
     await run();
 }
@@ -308,6 +310,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
 
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
 
+        updatePublicPartSize();
         updateOutputSizeRangeToNum();
         resetAlphabet();
     }
