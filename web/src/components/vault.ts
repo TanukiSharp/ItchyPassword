@@ -4,11 +4,11 @@ import { IComponent } from './IComponent';
 import { ITabInfo } from '../TabControl';
 
 import * as passwordComponent from './passwordComponent';
-import * as cipherComponent from './cipherComponent';
 import * as storageOutputComponent from './storageOutputComponent';
 
 import { IVaultStorage } from '../storages/IVaultStorage';
-import { GitHubVaultStorage, IKeyValueStorage } from '../storages/GitHubVaultStorage';
+import { SecureLocalStorage } from '../storages/SecureLocalStorage';
+import { GitHubVaultStorage } from '../storages/GitHubVaultStorage';
 
 const divTabVault: HTMLInputElement = getElementById('divTabVault');
 const btnTabVault: HTMLInputElement = getElementById('btnTabVault');
@@ -24,33 +24,6 @@ const LOCAL_STORAGE_KEY_PASSWORD_PUBLIC: string = 'ItchyPassword.Vault.PasswordP
 const LOCAL_STORAGE_KEY_PASSWORD_LENGTH: string = 'ItchyPassword.Vault.PasswordLength';
 const LOCAL_STORAGE_KEY_REPO: string = 'ItchyPassword.Vault.Repository';
 const LOCAL_STORAGE_KEY_FILENAME: string = 'ItchyPassword.Vault.Filename';
-
-class SecureLocalKeyValueStorage implements IKeyValueStorage {
-    removeValue(key: string): void {
-        window.localStorage.removeItem(key);
-    }
-
-    async getValue(key: string): Promise<string | null> {
-        const encryptedItem: string | null = window.localStorage.getItem(key);
-
-        if (encryptedItem === null) {
-            return null;
-        }
-
-        return cipherComponent.decryptString(encryptedItem);
-    }
-
-    async setValue(key: string, value: string): Promise<void> {
-        const encrypted: string | null = await cipherComponent.encryptString(value);
-
-        if (encrypted === null) {
-            console.error('Failed to encrypt value. (nothing stored)');
-            return;
-        }
-
-        window.localStorage.setItem(key, encrypted);
-    }
-}
 
 async function reloadVault(): Promise<void> {
     if (await ensureVaultStorage() === false) {
@@ -134,7 +107,7 @@ async function ensureVaultStorage(): Promise<boolean> {
         return false;
     }
 
-    vaultStorage = new GitHubVaultStorage(username, keyString.substr(0, passwordLength), repositoryName, vaultFilename, new SecureLocalKeyValueStorage());
+    vaultStorage = new GitHubVaultStorage(username, keyString.substr(0, passwordLength), repositoryName, vaultFilename, new SecureLocalStorage());
 
     return true;
 }

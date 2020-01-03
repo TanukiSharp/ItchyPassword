@@ -1,3 +1,4 @@
+import { IAsyncStorage } from './SecureLocalStorage';
 import { IVaultStorage } from './IVaultStorage';
 import { PlainObject } from '../PlainObject';
 
@@ -15,12 +16,6 @@ interface IGitHubContent {
     content: string;
 }
 
-export interface IKeyValueStorage {
-    removeValue(key: string): void;
-    getValue(key: string): Promise<string | null>;
-    setValue(key: string, value: string): Promise<void>;
-}
-
 export class GitHubVaultStorage implements IVaultStorage {
     static BASE_URL: string = 'https://api.github.com';
     static AUTHORIZATION_NAME: string = 'github.com/TanukiSharp/ItchyPassword';
@@ -33,7 +28,7 @@ export class GitHubVaultStorage implements IVaultStorage {
     private oneTimePassword: string | null = null;
     private currentVaultContentHash: string | null = null;
 
-    public constructor(username: string, password: string, private repositoryName: string, private vaultFilename: string, private keyValueStorage: IKeyValueStorage) {
+    public constructor(username: string, password: string, private repositoryName: string, private vaultFilename: string, private keyValueStorage: IAsyncStorage) {
         this.repositoryOwner = username;
         this.basicAuthHeader = this.constructBasicAuthString(username, password);
     }
@@ -151,7 +146,7 @@ export class GitHubVaultStorage implements IVaultStorage {
     }
 
     private async getToken(): Promise<string | null> {
-        const storedToken: string | null = await this.keyValueStorage.getValue(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME);
+        const storedToken: string | null = await this.keyValueStorage.getItem(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME);
 
         if (storedToken !== null) {
             return storedToken;
@@ -177,7 +172,7 @@ export class GitHubVaultStorage implements IVaultStorage {
             return null;
         }
 
-        await this.keyValueStorage.setValue(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME, token);
+        await this.keyValueStorage.setItem(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME, token);
 
         return token;
     }
@@ -209,7 +204,7 @@ export class GitHubVaultStorage implements IVaultStorage {
 
         if (response.ok === false) {
             if (response.status === 401) {
-                this.keyValueStorage.removeValue(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME);
+                this.keyValueStorage.removeItem(GitHubVaultStorage.KEY_VALUE_STORAGE_TOKEN_KEY_NAME);
                 this.token = null;
                 this.oneTimePassword = null;
                 return await this.getVaultContent();
