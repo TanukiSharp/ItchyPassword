@@ -34,6 +34,10 @@ button {
     margin-right: 2px;
 }
 
+#txtPath {
+    width: 100%;
+}
+
 .large-textarea {
     height: 200px;
 }
