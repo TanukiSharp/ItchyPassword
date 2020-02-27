@@ -1,4 +1,4 @@
-import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
+import * as ui from '../ui';
 import * as privatePartComponent from './privatePartComponent';
 
 import * as crypto from '../crypto';
@@ -12,31 +12,31 @@ import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
-const btnTabPasswords: HTMLInputElement = getElementById('btnTabPasswords');
-const divTabPasswords: HTMLInputElement = getElementById('divTabPasswords');
+const btnTabPasswords: HTMLInputElement = ui.getElementById('btnTabPasswords');
+const divTabPasswords: HTMLInputElement = ui.getElementById('divTabPasswords');
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
-const txtPublicPart: HTMLInputElement = getElementById('txtPublicPart');
-const spnPublicPartSize: HTMLInputElement = getElementById('spnPublicPartSize');
-const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
-const btnClearPublicPart: HTMLInputElement = getElementById('btnClearPublicPart');
-const btnCopyPublicPart: HTMLInputElement = getElementById('btnCopyPublicPart');
-const btnShowHidePasswordOptionalFeatures: HTMLInputElement = getElementById('btnShowHidePasswordOptionalFeatures');
+const txtPublicPart: HTMLInputElement = ui.getElementById('txtPublicPart');
+const spnPublicPartSize: HTMLInputElement = ui.getElementById('spnPublicPartSize');
+const btnGeneratePublicPart: HTMLInputElement = ui.getElementById('btnGeneratePublicPart');
+const btnClearPublicPart: HTMLInputElement = ui.getElementById('btnClearPublicPart');
+const btnCopyPublicPart: HTMLInputElement = ui.getElementById('btnCopyPublicPart');
+const btnShowHidePasswordOptionalFeatures: HTMLInputElement = ui.getElementById('btnShowHidePasswordOptionalFeatures');
 
-const lblAlphabetLength: HTMLInputElement = getElementById('lblAlphabetLength');
-const numOutputSizeRange: HTMLInputElement = getElementById('numOutputSizeRange');
-const numOutputSizeNum: HTMLInputElement = getElementById('numOutputSizeNum');
+const lblAlphabetLength: HTMLInputElement = ui.getElementById('lblAlphabetLength');
+const numOutputSizeRange: HTMLInputElement = ui.getElementById('numOutputSizeRange');
+const numOutputSizeNum: HTMLInputElement = ui.getElementById('numOutputSizeNum');
 
-const lblAlphabet: HTMLInputElement = getElementById('lblAlphabet');
-const txtAlphabet: HTMLInputElement = getElementById('txtAlphabet');
-const spnAlphabetSize: HTMLInputElement = getElementById('spnAlphabetSize');
-const divPasswordAlphabetActions: HTMLInputElement = getElementById('divPasswordAlphabetActions');
-const btnResetAlphabet: HTMLInputElement = getElementById('btnResetAlphabet');
+const lblAlphabet: HTMLInputElement = ui.getElementById('lblAlphabet');
+const txtAlphabet: HTMLInputElement = ui.getElementById('txtAlphabet');
+const spnAlphabetSize: HTMLInputElement = ui.getElementById('spnAlphabetSize');
+const divPasswordAlphabetActions: HTMLInputElement = ui.getElementById('divPasswordAlphabetActions');
+const btnResetAlphabet: HTMLInputElement = ui.getElementById('btnResetAlphabet');
 
-const txtResultPassword: HTMLInputElement = getElementById('txtResultPassword');
-const spnResultPasswordLength: HTMLInputElement = getElementById('spnResultPasswordLength');
-const btnCopyResultPassword: HTMLInputElement = getElementById('btnCopyResultPassword');
+const txtResultPassword: HTMLInputElement = ui.getElementById('txtResultPassword');
+const spnResultPasswordLength: HTMLInputElement = ui.getElementById('spnResultPasswordLength');
+const btnCopyResultPassword: HTMLInputElement = ui.getElementById('btnCopyResultPassword');
 
 const DEFAULT_LENGTH: number = 64;
 const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
@@ -64,10 +64,10 @@ function showHidePasswordOptionalFeatures(isVisible: boolean) {
     showHide(numOutputSizeNum, isVisible);
 }
 
-function onClearPublicPartButtonClick(): void {
+function onClearPublicPartButtonClick(): boolean {
     if (txtPublicPart.value.length > 0) {
         if (prompt('Are you sure you want to clear the public part ?\nType \'y\' to accept', '') !== 'y') {
-            return;
+            return false;
         }
     }
 
@@ -76,12 +76,14 @@ function onClearPublicPartButtonClick(): void {
 
     updatePasswordPublicPartLastUpdate();
     updatePasswordGenerationParameters();
+
+    return true;
 }
 
-function onGeneratePublicPartButtonClick(): void {
+function onGeneratePublicPartButtonClick(): boolean {
     if (txtPublicPart.value.length > 0) {
         if (prompt('Are you sure you want to generate a new public part ?\nType \'y\' to accept', '') !== 'y') {
-            return;
+            return false;
         }
     }
 
@@ -92,6 +94,8 @@ function onGeneratePublicPartButtonClick(): void {
     updatePasswordPublicPartLastUpdate();
 
     run();
+
+    return true;
 }
 
 function updatePasswordPublicPartLastUpdate(): void {
@@ -120,7 +124,7 @@ function deepMerge(source: PlainObject, target: PlainObject): void {
 }
 
 function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
-    const btn: HTMLInputElement = getElementById(buttonName);
+    const btn: HTMLInputElement = ui.getElementById(buttonName);
     btn.addEventListener('click', () => {
         if (txt.type === 'password') {
             txt.type = 'input';
@@ -214,7 +218,7 @@ function updateAlphabetValidityDisplay(isAlphabetValid: boolean): void {
     if (isAlphabetValid) {
         txtAlphabet.style.removeProperty('background');
     } else {
-        txtAlphabet.style.setProperty('background', ERROR_COLOR);
+        txtAlphabet.style.setProperty('background', ui.ERROR_COLOR);
     }
 }
 
@@ -328,13 +332,13 @@ export class PasswordComponent implements IComponent, ITabInfo {
         numOutputSizeRange.max = DEFAULT_LENGTH.toString();
         numOutputSizeRange.value = DEFAULT_LENGTH.toString();
 
-        btnClearPublicPart.addEventListener('click', onClearPublicPartButtonClick);
-        btnGeneratePublicPart.addEventListener('click', onGeneratePublicPartButtonClick);
+        ui.setupFeedbackButton(btnClearPublicPart, onClearPublicPartButtonClick);
+        ui.setupFeedbackButton(btnGeneratePublicPart, onGeneratePublicPartButtonClick);
 
         setupViewButton(txtResultPassword, 'btnViewResultPassword');
 
-        setupCopyButton(txtPublicPart, btnCopyPublicPart);
-        setupCopyButton(txtResultPassword, btnCopyResultPassword);
+        ui.setupCopyButton(txtPublicPart, btnCopyPublicPart);
+        ui.setupCopyButton(txtResultPassword, btnCopyResultPassword);
 
         numOutputSizeRange.addEventListener('input', onOutputSizeRangeInput);
         numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);

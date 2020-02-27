@@ -28,20 +28,44 @@ function createSafeTimeout(f: Function, duration: number): Function {
     };
 }
 
-export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement): void {
+export type FeedbackButtonAsyncFunction = () => Promise<boolean> | boolean | Promise<void> | void;
+
+export function setupFeedbackButton(button: HTMLInputElement, action: FeedbackButtonAsyncFunction): void {
     const setupStopAnimationTimer = createSafeTimeout(() => {
         button.classList.remove('good-flash');
         button.classList.remove('bad-flash');
     }, 1000);
 
     button.addEventListener('click', async () => {
-        if (await writeToClipboard(txt.value)) {
-            button.classList.add('good-flash');
-        } else {
+        button.disabled = true;
+
+        try {
+            const actionResult = action();
+
+            let result;
+            if (actionResult instanceof Promise) {
+                result = await actionResult;
+            } else {
+                result = actionResult;
+            }
+
+            if (result === undefined || result === true) {
+                button.classList.add('good-flash');
+            } else {
+                button.classList.add('bad-flash');
+            }
+        } catch (error) {
             button.classList.add('bad-flash');
+            console.error(error.message || error);
+        } finally {
+            setupStopAnimationTimer();
+            button.disabled = false;
         }
-        setupStopAnimationTimer();
     });
+}
+
+export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement): void {
+    setupFeedbackButton(button, () => writeToClipboard(txt.value));
 }
 
 export const SUCCESS_COLOR: string = '#D0FFD0';

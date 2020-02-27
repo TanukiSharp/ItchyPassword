@@ -1,4 +1,4 @@
-import { getElementById } from '../ui';
+import { getElementById, setupFeedbackButton } from '../ui';
 
 import { IComponent } from './IComponent';
 import { ITabInfo } from '../TabControl';
@@ -52,7 +52,7 @@ export class VaultComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        btnRefreshVault.addEventListener('click', onRefreshVaultButtonClick);
+        setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);
     }
 }
