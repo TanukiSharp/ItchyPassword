@@ -22,12 +22,16 @@ const spnPublicPartSize: HTMLInputElement = getElementById('spnPublicPartSize');
 const btnGeneratePublicPart: HTMLInputElement = getElementById('btnGeneratePublicPart');
 const btnClearPublicPart: HTMLInputElement = getElementById('btnClearPublicPart');
 const btnCopyPublicPart: HTMLInputElement = getElementById('btnCopyPublicPart');
+const btnShowHidePasswordOptionalFeatures: HTMLInputElement = getElementById('btnShowHidePasswordOptionalFeatures');
 
+const lblAlphabetLength: HTMLInputElement = getElementById('lblAlphabetLength');
 const numOutputSizeRange: HTMLInputElement = getElementById('numOutputSizeRange');
 const numOutputSizeNum: HTMLInputElement = getElementById('numOutputSizeNum');
 
+const lblAlphabet: HTMLInputElement = getElementById('lblAlphabet');
 const txtAlphabet: HTMLInputElement = getElementById('txtAlphabet');
 const spnAlphabetSize: HTMLInputElement = getElementById('spnAlphabetSize');
+const divPasswordAlphabetActions: HTMLInputElement = getElementById('divPasswordAlphabetActions');
 const btnResetAlphabet: HTMLInputElement = getElementById('btnResetAlphabet');
 
 const txtResultPassword: HTMLInputElement = getElementById('txtResultPassword');
@@ -40,6 +44,25 @@ const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLM
 const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
 let passwordPublicPartLastChange: string | undefined;
+
+function showHide(element: HTMLInputElement, isVisible: boolean) {
+    if (isVisible) {
+        element.style.removeProperty('display');
+    } else {
+        element.style.setProperty('display', 'none');
+    }
+}
+
+function showHidePasswordOptionalFeatures(isVisible: boolean) {
+    showHide(lblAlphabet, isVisible);
+    showHide(txtAlphabet, isVisible);
+    showHide(spnAlphabetSize, isVisible);
+    showHide(divPasswordAlphabetActions, isVisible);
+
+    showHide(lblAlphabetLength, isVisible);
+    showHide(numOutputSizeRange, isVisible);
+    showHide(numOutputSizeNum, isVisible);
+}
 
 function onClearPublicPartButtonClick(): void {
     if (txtPublicPart.value.length > 0) {
@@ -320,6 +343,13 @@ export class PasswordComponent implements IComponent, ITabInfo {
         btnResetAlphabet.addEventListener('click', onResetAlphabetButtonClick);
 
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
+
+        let passwordOptionalFeaturesVisible = false;
+        btnShowHidePasswordOptionalFeatures.addEventListener('click', function () {
+            passwordOptionalFeaturesVisible = !passwordOptionalFeaturesVisible;
+            showHidePasswordOptionalFeatures(passwordOptionalFeaturesVisible);
+        });
+        showHidePasswordOptionalFeatures(passwordOptionalFeaturesVisible);
 
         updatePublicPartSize();
         updateOutputSizeRangeToNum();
