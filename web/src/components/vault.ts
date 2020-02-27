@@ -8,6 +8,7 @@ import * as storageOutputComponent from './storageOutputComponent';
 import { SecureLocalStorage } from '../storages/SecureLocalStorage';
 import { IVaultStorage } from '../storages/IVaultStorage';
 import { GitHubPersonalAccessTokenVaultStorage } from '../storages/GitHubVaultStorage';
+import { hasPrivatePart } from '../components/privatePartComponent';
 
 const divTabVault: HTMLInputElement = getElementById('divTabVault');
 const btnTabVault: HTMLInputElement = getElementById('btnTabVault');
@@ -23,6 +24,11 @@ async function reloadVault(): Promise<void> {
 }
 
 async function onRefreshVaultButtonClick(): Promise<void> {
+    if (hasPrivatePart() === false) {
+        alert('You must enter a master key first.');
+        return;
+    }
+
     await reloadVault();
 }
 

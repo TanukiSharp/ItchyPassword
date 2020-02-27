@@ -24,6 +24,10 @@ export function registerOnChanged(onChanged: () => void) {
     onChangedHandlers.push(onChanged);
 }
 
+export function hasPrivatePart(): boolean {
+    return getPrivatePart().length > 0;
+}
+
 export function getPrivatePart(): string {
     if (privatePart !== undefined) {
         return privatePart;
