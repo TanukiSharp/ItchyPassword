@@ -204,10 +204,14 @@ async function onAlphabetTextInput(): Promise<void> {
     await run();
 }
 
-async function onResetAlphabetButtonClick(): Promise<void> {
-    resetAlphabet();
-    updateAlphabetSize();
+async function onResetAlphabetButtonClick(): Promise<boolean> {
+    if (resetAlphabet() === false) {
+        return false;
+    }
+
     await run();
+
+    return true;
 }
 
 function clearOutputs(): void {
@@ -263,13 +267,15 @@ async function run(): Promise<void> {
     updatePasswordGenerationParameters();
 }
 
-async function resetAlphabet(): Promise<void> {
+function resetAlphabet(): boolean {
     txtAlphabet.value = DEFAULT_ALPHABET;
     updateAlphabetSize();
 
     const isAlphabetValidResult: boolean = isAlphabetValid(txtAlphabet.value);
 
     updateAlphabetValidityDisplay(isAlphabetValidResult);
+
+    return isAlphabetValidResult;
 }
 
 async function onPublicPartTextInput(): Promise<void> {
@@ -309,7 +315,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
         numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);
 
         txtAlphabet.addEventListener('input', onAlphabetTextInput);
-        btnResetAlphabet.addEventListener('click', onResetAlphabetButtonClick);
+        ui.setupFeedbackButton(btnResetAlphabet, onResetAlphabetButtonClick);
 
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
 

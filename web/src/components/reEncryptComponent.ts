@@ -2,7 +2,7 @@ import { ICipher } from '../crypto';
 import * as stringUtils from '../stringUtils';
 import * as arrayUtils from '../arrayUtils';
 import { ITabInfo } from '../TabControl';
-import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
+import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
 import { CipherV1 } from '../ciphers/v1';
@@ -16,19 +16,19 @@ const ciphers: ICipher[] = [
     new CipherV2()
 ];
 
-const btnTabReEncrypt: HTMLInputElement = getElementById('btnTabReEncrypt');
-const divTabReEncrypt: HTMLInputElement = getElementById('divTabReEncrypt');
+const btnTabReEncrypt: HTMLInputElement = ui.getElementById('btnTabReEncrypt');
+const divTabReEncrypt: HTMLInputElement = ui.getElementById('divTabReEncrypt');
 
-const txtReEncryptSource: HTMLInputElement = getElementById('txtReEncryptSource');
-const txtReEncryptTarget: HTMLInputElement = getElementById('txtReEncryptTarget');
+const txtReEncryptSource: HTMLInputElement = ui.getElementById('txtReEncryptSource');
+const txtReEncryptTarget: HTMLInputElement = ui.getElementById('txtReEncryptTarget');
 
-const cboReEncryptFrom: HTMLInputElement = getElementById('cboReEncryptFrom');
-const cboReEncryptTo: HTMLInputElement = getElementById('cboReEncryptTo');
-const btnReEncrypt: HTMLInputElement = getElementById('btnReEncrypt');
+const cboReEncryptFrom: HTMLInputElement = ui.getElementById('cboReEncryptFrom');
+const cboReEncryptTo: HTMLInputElement = ui.getElementById('cboReEncryptTo');
+const btnReEncrypt: HTMLInputElement = ui.getElementById('btnReEncrypt');
 
-const btnClearReEncryptSource: HTMLInputElement = getElementById('btnClearReEncryptSource');
-const btnCopyReEncryptTarget: HTMLInputElement = getElementById('btnCopyReEncryptTarget');
-const btnClearReEncryptTarget: HTMLInputElement = getElementById('btnClearReEncryptTarget');
+const btnClearReEncryptSource: HTMLInputElement = ui.getElementById('btnClearReEncryptSource');
+const btnCopyReEncryptTarget: HTMLInputElement = ui.getElementById('btnCopyReEncryptTarget');
+const btnClearReEncryptTarget: HTMLInputElement = ui.getElementById('btnClearReEncryptTarget');
 
 function fillCipherComboBox(cbo: HTMLSelectElement, initialValue: number): void {
     let cipher: ICipher;
@@ -52,11 +52,11 @@ function clearTargetVisualCue(): void {
 }
 
 function setSourceVisualCueError() {
-    txtReEncryptSource.style.setProperty('background-color', ERROR_COLOR);
+    txtReEncryptSource.style.setProperty('background-color', ui.ERROR_COLOR);
 }
 
 function setTargetVisualCueError() {
-    txtReEncryptTarget.style.setProperty('background-color', ERROR_COLOR);
+    txtReEncryptTarget.style.setProperty('background-color', ui.ERROR_COLOR);
 }
 
 function clearAllVisualCues(): void {
@@ -64,24 +64,24 @@ function clearAllVisualCues(): void {
     clearTargetVisualCue();
 }
 
-async function onReEncryptButtonClick(): Promise<void> {
+async function onReEncryptButtonClick(): Promise<boolean> {
     txtReEncryptTarget.value = '';
     clearAllVisualCues();
 
     if (txtReEncryptSource.value.length === 0) {
         setSourceVisualCueError();
-        return;
+        return false;
     }
 
     if (cboReEncryptFrom.value === cboReEncryptTo.value) {
         setTargetVisualCueError();
-        return;
+        return false;
     }
 
     const privatePart: string = getPrivatePart();
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
-        return;
+        return false;
     }
 
     const sourceCipherIndex = parseInt(cboReEncryptFrom.value, 10);
@@ -94,6 +94,8 @@ async function onReEncryptButtonClick(): Promise<void> {
     const reEncrypted: ArrayBuffer = await ciphers[targetCipherIndex].encrypt(decrypted, password);
 
     txtReEncryptTarget.value = arrayUtils.toBase16(reEncrypted);
+
+    return true;
 }
 
 export class ReEncryptComponent implements IComponent, ITabInfo {
@@ -108,7 +110,7 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget);
+        ui.setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget);
 
         // Mais est-ce que ce monde est serieux?
         fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom, ciphers.length - 2);
@@ -128,6 +130,6 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
             txtReEncryptTarget.value = '';
         });
 
-        btnReEncrypt.addEventListener('click', onReEncryptButtonClick);
+        ui.setupFeedbackButton(btnReEncrypt, onReEncryptButtonClick);
     }
 }
