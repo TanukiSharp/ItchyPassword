@@ -36,6 +36,7 @@ const btnResetAlphabet: HTMLInputElement = ui.getElementById('btnResetAlphabet')
 
 const txtResultPassword: HTMLInputElement = ui.getElementById('txtResultPassword');
 const spnResultPasswordLength: HTMLInputElement = ui.getElementById('spnResultPasswordLength');
+const btnViewResultPassword: HTMLInputElement = ui.getElementById('btnViewResultPassword');
 const btnCopyResultPassword: HTMLInputElement = ui.getElementById('btnCopyResultPassword');
 
 const DEFAULT_LENGTH: number = 64;
@@ -102,19 +103,6 @@ function deepMerge(source: PlainObject, target: PlainObject): void {
 
         deepMerge(sourceValue, targetValue);
     }
-}
-
-function setupViewButton(txt: HTMLInputElement, buttonName: string): void {
-    const btn: HTMLInputElement = ui.getElementById(buttonName);
-    btn.addEventListener('click', () => {
-        if (txt.type === 'password') {
-            txt.type = 'input';
-            btn.innerHTML = 'Hide';
-        } else {
-            txt.type = 'password';
-            btn.innerHTML = 'View';
-        }
-    });
 }
 
 function updateResultPasswordLength(): void {
@@ -282,10 +270,6 @@ async function resetAlphabet(): Promise<void> {
     const isAlphabetValidResult: boolean = isAlphabetValid(txtAlphabet.value);
 
     updateAlphabetValidityDisplay(isAlphabetValidResult);
-
-    if (isAlphabetValidResult) {
-        await run();
-    }
 }
 
 async function onPublicPartTextInput(): Promise<void> {
@@ -316,7 +300,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
         ui.setupFeedbackButton(btnClearPublicPart, onClearPublicPartButtonClick);
         ui.setupFeedbackButton(btnGeneratePublicPart, onGeneratePublicPartButtonClick);
 
-        setupViewButton(txtResultPassword, 'btnViewResultPassword');
+        ui.setupViewButton(txtResultPassword, btnViewResultPassword);
 
         ui.setupCopyButton(txtPublicPart, btnCopyPublicPart);
         ui.setupCopyButton(txtResultPassword, btnCopyResultPassword);

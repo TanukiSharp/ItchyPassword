@@ -68,6 +68,18 @@ export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement)
     setupFeedbackButton(button, () => writeToClipboard(txt.value));
 }
 
+export function setupViewButton(txt: HTMLInputElement, button: HTMLInputElement): void {
+    button.addEventListener('click', () => {
+        if (txt.type === 'password') {
+            txt.type = 'input';
+            button.innerHTML = 'Hide';
+        } else {
+            txt.type = 'password';
+            button.innerHTML = 'View';
+        }
+    });
+}
+
 export function showHide(element: HTMLElement, isVisible: boolean): void {
     if (isVisible) {
         element.style.removeProperty('display');
