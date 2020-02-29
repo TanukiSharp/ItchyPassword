@@ -25,7 +25,7 @@ export class CipherV2 implements ICipher {
             length: 256
         };
 
-        const passwordKey: CryptoKey = await crypto.subtle.importKey(
+        const passwordKey: CryptoKey = await window.crypto.subtle.importKey(
             'raw',
             await getDerivedBytes(password, passwordSalt),
             aesKeyAlgorithm,
@@ -33,7 +33,7 @@ export class CipherV2 implements ICipher {
             ['encrypt']
         );
 
-        const result: ArrayBuffer = await crypto.subtle.encrypt(aesGcmParams, passwordKey, input);
+        const result: ArrayBuffer = await window.crypto.subtle.encrypt(aesGcmParams, passwordKey, input);
 
         new Uint8Array(output).set(new Uint8Array(result), 12 + 16);
 
@@ -57,7 +57,7 @@ export class CipherV2 implements ICipher {
 
         const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt);
 
-        const passwordKey: CryptoKey = await crypto.subtle.importKey(
+        const passwordKey: CryptoKey = await window.crypto.subtle.importKey(
             'raw',
             derivedKey,
             aesKeyAlgorithm,
@@ -65,6 +65,6 @@ export class CipherV2 implements ICipher {
             ['decrypt']
         );
 
-        return await crypto.subtle.decrypt(aesGcmParams, passwordKey, payload);
+        return await window.crypto.subtle.decrypt(aesGcmParams, passwordKey, payload);
     }
 }

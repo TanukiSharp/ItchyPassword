@@ -16,7 +16,7 @@ export interface ICipher {
 }
 
 export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer): Promise<ArrayBuffer> {
-    const baseKey: CryptoKey = await crypto.subtle.importKey(
+    const baseKey: CryptoKey = await window.crypto.subtle.importKey(
         'raw',
         password,
         'PBKDF2',
@@ -36,7 +36,7 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer):
         length: 256
     };
 
-    const result: CryptoKey = await crypto.subtle.deriveKey(
+    const result: CryptoKey = await window.crypto.subtle.deriveKey(
         algorithm,
         baseKey,
         derivedKeyType,
@@ -44,7 +44,7 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer):
         ['encrypt']
     );
 
-    const key: ArrayBuffer = await crypto.subtle.exportKey('raw', result);
+    const key: ArrayBuffer = await window.crypto.subtle.exportKey('raw', result);
 
     return key;
 }

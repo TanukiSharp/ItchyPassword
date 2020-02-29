@@ -26,7 +26,7 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
             hash: { name: 'SHA-512' }
         };
 
-        const hkdfKey: CryptoKey = await crypto.subtle.importKey(
+        const hkdfKey: CryptoKey = await window.crypto.subtle.importKey(
             'raw',
             derivedKey,
             hmacParameters,
@@ -34,6 +34,6 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
             ['sign']
         );
 
-        return await crypto.subtle.sign('HMAC', hkdfKey, this.hkdfPurpose);
+        return await window.crypto.subtle.sign('HMAC', hkdfKey, this.hkdfPurpose);
     }
 }
