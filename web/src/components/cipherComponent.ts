@@ -2,7 +2,7 @@ import * as crypto from '../crypto';
 import * as stringUtils from '../stringUtils';
 import * as arrayUtils from '../arrayUtils';
 
-import { getElementById, setupCopyButton, ERROR_COLOR } from '../ui';
+import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
 import { CipherV2 } from '../ciphers/v2';
@@ -13,20 +13,20 @@ import * as storageOutputComponent from './storageOutputComponent';
 
 const RESERVED_KEYS: string[] = ['version', 'value'];
 
-const btnTabCiphers: HTMLInputElement = getElementById('btnTabCiphers');
-const divTabCiphers: HTMLInputElement = getElementById('divTabCiphers');
+const btnTabCiphers: HTMLInputElement = ui.getElementById('btnTabCiphers');
+const divTabCiphers: HTMLInputElement = ui.getElementById('divTabCiphers');
 
 const cipher: crypto.ICipher = new CipherV2();
 
-const txtCipherName: HTMLInputElement = getElementById('txtCipherName');
-const txtCipherSource: HTMLInputElement = getElementById('txtCipherSource');
-const txtCipherTarget: HTMLInputElement = getElementById('txtCipherTarget');
-const btnEncrypt: HTMLInputElement = getElementById('btnEncrypt');
-const btnDecrypt: HTMLInputElement = getElementById('btnDecrypt');
+const txtCipherName: HTMLInputElement = ui.getElementById('txtCipherName');
+const txtCipherSource: HTMLInputElement = ui.getElementById('txtCipherSource');
+const txtCipherTarget: HTMLInputElement = ui.getElementById('txtCipherTarget');
+const btnEncrypt: HTMLInputElement = ui.getElementById('btnEncrypt');
+const btnDecrypt: HTMLInputElement = ui.getElementById('btnDecrypt');
 
-const btnClearCipherSource: HTMLInputElement = getElementById('btnClearCipherSource');
-const btnCopyCipherTarget: HTMLInputElement = getElementById('btnCopyCipherTarget');
-const btnClearCipherTarget: HTMLInputElement = getElementById('btnClearCipherTarget');
+const btnClearCipherSource: HTMLInputElement = ui.getElementById('btnClearCipherSource');
+const btnCopyCipherTarget: HTMLInputElement = ui.getElementById('btnCopyCipherTarget');
+const btnClearCipherTarget: HTMLInputElement = ui.getElementById('btnClearCipherTarget');
 
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
@@ -37,11 +37,11 @@ function clearTargetVisualCue(): void {
 }
 
 function setSourceVisualCueError() {
-    txtCipherSource.style.setProperty('background-color', ERROR_COLOR);
+    txtCipherSource.style.setProperty('background-color', ui.ERROR_COLOR);
 }
 
 function setTargetVisualCueError() {
-    txtCipherTarget.style.setProperty('background-color', ERROR_COLOR);
+    txtCipherTarget.style.setProperty('background-color', ui.ERROR_COLOR);
 }
 
 function clearAllVisualCues(): void {
@@ -109,43 +109,47 @@ export async function decryptString(value: string): Promise<string | null> {
     }
 }
 
-async function onEncryptButtonClick(): Promise<void> {
+async function onEncryptButtonClick(): Promise<boolean> {
     txtCipherSource.focus();
     setCipherTargetValue('');
     clearAllVisualCues();
 
     if (txtCipherSource.value.length === 0) {
         setSourceVisualCueError();
-        return;
+        return false;
     }
 
     const encryptedString: string | null = await encryptString(txtCipherSource.value);
 
     if (encryptedString === null) {
-        return;
+        return false;
     }
 
     setCipherTargetValue(encryptedString);
+
+    return true;
 }
 
-async function onDecryptButtonClick(): Promise<void> {
+async function onDecryptButtonClick(): Promise<boolean> {
     txtCipherSource.focus();
     setCipherTargetValue('');
     clearAllVisualCues();
 
     if (txtCipherSource.value.length === 0) {
         setSourceVisualCueError();
-        return;
+        return false;
     }
 
     const decryptedString: string | null = await decryptString(txtCipherSource.value);
 
     if (decryptedString === null) {
         setTargetVisualCueError();
-        return;
+        return false;
     }
 
     setCipherTargetValue(decryptedString);
+
+    return true;
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
@@ -161,10 +165,10 @@ export class CipherComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
+        ui.setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
 
-        btnEncrypt.addEventListener('click', onEncryptButtonClick);
-        btnDecrypt.addEventListener('click', onDecryptButtonClick);
+        ui.setupFeedbackButton(btnEncrypt, onEncryptButtonClick);
+        ui.setupFeedbackButton(btnDecrypt, onDecryptButtonClick);
 
         txtCipherName.addEventListener('input', () => {
             updateCipherParameters();
