@@ -68,5 +68,29 @@ export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement)
     setupFeedbackButton(button, () => writeToClipboard(txt.value));
 }
 
+export function showHide(element: HTMLElement, isVisible: boolean): void {
+    if (isVisible) {
+        element.style.removeProperty('display');
+    } else {
+        element.style.setProperty('display', 'none');
+    }
+}
+
+export function showHideMany(elements: HTMLElement[], isVisible: boolean): void {
+    for (const element of elements) {
+        showHide(element, isVisible);
+    }
+}
+
+export function setupShowHideButton(button: HTMLInputElement, startVisible: boolean, elements: HTMLElement[]): void {
+    let isVisible = startVisible;
+    button.addEventListener('click', function () {
+        isVisible = !isVisible;
+        showHideMany(elements, isVisible);
+    });
+    showHideMany(elements, isVisible);
+
+}
+
 export const SUCCESS_COLOR: string = '#D0FFD0';
 export const ERROR_COLOR: string = '#FFD0D0';

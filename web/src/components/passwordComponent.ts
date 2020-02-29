@@ -45,25 +45,6 @@ const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
 let passwordPublicPartLastChange: string | undefined;
 
-function showHide(element: HTMLInputElement, isVisible: boolean) {
-    if (isVisible) {
-        element.style.removeProperty('display');
-    } else {
-        element.style.setProperty('display', 'none');
-    }
-}
-
-function showHidePasswordOptionalFeatures(isVisible: boolean) {
-    showHide(lblAlphabet, isVisible);
-    showHide(txtAlphabet, isVisible);
-    showHide(spnAlphabetSize, isVisible);
-    showHide(divPasswordAlphabetActions, isVisible);
-
-    showHide(lblAlphabetLength, isVisible);
-    showHide(numOutputSizeRange, isVisible);
-    showHide(numOutputSizeNum, isVisible);
-}
-
 function onClearPublicPartButtonClick(): boolean {
     if (txtPublicPart.value.length > 0) {
         if (prompt('Are you sure you want to clear the public part ?\nType \'y\' to accept', '') !== 'y') {
@@ -348,12 +329,15 @@ export class PasswordComponent implements IComponent, ITabInfo {
 
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
 
-        let passwordOptionalFeaturesVisible = false;
-        btnShowHidePasswordOptionalFeatures.addEventListener('click', function () {
-            passwordOptionalFeaturesVisible = !passwordOptionalFeaturesVisible;
-            showHidePasswordOptionalFeatures(passwordOptionalFeaturesVisible);
-        });
-        showHidePasswordOptionalFeatures(passwordOptionalFeaturesVisible);
+        ui.setupShowHideButton(btnShowHidePasswordOptionalFeatures, false, [
+            lblAlphabet,
+            txtAlphabet,
+            spnAlphabetSize,
+            divPasswordAlphabetActions,
+            lblAlphabetLength,
+            numOutputSizeRange,
+            numOutputSizeNum
+        ]);
 
         updatePublicPartSize();
         updateOutputSizeRangeToNum();
