@@ -6,7 +6,7 @@ import { PrivatePartComponent } from './components/privatePartComponent';
 import { PasswordComponent } from './components/passwordComponent';
 import { CipherComponent } from './components/cipherComponent';
 import { ReEncryptComponent } from './components/reEncryptComponent';
-import { VaultComponent } from './components/vault';
+import { VaultComponent } from './components/vaultComponent';
 
 import * as storageOutputComponent from './components/storageOutputComponent';
 

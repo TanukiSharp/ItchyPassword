@@ -8,7 +8,7 @@ import * as storageOutputComponent from './storageOutputComponent';
 import { SecureLocalStorage } from '../storages/SecureLocalStorage';
 import { IVaultStorage } from '../storages/IVaultStorage';
 import { GitHubPersonalAccessTokenVaultStorage } from '../storages/GitHubVaultStorage';
-import { hasPrivatePart } from '../components/privatePartComponent';
+import { hasPrivatePart } from './privatePartComponent';
 
 const divTabVault: HTMLInputElement = getElementById('divTabVault');
 const btnTabVault: HTMLInputElement = getElementById('btnTabVault');
