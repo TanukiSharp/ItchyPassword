@@ -23,13 +23,15 @@ async function reloadVault(): Promise<void> {
     txtVault.value = (await vaultStorage.getVaultContent()) || '<error>';
 }
 
-async function onRefreshVaultButtonClick(): Promise<void> {
+async function onRefreshVaultButtonClick(): Promise<boolean> {
     if (hasPrivatePart() === false) {
         alert('You must enter a master key first.');
-        return;
+        return false;
     }
 
     await reloadVault();
+
+    return true;
 }
 
 function onClearVaultSettingsButtonClick(): void {
