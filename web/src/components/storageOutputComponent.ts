@@ -12,6 +12,7 @@ const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
 function isPlainObject(value: any): boolean {
     return value !== undefined &&
         value !== null &&
+        value.hasOwnProperty('constructor') === false &&
         value.constructor.name === 'Object';
 }
 
