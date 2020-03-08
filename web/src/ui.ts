@@ -1,3 +1,6 @@
+export const SUCCESS_COLOR: string = '#D0FFD0';
+export const ERROR_COLOR: string = '#FFD0D0';
+
 export function getElementById(elementName: string): HTMLInputElement {
     const element: HTMLElement|null = document.getElementById(elementName);
 
@@ -103,6 +106,3 @@ export function setupShowHideButton(button: HTMLInputElement, startVisible: bool
     showHideMany(elements, isVisible);
 
 }
-
-export const SUCCESS_COLOR: string = '#D0FFD0';
-export const ERROR_COLOR: string = '#FFD0D0';

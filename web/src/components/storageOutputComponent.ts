@@ -10,7 +10,9 @@ const txtParameters: HTMLInputElement = getElementById('txtParameters');
 const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
 
 function isPlainObject(value: any): boolean {
-    return value !== undefined && value !== null && value.constructor.name === 'Object';
+    return value !== undefined &&
+        value !== null &&
+        value.constructor.name === 'Object';
 }
 
 function objectDeepSort(object: PlainObject): PlainObject {
