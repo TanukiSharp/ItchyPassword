@@ -21,26 +21,42 @@ async function writeToClipboard(text: string): Promise<boolean> {
     }
 }
 
-function createSafeTimeout(f: Function, duration: number): Function {
-    let timeout: number | undefined;
-    return () => {
-        if (timeout) {
-            clearTimeout(timeout);
+interface ThrottleTimeout {
+    start: Function;
+    end: Function;
+}
+
+function createThrottleTimeout(clearFunc: Function, duration: number): ThrottleTimeout {
+    let timeout: number | undefined = undefined;
+
+    return {
+        start: () => {
+            if (timeout !== undefined) {
+                clearTimeout(timeout);
+                timeout = undefined;
+            }
+            clearFunc();
+        },
+        end: () => {
+            if (timeout !== undefined) {
+                clearTimeout(timeout);
+            }
+            timeout = setTimeout(clearFunc, duration);
         }
-        timeout = setTimeout(f, duration);
     };
 }
 
 export type FeedbackButtonAsyncFunction = () => Promise<boolean> | boolean | Promise<void> | void;
 
-export function setupFeedbackButton(button: HTMLInputElement, action: FeedbackButtonAsyncFunction): void {
-    const setupStopAnimationTimer = createSafeTimeout(() => {
+export function setupFeedbackButton(button: HTMLInputElement, action: FeedbackButtonAsyncFunction): () => void {
+    const throttleTimeout: ThrottleTimeout = createThrottleTimeout(() => {
         button.classList.remove('good-flash');
         button.classList.remove('bad-flash');
     }, 1000);
 
-    button.addEventListener('click', async () => {
+    const clickFunction = async () => {
         button.disabled = true;
+        throttleTimeout.start();
 
         try {
             const actionResult = action();
@@ -61,14 +77,18 @@ export function setupFeedbackButton(button: HTMLInputElement, action: FeedbackBu
             button.classList.add('bad-flash');
             console.error(error.message || error);
         } finally {
-            setupStopAnimationTimer();
+            throttleTimeout.end();
             button.disabled = false;
         }
-    });
+    };
+
+    button.addEventListener('click', clickFunction);
+
+    return clickFunction;
 }
 
-export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement): void {
-    setupFeedbackButton(button, () => writeToClipboard(txt.value));
+export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement): () => void {
+    return setupFeedbackButton(button, () => writeToClipboard(txt.value));
 }
 
 export function setupViewButton(txt: HTMLInputElement, button: HTMLInputElement): void {

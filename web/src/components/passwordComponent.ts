@@ -12,7 +12,7 @@ import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
-import { CancellationToken } from '../asyncUtils';
+import { CancellationToken, TaskRunner } from '../asyncUtils';
 
 const btnTabPasswords: HTMLInputElement = ui.getElementById('btnTabPasswords');
 const divTabPasswords: HTMLInputElement = ui.getElementById('divTabPasswords');
@@ -40,6 +40,7 @@ const txtResultPassword: HTMLInputElement = ui.getElementById('txtResultPassword
 const spnResultPasswordLength: HTMLInputElement = ui.getElementById('spnResultPasswordLength');
 const btnViewResultPassword: HTMLInputElement = ui.getElementById('btnViewResultPassword');
 const btnCopyResultPassword: HTMLInputElement = ui.getElementById('btnCopyResultPassword');
+const lblGeneratingPassword: HTMLInputElement = ui.getElementById('lblGeneratingPassword');
 
 const DEFAULT_LENGTH: number = 64;
 const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
@@ -47,6 +48,7 @@ const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLM
 const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
 let passwordPublicPartLastChange: string | undefined;
+let copyPasswordFunction: () => void;
 
 function onClearPublicPartButtonClick(): boolean {
     if (txtPublicPart.value.length > 0) {
@@ -251,12 +253,24 @@ export async function generatePasswordString(publicPart: string, cancellationTok
     return arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
 }
 
+const passwordTaskRunner: TaskRunner<void> = new TaskRunner<void>();
+
 async function run(cancellationToken: CancellationToken): Promise<void> {
     if (canRun() === false) {
         clearOutputs();
         return;
     }
 
+    ui.showHide(lblGeneratingPassword, true);
+
+    try {
+        await passwordTaskRunner.cancelAndExecute(runCore);
+    } finally {
+        ui.showHide(lblGeneratingPassword, false);
+    }
+}
+
+async function runCore(cancellationToken: CancellationToken): Promise<void> {
     const keyString: string | null = await generatePasswordString(txtPublicPart.value, cancellationToken);
     if (keyString === null) {
         return;
@@ -265,8 +279,9 @@ async function run(cancellationToken: CancellationToken): Promise<void> {
     txtResultPassword.value = stringUtils.truncate(keyString, Math.max(4, parseInt(numOutputSizeRange.value, 10)));
 
     updateResultPasswordLength();
-
     updatePasswordGenerationParameters();
+
+    copyPasswordFunction();
 }
 
 function resetAlphabet(): boolean {
@@ -311,7 +326,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
         ui.setupViewButton(txtResultPassword, btnViewResultPassword);
 
         ui.setupCopyButton(txtPublicPart, btnCopyPublicPart);
-        ui.setupCopyButton(txtResultPassword, btnCopyResultPassword);
+        copyPasswordFunction = ui.setupCopyButton(txtResultPassword, btnCopyResultPassword);
 
         numOutputSizeRange.addEventListener('input', onOutputSizeRangeInput);
         numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);
@@ -320,6 +335,8 @@ export class PasswordComponent implements IComponent, ITabInfo {
         ui.setupFeedbackButton(btnResetAlphabet, onResetAlphabetButtonClick);
 
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
+
+        ui.showHide(lblGeneratingPassword, false);
 
         ui.setupShowHideButton(btnShowHidePasswordOptionalFeatures, false, [
             lblAlphabet,
