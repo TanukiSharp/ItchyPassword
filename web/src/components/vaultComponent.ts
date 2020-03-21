@@ -19,8 +19,10 @@ const btnClearVaultSettings: HTMLInputElement = getElementById('btnClearVaultSet
 
 let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new SecureLocalStorage());
 
-async function reloadVault(): Promise<void> {
-    txtVault.value = (await vaultStorage.getVaultContent()) || '<error>';
+async function reloadVault(): Promise<boolean> {
+    const content: string | null = await vaultStorage.getVaultContent();
+    txtVault.value = content || '<error>';
+    return content !== null;
 }
 
 async function onRefreshVaultButtonClick(): Promise<boolean> {
@@ -29,9 +31,7 @@ async function onRefreshVaultButtonClick(): Promise<boolean> {
         return false;
     }
 
-    await reloadVault();
-
-    return true;
+    return await reloadVault();
 }
 
 function onClearVaultSettingsButtonClick(): void {
