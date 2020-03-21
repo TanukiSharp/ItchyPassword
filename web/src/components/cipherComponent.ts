@@ -11,6 +11,8 @@ import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
+import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyncUtils';
+
 const RESERVED_KEYS: string[] = ['version', 'value'];
 
 const btnTabCiphers: HTMLInputElement = ui.getElementById('btnTabCiphers');
@@ -74,7 +76,7 @@ function updateCipherParameters(): void {
     storageOutputComponent.setParameters(cipherParameters, path, RESERVED_KEYS);
 }
 
-export async function encryptString(value: string): Promise<string | null> {
+export async function encryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
@@ -84,12 +86,14 @@ export async function encryptString(value: string): Promise<string | null> {
     const input: ArrayBuffer = stringUtils.stringToArray(value);
     const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
-    const encrypted: ArrayBuffer = await cipher.encrypt(input, password);
+    const encrypted: ArrayBuffer = await cipher.encrypt(input, password, cancellationToken);
+
+    ensureNotCancelled(cancellationToken);
 
     return arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
 }
 
-export async function decryptString(value: string): Promise<string | null> {
+export async function decryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
@@ -100,10 +104,14 @@ export async function decryptString(value: string): Promise<string | null> {
         const input: ArrayBuffer = arrayUtils.fromCustomBase(value, crypto.BASE62_ALPHABET);
         const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
-        const decrypted: ArrayBuffer = await cipher.decrypt(input, password);
+        const decrypted: ArrayBuffer = await cipher.decrypt(input, password, cancellationToken);
+
+        ensureNotCancelled(cancellationToken);
 
         return arrayUtils.arrayToString(decrypted);
     } catch (error) {
+        rethrowCancelled(error);
+
         console.warn(`Failed to decrypt${error.message ? `, error: ${error.message}` : ', no error message'}`);
         return null;
     }
@@ -119,7 +127,7 @@ async function onEncryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const encryptedString: string | null = await encryptString(txtCipherSource.value);
+    const encryptedString: string | null = await encryptString(txtCipherSource.value, CancellationToken.none);
 
     if (encryptedString === null) {
         return false;
@@ -140,7 +148,7 @@ async function onDecryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const decryptedString: string | null = await decryptString(txtCipherSource.value);
+    const decryptedString: string | null = await decryptString(txtCipherSource.value, CancellationToken.none);
 
     if (decryptedString === null) {
         setTargetVisualCueError();

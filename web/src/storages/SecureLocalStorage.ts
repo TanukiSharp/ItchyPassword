@@ -1,4 +1,5 @@
 import * as cipherComponent from '../components/cipherComponent';
+import { CancellationToken } from '../asyncUtils';
 
 export interface IAsyncStorage {
     readonly length: number;
@@ -33,11 +34,11 @@ export class SecureLocalStorage implements IAsyncStorage {
             return null;
         }
 
-        return await cipherComponent.decryptString(encryptedItem);
+        return await cipherComponent.decryptString(encryptedItem, CancellationToken.none);
     }
 
     async setItem(key: string, value: string): Promise<void> {
-        const encrypted: string | null = await cipherComponent.encryptString(value);
+        const encrypted: string | null = await cipherComponent.encryptString(value, CancellationToken.none);
 
         if (encrypted === null) {
             console.error('Failed to encrypt value. (nothing stored)');

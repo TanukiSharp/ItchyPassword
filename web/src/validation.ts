@@ -2,6 +2,8 @@ import * as crypto from './crypto';
 import * as arrayUtils from './arrayUtils';
 import * as stringUtils from './stringUtils';
 
+import { CancellationToken } from './asyncUtils';
+
 import { PasswordGeneratorV1 } from './passwordGenerators/v1';
 import { CipherV2 } from './ciphers/v2';
 
@@ -37,9 +39,9 @@ async function validate(): Promise<void> {
     for (let i: number = 0; i < 10; i += 1) {
         const privatePartBytes: ArrayBuffer = crypto.generateRandomBytes(64);
         const publicPartBytes: ArrayBuffer = crypto.generateRandomBytes(64);
-        const generatedPasswordBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePartBytes, publicPartBytes);
+        const generatedPasswordBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePartBytes, publicPartBytes, CancellationToken.none);
         const frontendClearBytes: ArrayBuffer = crypto.generateRandomBytes(64);
-        const frontendEncryptedBytes: ArrayBuffer = await cipher.encrypt(frontendClearBytes, generatedPasswordBytes);
+        const frontendEncryptedBytes: ArrayBuffer = await cipher.encrypt(frontendClearBytes, generatedPasswordBytes, CancellationToken.none);
 
         const responseContent: string = await postData('http://localhost:5000/', {
             privatePart: arrayUtils.toBase16(privatePartBytes),
@@ -58,7 +60,7 @@ async function validate(): Promise<void> {
         }
 
         const backendEncryptedBytes: ArrayBuffer = stringUtils.fromBase16(backendData.backendEncrypted);
-        const decryptedBackendEncryptedBytes: ArrayBuffer = await cipher.decrypt(backendEncryptedBytes, generatedPasswordBytes);
+        const decryptedBackendEncryptedBytes: ArrayBuffer = await cipher.decrypt(backendEncryptedBytes, generatedPasswordBytes, CancellationToken.none);
 
         const decryptedBackendEncrypted: string = arrayUtils.toBase16(decryptedBackendEncryptedBytes);
         if (decryptedBackendEncrypted !== backendData.backendClear) {

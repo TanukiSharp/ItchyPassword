@@ -12,6 +12,8 @@ import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
+import { CancellationToken } from '../asyncUtils';
+
 const btnTabPasswords: HTMLInputElement = ui.getElementById('btnTabPasswords');
 const divTabPasswords: HTMLInputElement = ui.getElementById('divTabPasswords');
 
@@ -75,7 +77,7 @@ function onGeneratePublicPartButtonClick(): boolean {
 
     updatePasswordPublicPartLastUpdate();
 
-    run();
+    run(CancellationToken.none);
 
     return true;
 }
@@ -165,14 +167,14 @@ function updateOutputSizeNumToRange(): boolean {
 
 async function onOutputSizeRangeInput(): Promise<void> {
     updateOutputSizeRangeToNum();
-    await run();
+    await run(CancellationToken.none);
 }
 
 async function onOutputSizeNumInput(): Promise<void> {
     if (updateOutputSizeNumToRange()) {
         updateOutputSizeRangeToNum();
     }
-    await run();
+    await run(CancellationToken.none);
 }
 
 function updatePublicPartSize(): void {
@@ -201,7 +203,7 @@ async function onAlphabetTextInput(): Promise<void> {
     }
 
     updateAlphabetSize();
-    await run();
+    await run(CancellationToken.none);
 }
 
 async function onResetAlphabetButtonClick(): Promise<boolean> {
@@ -209,7 +211,7 @@ async function onResetAlphabetButtonClick(): Promise<boolean> {
         return false;
     }
 
-    await run();
+    await run(CancellationToken.none);
 
     return true;
 }
@@ -236,7 +238,7 @@ function canRun(publicPart?: string): boolean {
     return true;
 }
 
-export async function generatePasswordString(publicPart: string): Promise<string | null> {
+export async function generatePasswordString(publicPart: string, cancellationToken: CancellationToken): Promise<string | null> {
     if (canRun(publicPart) === false) {
         return null;
     }
@@ -244,18 +246,18 @@ export async function generatePasswordString(publicPart: string): Promise<string
     const privatePartString: string = privatePartComponent.getPrivatePart();
     const privatePrivateBytes: ArrayBuffer = stringUtils.stringToArray(privatePartString);
     const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPart);
-    const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes);
+    const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes, cancellationToken);
 
     return arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
 }
 
-async function run(): Promise<void> {
+async function run(cancellationToken: CancellationToken): Promise<void> {
     if (canRun() === false) {
         clearOutputs();
         return;
     }
 
-    const keyString: string | null = await generatePasswordString(txtPublicPart.value);
+    const keyString: string | null = await generatePasswordString(txtPublicPart.value, cancellationToken);
     if (keyString === null) {
         return;
     }
@@ -281,7 +283,7 @@ function resetAlphabet(): boolean {
 async function onPublicPartTextInput(): Promise<void> {
     updatePublicPartSize();
     updatePasswordPublicPartLastUpdate();
-    await run();
+    await run(CancellationToken.none);
 }
 
 export class PasswordComponent implements IComponent, ITabInfo {
@@ -297,7 +299,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
     }
 
     init(): void {
-        privatePartComponent.registerOnChanged(run);
+        privatePartComponent.registerOnChanged(async () => await run(CancellationToken.none));
 
         // dafuq!?
         numOutputSizeRange.max = DEFAULT_LENGTH.toString();

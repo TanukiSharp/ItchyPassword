@@ -4,6 +4,8 @@ import { SecureLocalStorage } from './SecureLocalStorage';
 import { IVaultStorage } from './IVaultStorage';
 import { PlainObject } from '../PlainObject';
 
+import { CancellationToken } from '../asyncUtils';
+
 interface IApp {
     name: string;
 }
@@ -386,7 +388,7 @@ export class GitHubApiVaultStorage extends GitHubVaultStorageBase {
             return false;
         }
 
-        let password: string | null = await passwordComponent.generatePasswordString(passwordPublicPart);
+        let password: string | null = await passwordComponent.generatePasswordString(passwordPublicPart, CancellationToken.none);
         if (!password) {
             return false;
         }

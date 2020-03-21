@@ -1,21 +1,22 @@
 import * as arrayUtils from './arrayUtils';
+import { CancellationToken, ensureNotCancelled } from './asyncUtils';
 
 export const BASE62_ALPHABET: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
 export interface IPasswordGenerator {
     readonly version: number;
     readonly description: string;
-    generatePassword(privatePart: ArrayBuffer, publicPart: ArrayBuffer): Promise<ArrayBuffer>;
+    generatePassword(privatePart: ArrayBuffer, publicPart: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer>;
 }
 
 export interface ICipher {
     readonly version: number;
     readonly description: string;
-    encrypt(input: ArrayBuffer, password: ArrayBuffer): Promise<ArrayBuffer>;
-    decrypt(input: ArrayBuffer, password: ArrayBuffer): Promise<ArrayBuffer>;
+    encrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer>;
+    decrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer>;
 }
 
-export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer): Promise<ArrayBuffer> {
+export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
     const baseKey: CryptoKey = await window.crypto.subtle.importKey(
         'raw',
         password,
@@ -23,6 +24,8 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer):
         false,
         ['deriveKey']
     );
+
+    ensureNotCancelled(cancellationToken);
 
     const algorithm: Pbkdf2Params = {
         name: 'PBKDF2',
@@ -44,7 +47,11 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer):
         ['encrypt']
     );
 
+    ensureNotCancelled(cancellationToken);
+
     const key: ArrayBuffer = await window.crypto.subtle.exportKey('raw', result);
+
+    ensureNotCancelled(cancellationToken);
 
     return key;
 }

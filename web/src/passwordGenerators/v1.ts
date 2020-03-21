@@ -1,5 +1,6 @@
 import { stringToArray } from '../stringUtils';
 import { IPasswordGenerator, getDerivedBytes } from '../crypto';
+import { CancellationToken, ensureNotCancelled } from '../asyncUtils';
 
 export class PasswordGeneratorV1 implements IPasswordGenerator {
     private hkdfPurpose: ArrayBuffer;
@@ -18,8 +19,10 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
         return this._description;
     }
 
-    public async generatePassword(privatePart: ArrayBuffer, publicPart: ArrayBuffer): Promise<ArrayBuffer> {
-        const derivedKey: ArrayBuffer = await getDerivedBytes(privatePart, publicPart);
+    public async generatePassword(privatePart: ArrayBuffer, publicPart: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
+        const derivedKey: ArrayBuffer = await getDerivedBytes(privatePart, publicPart, cancellationToken);
+
+        ensureNotCancelled(cancellationToken);
 
         const hmacParameters: HmacImportParams = {
             name: 'HMAC',
@@ -34,6 +37,12 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
             ['sign']
         );
 
-        return await window.crypto.subtle.sign('HMAC', hkdfKey, this.hkdfPurpose);
+        ensureNotCancelled(cancellationToken);
+
+        const result: ArrayBuffer = await window.crypto.subtle.sign('HMAC', hkdfKey, this.hkdfPurpose);
+
+        ensureNotCancelled(cancellationToken);
+
+        return result;
     }
 }

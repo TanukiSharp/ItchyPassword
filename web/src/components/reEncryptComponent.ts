@@ -11,6 +11,8 @@ import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
+import { CancellationToken } from '../asyncUtils';
+
 const ciphers: ICipher[] = [
     new CipherV1(),
     new CipherV2()
@@ -90,8 +92,8 @@ async function onReEncryptButtonClick(): Promise<boolean> {
     const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
     const input: ArrayBuffer = stringUtils.fromBase16(txtReEncryptSource.value);
-    const decrypted: ArrayBuffer = await ciphers[sourceCipherIndex].decrypt(input, password);
-    const reEncrypted: ArrayBuffer = await ciphers[targetCipherIndex].encrypt(decrypted, password);
+    const decrypted: ArrayBuffer = await ciphers[sourceCipherIndex].decrypt(input, password, CancellationToken.none);
+    const reEncrypted: ArrayBuffer = await ciphers[targetCipherIndex].encrypt(decrypted, password, CancellationToken.none);
 
     txtReEncryptTarget.value = arrayUtils.toBase16(reEncrypted);
 
