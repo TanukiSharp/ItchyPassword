@@ -35,7 +35,7 @@ const elements: any[] = [
 const tabs: ITabInfo[] = elements.filter(e => (e as ITabInfo).getTabButton !== undefined);
 const components: IComponent[] = elements.filter(e => (e as IComponent).init !== undefined);
 
-new TabControl(tabs);
+(new TabControl(tabs)).activeTabIndex = 4;
 
 declare const COMMITHASH: string;
 
