@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Numerics;
 
 namespace ItchyPassword.Core
 {
@@ -42,6 +45,57 @@ namespace ItchyPassword.Core
                 result[i] = Convert.ToByte(input.Substring(i * 2, 2), 16);
 
             return result;
+        }
+
+        private static byte[] BigIntegerToArrayBuffer(BigInteger number)
+        {
+            var result = new List<byte>();
+
+            while (number > 0)
+            {
+                BigInteger remainder = number % 256;
+                number /= 256;
+
+                byte byteValue = (byte)remainder;
+
+                result.Add(byteValue);
+            }
+
+            int totalLength = result[0];
+            if (result.Count > 1) // For case where original buffer is of length 1 and contains 0.
+                totalLength += result[1] * 256;
+
+            // The varable 'result' contains 2 bytes of size header.
+            int diff = totalLength - (result.Count - 2);
+
+            for (int i = 0; i < diff; i++)
+                result.Add(0);
+
+            return result.Skip(2).ToArray();
+        }
+
+        /// <summary>
+        /// Converts a string encoded in arbitrary base to an array of bytes.
+        /// </summary>
+        /// <param name="input">The string containing arbitrary base encoded value to decode.</param>
+        /// <param name="alphabet">The alphabet used to encode the string.</param>
+        /// <returns>rns the decoded array of bytes.</returns>
+        public static byte[] FromCustomBase(this string input, string alphabet)
+        {
+            var alphabetLength = new BigInteger(alphabet.Length);
+
+            BigInteger number = BigInteger.Zero;
+            BigInteger multiplier = BigInteger.One;
+
+            for (int i = 0; i < input.Length; i++)
+            {
+                var value = new BigInteger(alphabet.IndexOf(input[i]));
+
+                number += value * multiplier;
+                multiplier *= alphabetLength;
+            }
+
+            return BigIntegerToArrayBuffer(number);
         }
     }
 }

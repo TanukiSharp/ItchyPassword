@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Security.Cryptography;
+using System.Text;
 using ItchyPassword.Core;
 
 namespace ItchyPassword.Tester
@@ -58,18 +59,31 @@ namespace ItchyPassword.Tester
 
             // **************************************************************************************************
 
-            using var rng = RandomNumberGenerator.Create();
+            //using var rng = RandomNumberGenerator.Create();
 
-            byte[] privatePartBytes = new byte[256];
-            rng.GetBytes(privatePartBytes);
+            //byte[] privatePartBytes = new byte[256];
+            //rng.GetBytes(privatePartBytes);
 
-            byte[] password = new byte[256];
-            rng.GetBytes(password);
+            //byte[] password = new byte[256];
+            //rng.GetBytes(password);
 
-            byte[] decrypted = Crypto.Decrypt(Crypto.Encrypt(privatePartBytes, password), password);
+            //byte[] decrypted = Crypto.Decrypt(Crypto.Encrypt(privatePartBytes, password), password);
 
-            if (new Span<byte>(privatePartBytes).SequenceEqual(decrypted) == false)
-                throw new Exception();
+            //if (new Span<byte>(privatePartBytes).SequenceEqual(decrypted) == false)
+            //    throw new Exception();
+
+            string base62Input = "dcXya8LSBxGwXT2hWMSc8yXiZbeZLm088UdS2yM5CYB3xuYbazBx9PaTvHa1hhJRG6XbsrDO27mw9UZTmerd8oAzQo4Al";
+
+            byte[] decoded = base62Input.FromCustomBase("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+
+            string base64Input = Convert.ToBase64String(decoded, Base64FormattingOptions.None);
+
+            Console.WriteLine(base62Input.Length);
+            Console.WriteLine(base64Input.Length);
+            Console.WriteLine();
+
+            byte[] decrypted = Crypto.Decrypt(decoded, Encoding.UTF8.GetBytes("abcd1234"));
+            Console.WriteLine(Encoding.UTF8.GetString(decrypted));
         }
     }
 }
