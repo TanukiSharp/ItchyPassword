@@ -124,5 +124,4 @@ export function setupShowHideButton(button: HTMLInputElement, startVisible: bool
         showHideMany(elements, isVisible);
     });
     showHideMany(elements, isVisible);
-
 }

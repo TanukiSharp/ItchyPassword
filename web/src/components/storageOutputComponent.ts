@@ -1,5 +1,5 @@
 import { getElementById, ERROR_COLOR } from '../ui';
-import { PlainObject } from '../PlainObject';
+import { PlainObject, objectDeepSort } from '../PlainObject';
 import { IComponent } from './IComponent';
 
 const divStorageOutput: HTMLInputElement = getElementById('divStorageOutput');
@@ -8,23 +8,6 @@ const txtPath: HTMLInputElement = getElementById('txtPath');
 
 const txtParameters: HTMLInputElement = getElementById('txtParameters');
 const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
-
-function isPlainObject(value: any): boolean {
-    return value !== undefined &&
-        value !== null &&
-        value.hasOwnProperty('constructor') === false &&
-        value.constructor.name === 'Object';
-}
-
-function objectDeepSort(object: PlainObject): PlainObject {
-    const output: PlainObject = {};
-
-    for (const [key, value] of Object.entries(object).sort((a, b) => a[0].localeCompare(b[0]))) {
-        output[key] = isPlainObject(value) ? objectDeepSort(value) : value;
-    }
-
-    return output;
-}
 
 function shallowMerge(source: PlainObject | null, target: PlainObject | null, reservedKeys: string[]): PlainObject {
     const result: PlainObject = {};

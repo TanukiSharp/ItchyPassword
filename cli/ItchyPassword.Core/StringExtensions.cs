@@ -29,17 +29,17 @@ namespace ItchyPassword.Core
         /// <summary>
         /// Converts an hexadecimal encoded string to an array of bytes.
         /// </summary>
-        /// <param name="str">The string containing hexadecimal encoded value to decode.</param>
+        /// <param name="input">The string containing hexadecimal encoded value to decode.</param>
         /// <returns>Returns the decoded array of bytes.</returns>
-        public static byte[] FromBase16(this string str)
+        public static byte[] FromBase16(this string input)
         {
-            if (str.Length % 2 != 0)
-                str = $"0{str}";
+            if (input.Length % 2 != 0)
+                input = $"0{input}";
 
-            byte[] result = new byte[str.Length / 2];
+            byte[] result = new byte[input.Length / 2];
 
             for (int i = 0; i < result.Length; i++)
-                result[i] = Convert.ToByte(str.Substring(i * 2, 2), 16);
+                result[i] = Convert.ToByte(input.Substring(i * 2, 2), 16);
 
             return result;
         }
