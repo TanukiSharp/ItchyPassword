@@ -1,3 +1,3 @@
 export interface IComponent {
-    init: Function
+    init(): void
 }
