@@ -117,12 +117,23 @@
 
     <div id="divTabVault" class="divTab">
         <button id="btnRefreshVault">Refresh</button><button id="btnClearVaultSettings">Clear settings</button><br/>
-        <textarea id="txtVault" class="readonlyText very-large-textarea" readonly></textarea><br/>
 
-        <br/><br/><br/>
-        <span id="lblSearchVault">Search:</span>
-        <input id="txtSearchVault" type="text"></input><br/>
-       <div id="treeVault"></div><br/>
+        <br/>
+        <br/>
+
+        <button id="btnTabVaultTabTreeView">Tree view</button><button id="btnTabVaultTabTextView">Text view</button>
+        <br/><br/>
+
+        <div id="divTabVaultTabTreeView">
+            <div id="divVaultTreeViewSearchAndTree">
+                <span id="lblSearchVault">Search:</span>
+                <input id="txtSearchVault" type="text"></input><br/>
+                <div id="treeVault"></div>
+            </div>
+        </div>
+        <div id="divTabVaultTabTextView">
+            <textarea id="txtVault" class="readonlyText very-large-textarea" readonly></textarea><br/>
+        </div>
     </div>
 
     <div id="divStorageOutput">
