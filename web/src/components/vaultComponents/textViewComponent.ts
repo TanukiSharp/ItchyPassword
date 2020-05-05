@@ -4,20 +4,20 @@ import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
 import * as plainObject from '../../PlainObject';
 
-const btnTabVaultTabTextView = getElementById('btnTabVaultTabTextView');
+const btnTabVaultTabTextView = getElementById('btnTabVaultTabTextView') as HTMLButtonElement;
 const divTabVaultTabTextView = getElementById('divTabVaultTabTextView');
 
-const txtVault: HTMLInputElement = getElementById('txtVault');
+const txtVault = getElementById('txtVault') as HTMLInputElement;
 
 export class VaultTextViewComponent implements IComponent, ITabInfo, IVaultComponent {
     public onVaultLoaded(vault: plainObject.PlainObject): void {
         txtVault.value = JSON.stringify(vault, undefined, 4);
     }
 
-    public getTabButton(): HTMLInputElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabVaultTabTextView;
     }
-    public getTabContent(): HTMLInputElement {
+    public getTabContent(): HTMLElement {
         return divTabVaultTabTextView;
     }
 

@@ -125,11 +125,14 @@
         <br/><br/>
 
         <div id="divTabVaultTabTreeView">
-            <div id="divVaultTreeViewSearchAndTree">
-                <span id="lblSearchVault">Search:</span>
-                <input id="txtSearchVault" type="text"></input><br/>
-                <div id="treeVault"></div>
+            <div id="divVaultTreeViewSearchControls">
+                <span id="lblVaultTreeViewSearch">Search:</span>
+                <input id="txtVaultTreeViewSearch" type="text"></input>
+                <span id="lblVaultTreeViewSearchType">Type:</span>
+                <select id="cboVaultTreeViewSearchType"></select>
             </div>
+            <br/><br/>
+            <div id="trvVaultTreeView" class="treeview-container"></div>
         </div>
         <div id="divTabVaultTabTextView">
             <textarea id="txtVault" class="readonlyText very-large-textarea" readonly></textarea><br/>

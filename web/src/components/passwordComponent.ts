@@ -14,33 +14,33 @@ import * as storageOutputComponent from './storageOutputComponent';
 
 import { CancellationToken, TaskRunner } from '../asyncUtils';
 
-const btnTabPasswords: HTMLInputElement = ui.getElementById('btnTabPasswords');
-const divTabPasswords: HTMLInputElement = ui.getElementById('divTabPasswords');
+const btnTabPasswords = ui.getElementById('btnTabPasswords') as HTMLButtonElement;
+const divTabPasswords = ui.getElementById('divTabPasswords');
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
-const txtPublicPart: HTMLInputElement = ui.getElementById('txtPublicPart');
-const spnPublicPartSize: HTMLInputElement = ui.getElementById('spnPublicPartSize');
-const btnGeneratePublicPart: HTMLInputElement = ui.getElementById('btnGeneratePublicPart');
-const btnClearPublicPart: HTMLInputElement = ui.getElementById('btnClearPublicPart');
-const btnCopyPublicPart: HTMLInputElement = ui.getElementById('btnCopyPublicPart');
-const btnShowHidePasswordOptionalFeatures: HTMLInputElement = ui.getElementById('btnShowHidePasswordOptionalFeatures');
+const txtPublicPart = ui.getElementById('txtPublicPart') as HTMLInputElement;
+const spnPublicPartSize = ui.getElementById('spnPublicPartSize');
+const btnGeneratePublicPart = ui.getElementById('btnGeneratePublicPart') as HTMLButtonElement;
+const btnClearPublicPart = ui.getElementById('btnClearPublicPart') as HTMLButtonElement;
+const btnCopyPublicPart = ui.getElementById('btnCopyPublicPart') as HTMLButtonElement;
+const btnShowHidePasswordOptionalFeatures = ui.getElementById('btnShowHidePasswordOptionalFeatures') as HTMLButtonElement;
 
-const lblAlphabetLength: HTMLInputElement = ui.getElementById('lblAlphabetLength');
-const numOutputSizeRange: HTMLInputElement = ui.getElementById('numOutputSizeRange');
-const numOutputSizeNum: HTMLInputElement = ui.getElementById('numOutputSizeNum');
+const lblAlphabetLength = ui.getElementById('lblAlphabetLength');
+const numOutputSizeRange = ui.getElementById('numOutputSizeRange') as HTMLInputElement;
+const numOutputSizeNum = ui.getElementById('numOutputSizeNum') as HTMLInputElement;
 
-const lblAlphabet: HTMLInputElement = ui.getElementById('lblAlphabet');
-const txtAlphabet: HTMLInputElement = ui.getElementById('txtAlphabet');
-const spnAlphabetSize: HTMLInputElement = ui.getElementById('spnAlphabetSize');
-const divPasswordAlphabetActions: HTMLInputElement = ui.getElementById('divPasswordAlphabetActions');
-const btnResetAlphabet: HTMLInputElement = ui.getElementById('btnResetAlphabet');
+const lblAlphabet = ui.getElementById('lblAlphabet');
+const txtAlphabet = ui.getElementById('txtAlphabet') as HTMLInputElement;
+const spnAlphabetSize = ui.getElementById('spnAlphabetSize');
+const divPasswordAlphabetActions = ui.getElementById('divPasswordAlphabetActions');
+const btnResetAlphabet = ui.getElementById('btnResetAlphabet') as HTMLButtonElement;
 
-const txtResultPassword: HTMLInputElement = ui.getElementById('txtResultPassword');
-const spnResultPasswordLength: HTMLInputElement = ui.getElementById('spnResultPasswordLength');
-const btnViewResultPassword: HTMLInputElement = ui.getElementById('btnViewResultPassword');
-const btnCopyResultPassword: HTMLInputElement = ui.getElementById('btnCopyResultPassword');
-const lblGeneratingPassword: HTMLInputElement = ui.getElementById('lblGeneratingPassword');
+const txtResultPassword = ui.getElementById('txtResultPassword') as HTMLInputElement;
+const spnResultPasswordLength = ui.getElementById('spnResultPasswordLength');
+const btnViewResultPassword = ui.getElementById('btnViewResultPassword') as HTMLButtonElement;
+const btnCopyResultPassword = ui.getElementById('btnCopyResultPassword') as HTMLButtonElement;
+const lblGeneratingPassword = ui.getElementById('lblGeneratingPassword');
 
 const DEFAULT_LENGTH: number = 64;
 const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
@@ -302,10 +302,10 @@ async function onPublicPartTextInput(): Promise<void> {
 }
 
 export class PasswordComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLInputElement {
+    getTabButton(): HTMLButtonElement {
         return btnTabPasswords;
     }
-    getTabContent(): HTMLInputElement {
+    getTabContent(): HTMLElement {
         return divTabPasswords;
     }
     onTabSelected(): void {

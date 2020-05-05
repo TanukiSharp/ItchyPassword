@@ -18,19 +18,19 @@ const ciphers: ICipher[] = [
     new CipherV2()
 ];
 
-const btnTabReEncrypt: HTMLInputElement = ui.getElementById('btnTabReEncrypt');
-const divTabReEncrypt: HTMLInputElement = ui.getElementById('divTabReEncrypt');
+const btnTabReEncrypt: HTMLButtonElement = ui.getElementById('btnTabReEncrypt') as HTMLButtonElement;
+const divTabReEncrypt: HTMLElement = ui.getElementById('divTabReEncrypt');
 
-const txtReEncryptSource: HTMLInputElement = ui.getElementById('txtReEncryptSource');
-const txtReEncryptTarget: HTMLInputElement = ui.getElementById('txtReEncryptTarget');
+const txtReEncryptSource: HTMLInputElement = ui.getElementById('txtReEncryptSource') as HTMLInputElement;
+const txtReEncryptTarget: HTMLInputElement = ui.getElementById('txtReEncryptTarget') as HTMLInputElement;
 
-const cboReEncryptFrom: HTMLInputElement = ui.getElementById('cboReEncryptFrom');
-const cboReEncryptTo: HTMLInputElement = ui.getElementById('cboReEncryptTo');
-const btnReEncrypt: HTMLInputElement = ui.getElementById('btnReEncrypt');
+const cboReEncryptFrom: HTMLSelectElement = ui.getElementById('cboReEncryptFrom') as HTMLSelectElement;
+const cboReEncryptTo: HTMLSelectElement = ui.getElementById('cboReEncryptTo') as HTMLSelectElement;
+const btnReEncrypt: HTMLButtonElement = ui.getElementById('btnReEncrypt') as HTMLButtonElement;
 
-const btnClearReEncryptSource: HTMLInputElement = ui.getElementById('btnClearReEncryptSource');
-const btnCopyReEncryptTarget: HTMLInputElement = ui.getElementById('btnCopyReEncryptTarget');
-const btnClearReEncryptTarget: HTMLInputElement = ui.getElementById('btnClearReEncryptTarget');
+const btnClearReEncryptSource: HTMLButtonElement = ui.getElementById('btnClearReEncryptSource') as HTMLButtonElement;
+const btnCopyReEncryptTarget: HTMLButtonElement = ui.getElementById('btnCopyReEncryptTarget') as HTMLButtonElement;
+const btnClearReEncryptTarget: HTMLButtonElement = ui.getElementById('btnClearReEncryptTarget') as HTMLButtonElement;
 
 function fillCipherComboBox(cbo: HTMLSelectElement, initialValue: number): void {
     let cipher: ICipher;
@@ -101,10 +101,10 @@ async function onReEncryptButtonClick(): Promise<boolean> {
 }
 
 export class ReEncryptComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLInputElement {
+    getTabButton(): HTMLButtonElement {
         return btnTabReEncrypt;
     }
-    getTabContent(): HTMLInputElement {
+    getTabContent(): HTMLElement {
         return divTabReEncrypt;
     }
     onTabSelected() {

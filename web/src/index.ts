@@ -11,10 +11,10 @@ import { VaultComponent } from './components/vaultComponent';
 import * as storageOutputComponent from './components/storageOutputComponent';
 
 const nothingTabInfo: ITabInfo = {
-    getTabButton(): HTMLInputElement {
-        return getElementById('btnTabNothing');
+    getTabButton(): HTMLButtonElement {
+        return getElementById('btnTabNothing') as HTMLButtonElement;
     },
-    getTabContent(): HTMLInputElement {
+    getTabContent(): HTMLElement {
         return getElementById('divTabNothing');
     },
     onTabSelected(): void {

@@ -1,4 +1,5 @@
 import * as plainObject from '../../PlainObject';
+import { SearchMatchFunction, PositionMarker } from '../../searchMatchFunctions';
 
 const DEEP_MODE_NONE = 0;
 const DEEP_MODE_UP = 1;
@@ -10,17 +11,12 @@ const HORIZONTAL_LINE_VERTICAL_OFFSET = 11;
 const HORIZONTAL_LINE_LENGTH = 12;
 const VERTICAL_BAR_OFFSET = 6;
 
-interface PositionMarker {
-    pos: number;
-    len: number;
-}
-
 export class TreeNode {
     protected readonly parent: TreeNode | null;
     protected readonly children: TreeNode[] = [];
 
     protected readonly rootElement: HTMLElement;
-    protected readonly titleElement: HTMLElement;
+    protected readonly titleElement: HTMLElement | null = null;
     protected readonly childrenContainerElement: HTMLElement;
 
     protected readonly _propertyName: string;
@@ -79,11 +75,13 @@ export class TreeNode {
         this.rootElement = document.createElement('div');
         this.setRootElementStyle();
 
-        // Construct title DOM element.
-        this.titleElement = document.createElement('div');
-        this.titleElement.innerText = title;
-        this.rootElement.appendChild(this.titleElement);
-        this.setTitleElementStyle();
+        if (parent) {
+            // Construct title DOM element.
+            this.titleElement = document.createElement('div');
+            this.titleElement.innerText = title;
+            this.rootElement.appendChild(this.titleElement);
+            this.setTitleElementStyle();
+        }
 
         // Construct children container DOM element.
         this.childrenContainerElement = document.createElement('div');
@@ -178,14 +176,20 @@ export class TreeNode {
     }
 
     private setRootElementStyle(): void {
+        this.rootElement.classList.add('treenode-root');
         this.rootElement.style.display = 'grid';
-        this.rootElement.style.gridTemplateRows = `${TREE_ELEMENT_HEIGHT}px 1fr`;
 
+        let height = 4; // Gives a bit of top spacing.
         let childrenOffset = 0;
+
+        if (this.parent) {
+            height = TREE_ELEMENT_HEIGHT;
+        }
         if (this.parent && this.parent.parent) {
             childrenOffset = HORIZONTAL_LINE_LENGTH;
         }
 
+        this.rootElement.style.gridTemplateRows = `${height}px 1fr`;
         this.rootElement.style.gridTemplateColumns = `${childrenOffset}px ${VERTICAL_BAR_OFFSET}px 1fr`;
     }
 
@@ -193,6 +197,7 @@ export class TreeNode {
 
     private setupLinesElements(color: string): void {
         const verticalLineElement = document.createElement('div');
+        verticalLineElement.classList.add('treenode-vertical-line');
         verticalLineElement.style.gridColumn = '2';
         verticalLineElement.style.gridRow = '2';
         verticalLineElement.style.width = '100%';
@@ -202,6 +207,7 @@ export class TreeNode {
 
         if (this.parent && this.parent.parent) {
             const horizontalLineElement = document.createElement('div');
+            horizontalLineElement.classList.add('treenode-horizontal-line');
             horizontalLineElement.style.gridColumn = '1';
             horizontalLineElement.style.gridRow = '1';
             horizontalLineElement.style.width = '100%';
@@ -239,19 +245,27 @@ export class TreeNode {
     }
 
     private setTitleElementStyle(): void {
+        if (!this.titleElement) {
+            return;
+        }
+
+        this.titleElement.classList.add('treenode-title');
         this.titleElement.style.gridColumn = '2 / span 2';
         this.titleElement.style.gridRow = '1';
         this.titleElement.style.marginLeft = '3px';
     }
 
     private setChildrenContainerElementStyle(): void {
+        this.childrenContainerElement.classList.add('treenode-children-container');
         this.childrenContainerElement.style.gridColumn = '3';
         this.childrenContainerElement.style.gridRow = '2';
     }
 
     private resetTitle(deepMode: number): void {
-        this.titleElement.innerHTML = '';
-        this.titleElement.innerText = this.propertyName;
+        if (this.titleElement) {
+            this.titleElement.innerHTML = '';
+            this.titleElement.innerText = this.propertyName;
+        }
 
         if (deepMode === DEEP_MODE_UP && this.parent) {
             this.parent.resetTitle(deepMode);
@@ -328,33 +342,7 @@ export class TreeNode {
         return root;
     }
 
-    private static indexedMatchFunction(lhs: string, lhsIndex: number, rhs: string, markers: PositionMarker[]): boolean {
-        if (!rhs) {
-            return true;
-        }
-
-        for (let len = rhs.length; len >= 1; len -= 1) {
-            const subWord = rhs.substr(0, len);
-            const foundPos = lhs.indexOf(subWord, lhsIndex);
-
-            if (foundPos >= 0) {
-                markers.push({
-                    pos: foundPos,
-                    len: subWord.length
-                });
-
-                return TreeNode.indexedMatchFunction(lhs, foundPos + subWord.length, rhs.substr(len), markers);
-            }
-        }
-
-        return false;
-    }
-
-    private static matchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {
-        return TreeNode.indexedMatchFunction(lhs.toLocaleLowerCase(), 0, rhs.toLocaleLowerCase(), markers);
-    }
-
-    public filter(searchText: string): void {
+    public filter(searchText: string, matchFunction: SearchMatchFunction): void {
         if (!searchText) {
             this.show(DEEP_MODE_DOWN);
             this.resetTitle(DEEP_MODE_DOWN);
@@ -365,10 +353,12 @@ export class TreeNode {
         this.resetTitle(DEEP_MODE_DOWN);
 
         const markers: PositionMarker[] = [];
-        const isVisible = TreeNode.matchFunction(this.propertyName, searchText, markers);
+        const isVisible = matchFunction(this.propertyName, searchText, markers);
 
-        this.titleElement.innerHTML = '';
-        this.titleElement.appendChild(TreeNode.createColoredSpan(this.propertyName, markers));
+        if (this.titleElement) {
+            this.titleElement.innerHTML = '';
+            this.titleElement.appendChild(TreeNode.createColoredSpan(this.propertyName, markers));
+        }
 
         if (isVisible) {
             this.show(DEEP_MODE_UP);
@@ -378,7 +368,7 @@ export class TreeNode {
             this.resetTitle(DEEP_MODE_NONE);
 
             for (const child of this.children) {
-                child.filter(searchText);
+                child.filter(searchText, matchFunction);
             }
         }
 

@@ -6,13 +6,13 @@ import { IComponent } from './IComponent';
 const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
 const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';
 
-const txtPrivatePart: HTMLInputElement = getElementById('txtPrivatePart');
-const txtPrivatePartConfirmation: HTMLInputElement = getElementById('txtPrivatePartConfirmation');
-const btnProtect: HTMLInputElement = getElementById('btnProtect');
-const spnProtectedConfirmation: HTMLInputElement = getElementById('spnProtectedConfirmation');
+const txtPrivatePart = getElementById('txtPrivatePart') as HTMLInputElement;
+const txtPrivatePartConfirmation = getElementById('txtPrivatePartConfirmation') as HTMLInputElement;
+const btnProtect = getElementById('btnProtect') as HTMLButtonElement;
+const spnProtectedConfirmation = getElementById('spnProtectedConfirmation');
 
-const spnPrivatePartSize: HTMLInputElement = getElementById('spnPrivatePartSize');
-const spnPrivatePartSizeConfirmation: HTMLInputElement = getElementById('spnPrivatePartSizeConfirmation');
+const spnPrivatePartSize = getElementById('spnPrivatePartSize');
+const spnPrivatePartSizeConfirmation = getElementById('spnPrivatePartSizeConfirmation');
 
 const PRIVATE_PART_PROTECTION_TIMEOUT: number = 60 * 1000;
 

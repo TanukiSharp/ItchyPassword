@@ -2,12 +2,12 @@ import { getElementById, ERROR_COLOR } from '../ui';
 import { PlainObject, objectDeepSort } from '../PlainObject';
 import { IComponent } from './IComponent';
 
-const divStorageOutput: HTMLInputElement = getElementById('divStorageOutput');
+const divStorageOutput: HTMLElement = getElementById('divStorageOutput');
 
-const txtPath: HTMLInputElement = getElementById('txtPath');
+const txtPath: HTMLInputElement = getElementById('txtPath') as HTMLInputElement;
 
-const txtParameters: HTMLInputElement = getElementById('txtParameters');
-const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys');
+const txtParameters: HTMLInputElement = getElementById('txtParameters') as HTMLInputElement;
+const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys') as HTMLInputElement;
 
 function shallowMerge(source: PlainObject | null, target: PlainObject | null, reservedKeys: string[]): PlainObject {
     const result: PlainObject = {};

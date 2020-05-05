@@ -4,20 +4,45 @@ import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
 import { TreeNode } from './TreeNode';
 import * as plainObject from '../../PlainObject';
+import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
 
-const btnTabVaultTabTreeView = getElementById('btnTabVaultTabTreeView');
+const btnTabVaultTabTreeView = getElementById('btnTabVaultTabTreeView') as HTMLButtonElement;
 const divTabVaultTabTreeView = getElementById('divTabVaultTabTreeView');
 
-const divVaultTreeViewSearchAndTree = getElementById('divVaultTreeViewSearchAndTree');
-
-const treeVault: HTMLElement = getElementById('treeVault');
-const txtSearchVault: HTMLInputElement = getElementById('txtSearchVault');
+const trvVaultTreeView = getElementById('trvVaultTreeView');
+const txtVaultTreeViewSearch = getElementById('txtVaultTreeViewSearch') as HTMLInputElement;
+const cboVaultTreeViewSearchType = getElementById('cboVaultTreeViewSearchType') as HTMLSelectElement;
 
 let rootTreeNode: TreeNode;
 
+interface SearchMatchFunctionDescription {
+    text: string,
+    function: SearchMatchFunction
+}
+
+const searchMatchFunctionDescriptions: SearchMatchFunctionDescription[] = [
+    { text: 'Aggresive', function: aggresiveSearchMatchFunction },
+    { text: 'Regular', function: containsSearchMatchFunction },
+];
+
 function onSearchVaultInputChanged(): void {
-    if (rootTreeNode) {
-        rootTreeNode.filter(txtSearchVault.value.toLocaleLowerCase());
+    if (!rootTreeNode) {
+        return;
+    }
+
+    const index: number = cboVaultTreeViewSearchType.selectedIndex;
+    const searchMatchFunction: SearchMatchFunction = searchMatchFunctionDescriptions[index].function;
+
+    rootTreeNode.filter(txtVaultTreeViewSearch.value.toLocaleLowerCase(), searchMatchFunction);
+}
+
+function populateSearchFunctions(): void {
+    cboVaultTreeViewSearchType.innerHTML = '';
+
+    for (let description of searchMatchFunctionDescriptions) {
+        const option = document.createElement('option');
+        option.text = description.text;
+        cboVaultTreeViewSearchType.appendChild(option);
     }
 }
 
@@ -25,19 +50,14 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
     onVaultLoaded(vault: plainObject.PlainObject): void {
         rootTreeNode = new TreeNode(null, '<root>', '', vault);
 
-        treeVault.innerHTML = '';
-        treeVault.appendChild(rootTreeNode.element);
-
-        // Hack to prevent tree view from shrinking, set to maximum possible height after building the whole tree.
-        setTimeout(() => treeVault.style.minHeight = `${treeVault.clientHeight}px`, 1);
-
-        divVaultTreeViewSearchAndTree.style.removeProperty('display');
+        trvVaultTreeView.innerHTML = '';
+        trvVaultTreeView.appendChild(rootTreeNode.element);
     }
 
-    public getTabButton(): HTMLInputElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabVaultTabTreeView;
     }
-    public getTabContent(): HTMLInputElement {
+    public getTabContent(): HTMLElement {
         return divTabVaultTabTreeView;
     }
 
@@ -45,7 +65,9 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
     }
 
     public init(): void {
-        divVaultTreeViewSearchAndTree.style.display = 'none';
-        txtSearchVault.addEventListener('input', onSearchVaultInputChanged)
+        populateSearchFunctions();
+
+        txtVaultTreeViewSearch.addEventListener('input', onSearchVaultInputChanged);
+        cboVaultTreeViewSearchType.addEventListener('change', onSearchVaultInputChanged);
     }
 }

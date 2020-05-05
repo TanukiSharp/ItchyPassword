@@ -15,20 +15,20 @@ import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyn
 
 const RESERVED_KEYS: string[] = ['version', 'value'];
 
-const btnTabCiphers: HTMLInputElement = ui.getElementById('btnTabCiphers');
-const divTabCiphers: HTMLInputElement = ui.getElementById('divTabCiphers');
+const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
+const divTabCiphers = ui.getElementById('divTabCiphers');
 
 const cipher: crypto.ICipher = new CipherV2();
 
-const txtCipherName: HTMLInputElement = ui.getElementById('txtCipherName');
-const txtCipherSource: HTMLInputElement = ui.getElementById('txtCipherSource');
-const txtCipherTarget: HTMLInputElement = ui.getElementById('txtCipherTarget');
-const btnEncrypt: HTMLInputElement = ui.getElementById('btnEncrypt');
-const btnDecrypt: HTMLInputElement = ui.getElementById('btnDecrypt');
+const txtCipherName = ui.getElementById('txtCipherName') as HTMLInputElement;
+const txtCipherSource = ui.getElementById('txtCipherSource') as HTMLInputElement;
+const txtCipherTarget = ui.getElementById('txtCipherTarget') as HTMLInputElement;
+const btnEncrypt = ui.getElementById('btnEncrypt') as HTMLButtonElement;
+const btnDecrypt = ui.getElementById('btnDecrypt') as HTMLButtonElement;
 
-const btnClearCipherSource: HTMLInputElement = ui.getElementById('btnClearCipherSource');
-const btnCopyCipherTarget: HTMLInputElement = ui.getElementById('btnCopyCipherTarget');
-const btnClearCipherTarget: HTMLInputElement = ui.getElementById('btnClearCipherTarget');
+const btnClearCipherSource = ui.getElementById('btnClearCipherSource') as HTMLButtonElement;
+const btnCopyCipherTarget = ui.getElementById('btnCopyCipherTarget') as HTMLButtonElement;
+const btnClearCipherTarget = ui.getElementById('btnClearCipherTarget') as HTMLButtonElement;
 
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
@@ -161,10 +161,10 @@ async function onDecryptButtonClick(): Promise<boolean> {
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLInputElement {
+    getTabButton(): HTMLButtonElement {
         return btnTabCiphers;
     }
-    getTabContent(): HTMLInputElement {
+    getTabContent(): HTMLElement {
         return divTabCiphers;
     }
     onTabSelected(): void {

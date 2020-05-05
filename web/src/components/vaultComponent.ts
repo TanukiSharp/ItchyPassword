@@ -17,11 +17,11 @@ export interface IVaultComponent {
     onVaultLoaded(vault: plainObject.PlainObject): void;
 }
 
-const divTabVault: HTMLInputElement = getElementById('divTabVault');
-const btnTabVault: HTMLInputElement = getElementById('btnTabVault');
+const divTabVault = getElementById('divTabVault');
+const btnTabVault = getElementById('btnTabVault') as HTMLButtonElement;
 
-const btnRefreshVault: HTMLInputElement = getElementById('btnRefreshVault');
-const btnClearVaultSettings: HTMLInputElement = getElementById('btnClearVaultSettings');
+const btnRefreshVault = getElementById('btnRefreshVault') as HTMLButtonElement;
+const btnClearVaultSettings = getElementById('btnClearVaultSettings') as HTMLButtonElement;
 
 const elements: any[] = [
     new VaultTreeViewComponent(),
@@ -76,10 +76,10 @@ function onClearVaultSettingsButtonClick(): void {
 }
 
 export class VaultComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLInputElement {
+    getTabButton(): HTMLButtonElement {
         return btnTabVault;
     }
-    getTabContent(): HTMLInputElement {
+    getTabContent(): HTMLElement {
         return divTabVault;
     }
     onTabSelected(): void {

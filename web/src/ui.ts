@@ -1,14 +1,14 @@
 export const SUCCESS_COLOR: string = '#D0FFD0';
 export const ERROR_COLOR: string = '#FFD0D0';
 
-export function getElementById(elementName: string): HTMLInputElement {
+export function getElementById(elementName: string): HTMLElement {
     const element: HTMLElement|null = document.getElementById(elementName);
 
     if (elementName === null) {
         throw new Error(`DOM element '${elementName}' not found.`);
     }
 
-    return element as HTMLInputElement;
+    return element as HTMLElement;
 }
 
 async function writeToClipboard(text: string): Promise<boolean> {
@@ -48,7 +48,7 @@ function createThrottleTimeout(clearFunc: Function, duration: number): ThrottleT
 
 export type FeedbackButtonAsyncFunction = () => Promise<boolean> | boolean | Promise<void> | void;
 
-export function setupFeedbackButton(button: HTMLInputElement, action: FeedbackButtonAsyncFunction): () => void {
+export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackButtonAsyncFunction): () => void {
     const throttleTimeout: ThrottleTimeout = createThrottleTimeout(() => {
         button.classList.remove('good-flash');
         button.classList.remove('bad-flash');
@@ -87,11 +87,11 @@ export function setupFeedbackButton(button: HTMLInputElement, action: FeedbackBu
     return clickFunction;
 }
 
-export function setupCopyButton(txt: HTMLInputElement, button: HTMLInputElement): () => void {
+export function setupCopyButton(txt: HTMLInputElement, button: HTMLButtonElement): () => void {
     return setupFeedbackButton(button, () => writeToClipboard(txt.value));
 }
 
-export function setupViewButton(txt: HTMLInputElement, button: HTMLInputElement): void {
+export function setupViewButton(txt: HTMLInputElement, button: HTMLButtonElement): void {
     button.addEventListener('click', () => {
         if (txt.type === 'password') {
             txt.type = 'input';
@@ -117,7 +117,7 @@ export function showHideMany(elements: HTMLElement[], isVisible: boolean): void 
     }
 }
 
-export function setupShowHideButton(button: HTMLInputElement, startVisible: boolean, elements: HTMLElement[]): void {
+export function setupShowHideButton(button: HTMLButtonElement, startVisible: boolean, elements: HTMLElement[]): void {
     let isVisible = startVisible;
     button.addEventListener('click', function () {
         isVisible = !isVisible;
