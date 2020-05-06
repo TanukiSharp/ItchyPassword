@@ -370,12 +370,12 @@ export class TreeNode {
         const markers: PositionMarker[] = [];
         const isVisible = matchFunction(this.title, searchText, markers);
 
-        if (this.titleElement) {
-            this.titleElement.innerHTML = '';
-            this.titleElement.appendChild(TreeNode.createColoredSpan(this.title, markers));
-        }
-
         if (isVisible) {
+            if (this.titleElement) {
+                this.titleElement.innerHTML = '';
+                this.titleElement.appendChild(TreeNode.createColoredSpan(this.title, markers));
+            }
+
             this.show(DEEP_MODE_UP);
             this.show(DEEP_MODE_DOWN);
         } else {
