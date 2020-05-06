@@ -106,7 +106,7 @@ export class TreeNode {
         if (parent) {
             const context: TreeNodeContext = {
                 isCipher: this.isCipher,
-                isPassword: this.isCipher,
+                isPassword: this.isPassword,
                 path,
                 key: title,
                 value
@@ -381,10 +381,10 @@ export class TreeNode {
         } else {
             this.hide(DEEP_MODE_NONE);
             this.resetTitle(DEEP_MODE_NONE);
+        }
 
-            for (const child of this.children) {
-                child.filter(searchText, matchFunction);
-            }
+        for (const child of this.children) {
+            child.filter(searchText, matchFunction);
         }
 
         this.updateLines();
