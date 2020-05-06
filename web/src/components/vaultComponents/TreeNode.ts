@@ -11,6 +11,18 @@ const HORIZONTAL_LINE_VERTICAL_OFFSET = 11;
 const HORIZONTAL_LINE_LENGTH = 12;
 const VERTICAL_BAR_OFFSET = 6;
 
+export interface TreeNodeContext {
+    isCipher: boolean;
+    isPassword: boolean;
+    path: string;
+    key: string;
+    value: any;
+}
+
+export interface TreeNodeTitleElementFactory {
+    createTreeNodeTitleElement(context: TreeNodeContext): HTMLElement;
+}
+
 export class TreeNode {
     protected readonly parent: TreeNode | null;
     protected readonly children: TreeNode[] = [];
@@ -19,8 +31,8 @@ export class TreeNode {
     protected readonly titleElement: HTMLElement | null = null;
     protected readonly childrenContainerElement: HTMLElement;
 
-    protected readonly _propertyName: string;
-    protected readonly propertyValue: any;
+    protected readonly title: string;
+    protected readonly value: any;
 
     protected readonly isHint: boolean = false;
     protected readonly isCipher: boolean = false;
@@ -28,10 +40,6 @@ export class TreeNode {
 
     public get element(): HTMLElement {
         return this.rootElement;
-    }
-
-    public get propertyName(): string {
-        return this._propertyName;
     }
 
     public get isVisible(): boolean {
@@ -69,24 +77,9 @@ export class TreeNode {
         this.children.push(child);
     }
 
-    constructor(parent: TreeNode | null, path: string, title: string, value: any) {
+    constructor(parent: TreeNode | null, path: string, title: string, factory: TreeNodeTitleElementFactory, value: any) {
         this.parent = parent;
-
-        this.rootElement = document.createElement('div');
-        this.setRootElementStyle();
-
-        if (parent) {
-            // Construct title DOM element.
-            this.titleElement = document.createElement('div');
-            this.titleElement.innerText = title;
-            this.rootElement.appendChild(this.titleElement);
-            this.setTitleElementStyle();
-        }
-
-        // Construct children container DOM element.
-        this.childrenContainerElement = document.createElement('div');
-        this.rootElement.appendChild(this.childrenContainerElement);
-        this.setChildrenContainerElementStyle();
+        this.title = title;
 
         let isLeaf: boolean = false;
 
@@ -107,15 +100,37 @@ export class TreeNode {
             this.isHint = true;
         }
 
-        this._propertyName = title;
+        this.rootElement = document.createElement('div');
+        this.setRootElementStyle();
+
+        if (parent) {
+            const context: TreeNodeContext = {
+                isCipher: this.isCipher,
+                isPassword: this.isCipher,
+                path,
+                key: title,
+                value
+            };
+
+            // Construct title DOM element.
+            this.titleElement = factory.createTreeNodeTitleElement(context);
+            this.titleElement.innerText = title;
+            this.rootElement.appendChild(this.titleElement);
+            this.setTitleElementStyle();
+        }
+
+        // Construct children container DOM element.
+        this.childrenContainerElement = document.createElement('div');
+        this.rootElement.appendChild(this.childrenContainerElement);
+        this.setChildrenContainerElementStyle();
 
         if (isLeaf === false && plainObject.isPlainObject(value)) {
             for (const [childKey, childValue] of Object.entries(value)) {
-                const child = new TreeNode(this, `${path}/${childKey}`, childKey, childValue);
+                const child = new TreeNode(this, `${path}/${childKey}`, childKey, factory, childValue);
                 this.addChild(child);
             }
         } else {
-            this.propertyValue = value;
+            this.value = value;
 
             // const button = document.createElement('button');
             // button.innerText = title;
@@ -264,7 +279,7 @@ export class TreeNode {
     private resetTitle(deepMode: number): void {
         if (this.titleElement) {
             this.titleElement.innerHTML = '';
-            this.titleElement.innerText = this.propertyName;
+            this.titleElement.innerText = this.title;
         }
 
         if (deepMode === DEEP_MODE_UP && this.parent) {
@@ -353,11 +368,11 @@ export class TreeNode {
         this.resetTitle(DEEP_MODE_DOWN);
 
         const markers: PositionMarker[] = [];
-        const isVisible = matchFunction(this.propertyName, searchText, markers);
+        const isVisible = matchFunction(this.title, searchText, markers);
 
         if (this.titleElement) {
             this.titleElement.innerHTML = '';
-            this.titleElement.appendChild(TreeNode.createColoredSpan(this.propertyName, markers));
+            this.titleElement.appendChild(TreeNode.createColoredSpan(this.title, markers));
         }
 
         if (isVisible) {

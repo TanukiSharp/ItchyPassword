@@ -2,7 +2,7 @@ import { getElementById } from '../../ui';
 import { IComponent } from '../IComponent';
 import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
-import { TreeNode } from './TreeNode';
+import { TreeNode, TreeNodeTitleElementFactory, TreeNodeContext } from './TreeNode';
 import * as plainObject from '../../PlainObject';
 import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
 
@@ -46,9 +46,15 @@ function populateSearchFunctions(): void {
     }
 }
 
+class VaultTreeNodeTitleElementFactory implements TreeNodeTitleElementFactory {
+    createTreeNodeTitleElement(context: TreeNodeContext): HTMLElement {
+        return document.createElement('div');
+    }
+}
+
 export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultComponent {
     onVaultLoaded(vault: plainObject.PlainObject): void {
-        rootTreeNode = new TreeNode(null, '<root>', '', vault);
+        rootTreeNode = new TreeNode(null, '<root>', '', new VaultTreeNodeTitleElementFactory(), vault);
 
         trvVaultTreeView.innerHTML = '';
         trvVaultTreeView.appendChild(rootTreeNode.element);
