@@ -10,6 +10,9 @@ function indexedAggresiveSearchMatchFunction(lhs: string, lhsIndex: number, rhs:
         return true;
     }
 
+    lhs = lhs.toLowerCase();
+    rhs = rhs.toLowerCase();
+
     for (let len = rhs.length; len >= 1; len -= 1) {
         const subWord = rhs.substr(0, len);
         const foundPos = lhs.indexOf(subWord, lhsIndex);
@@ -32,7 +35,7 @@ export function aggresiveSearchMatchFunction(lhs: string, rhs: string, markers: 
 }
 
 export function containsSearchMatchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {
-    const index = lhs.indexOf(rhs);
+    const index = lhs.toLowerCase().indexOf(rhs.toLowerCase());
 
     if (index < 0) {
         return false;
