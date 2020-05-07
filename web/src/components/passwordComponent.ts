@@ -14,6 +14,9 @@ import * as storageOutputComponent from './storageOutputComponent';
 
 import { CancellationToken, TaskRunner } from '../asyncUtils';
 
+import * as serviceManager from '../services/serviceManger';
+import { PasswordService } from '../services/passwordService';
+
 const btnTabPasswords = ui.getElementById('btnTabPasswords') as HTMLButtonElement;
 const divTabPasswords = ui.getElementById('divTabPasswords');
 
@@ -353,5 +356,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
         updatePublicPartSize();
         updateOutputSizeRangeToNum();
         resetAlphabet();
+
+        serviceManager.registerService('password', new PasswordService());
     }
 };

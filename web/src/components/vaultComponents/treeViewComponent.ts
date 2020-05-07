@@ -4,7 +4,10 @@ import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
 import { TreeNode, TreeNodeTitleElementFactory, TreeNodeContext, DEEP_MODE_DOWN } from './TreeNode';
 import * as plainObject from '../../PlainObject';
+import * as ui from '../../ui';
 import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
+import * as serviceManager from '../../services/serviceManger';
+import { PasswordService } from '../../services/passwordService';
 
 const btnTabVaultTabTreeView = getElementById('btnTabVaultTabTreeView') as HTMLButtonElement;
 const divTabVaultTabTreeView = getElementById('divTabVaultTabTreeView');
@@ -48,7 +51,28 @@ function populateSearchFunctions(): void {
 }
 
 class VaultTreeNodeTitleElementFactory implements TreeNodeTitleElementFactory {
+    private readonly passwordService: PasswordService;
+
+    public constructor() {
+        this.passwordService = serviceManager.getService('password');
+    }
+
+    private async run(context: TreeNodeContext): Promise<void> {
+        const value = context.value;
+        await this.passwordService.generateAndCopyPasswordToClipboard(value.public, value.alphabet, value.length);
+    }
+
     createTreeNodeTitleElement(context: TreeNodeContext): HTMLElement {
+        if (context.isPassword) {
+            const button = document.createElement('button');
+            button.style.justifySelf = 'start';
+            button.style.minWidth = '80px';
+
+            ui.setupFeedbackButton(button, async () => await this.run(context));
+
+            return button;
+        }
+
         return document.createElement('div');
     }
 }
