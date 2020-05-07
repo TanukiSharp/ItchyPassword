@@ -365,8 +365,6 @@ export class TreeNode {
             return;
         }
 
-        this.resetTitle(DEEP_MODE_DOWN);
-
         const markers: PositionMarker[] = [];
         const isMatch = matchFunction(this.title, searchText, markers);
 
@@ -379,8 +377,7 @@ export class TreeNode {
             this.show(DEEP_MODE_UP);
             this.show(DEEP_MODE_DOWN);
         } else {
-            this.hide(DEEP_MODE_NONE);
-            this.resetTitle(DEEP_MODE_NONE);
+            this.resetTitle(DEEP_MODE_DOWN);
         }
 
         for (const child of this.children) {

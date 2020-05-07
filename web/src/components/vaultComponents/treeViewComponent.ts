@@ -2,7 +2,7 @@ import { getElementById } from '../../ui';
 import { IComponent } from '../IComponent';
 import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
-import { TreeNode, TreeNodeTitleElementFactory, TreeNodeContext } from './TreeNode';
+import { TreeNode, TreeNodeTitleElementFactory, TreeNodeContext, DEEP_MODE_DOWN } from './TreeNode';
 import * as plainObject from '../../PlainObject';
 import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
 
@@ -33,6 +33,7 @@ function onSearchVaultInputChanged(): void {
     const index: number = cboVaultTreeViewSearchType.selectedIndex;
     const searchMatchFunction: SearchMatchFunction = searchMatchFunctionDescriptions[index].function;
 
+    rootTreeNode.hide(DEEP_MODE_DOWN);
     rootTreeNode.filter(txtVaultTreeViewSearch.value.toLocaleLowerCase(), searchMatchFunction);
 }
 
