@@ -388,7 +388,7 @@ export class GitHubApiVaultStorage extends GitHubVaultStorageBase {
             return false;
         }
 
-        let password: string | null = await passwordComponent.generatePasswordString(passwordPublicPart, CancellationToken.none);
+        let password: string | null = await passwordComponent.generatePasswordString(passwordPublicPart, passwordComponent.DEFAULT_ALPHABET, CancellationToken.none);
         if (!password) {
             return false;
         }

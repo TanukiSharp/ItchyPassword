@@ -1,7 +1,7 @@
 import { getElementById, setupFeedbackButton } from '../ui';
 
 import { IComponent } from './IComponent';
-import { ITabInfo } from '../TabControl';
+import { ITabInfo, TabControl } from '../TabControl';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
@@ -9,20 +9,53 @@ import { SecureLocalStorage } from '../storages/SecureLocalStorage';
 import { IVaultStorage } from '../storages/IVaultStorage';
 import { GitHubPersonalAccessTokenVaultStorage } from '../storages/GitHubVaultStorage';
 import { hasPrivatePart } from './privatePartComponent';
+import * as plainObject from '../PlainObject';
+import { VaultTreeViewComponent } from './vaultComponents/treeViewComponent';
+import { VaultTextViewComponent } from './vaultComponents/textViewComponent';
 
-const divTabVault: HTMLInputElement = getElementById('divTabVault');
-const btnTabVault: HTMLInputElement = getElementById('btnTabVault');
+export interface IVaultComponent {
+    onVaultLoaded(vault: plainObject.PlainObject): void;
+}
 
-const txtVault: HTMLInputElement = getElementById('txtVault');
-const btnRefreshVault: HTMLInputElement = getElementById('btnRefreshVault');
-const btnClearVaultSettings: HTMLInputElement = getElementById('btnClearVaultSettings');
+const divTabVault = getElementById('divTabVault');
+const btnTabVault = getElementById('btnTabVault') as HTMLButtonElement;
+
+const btnRefreshVault = getElementById('btnRefreshVault') as HTMLButtonElement;
+const btnClearVaultSettings = getElementById('btnClearVaultSettings') as HTMLButtonElement;
+
+const elements: any[] = [
+    new VaultTreeViewComponent(),
+    new VaultTextViewComponent(),
+];
+
+const tabs: ITabInfo[] = elements.filter(e => (e as ITabInfo).getTabButton !== undefined);
+const components: (IComponent & IVaultComponent)[] = elements.filter(e => (e as IComponent).init !== undefined);
+
+new TabControl(tabs);
 
 let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new SecureLocalStorage());
 
 async function reloadVault(): Promise<boolean> {
-    const content: string | null = await vaultStorage.getVaultContent();
-    txtVault.value = content || '<error>';
-    return content !== null;
+    let content: string | null = await vaultStorage.getVaultContent();
+
+    if (content === null) {
+        return false;
+    }
+
+    try {
+        let obj = JSON.parse(content) as plainObject.PlainObject;
+        obj = plainObject.objectDeepSort(obj);
+
+        let component: IVaultComponent;
+        for (component of components) {
+            component.onVaultLoaded(obj);
+        }
+
+        return true;
+    } catch (error) {
+        console.error(error);
+        return false;
+    }
 }
 
 async function onRefreshVaultButtonClick(): Promise<boolean> {
@@ -43,18 +76,25 @@ function onClearVaultSettingsButtonClick(): void {
 }
 
 export class VaultComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLInputElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabVault;
     }
-    getTabContent(): HTMLInputElement {
+
+    public getTabContent(): HTMLElement {
         return divTabVault;
     }
-    onTabSelected(): void {
+
+    public onTabSelected(): void {
         storageOutputComponent.hide();
     }
 
-    init(): void {
+    public init(): void {
         setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);
+
+        let component: IComponent;
+        for (component of components) {
+            component.init();
+        }
     }
 }

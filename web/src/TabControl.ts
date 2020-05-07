@@ -1,6 +1,6 @@
 export interface ITabInfo {
-    getTabButton(): HTMLInputElement;
-    getTabContent(): HTMLInputElement;
+    getTabButton(): HTMLButtonElement;
+    getTabContent(): HTMLElement;
     onTabSelected(): void;
 }
 

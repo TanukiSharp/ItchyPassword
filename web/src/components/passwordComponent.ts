@@ -14,36 +14,39 @@ import * as storageOutputComponent from './storageOutputComponent';
 
 import { CancellationToken, TaskRunner } from '../asyncUtils';
 
-const btnTabPasswords: HTMLInputElement = ui.getElementById('btnTabPasswords');
-const divTabPasswords: HTMLInputElement = ui.getElementById('divTabPasswords');
+import * as serviceManager from '../services/serviceManger';
+import { PasswordService } from '../services/passwordService';
+
+const btnTabPasswords = ui.getElementById('btnTabPasswords') as HTMLButtonElement;
+const divTabPasswords = ui.getElementById('divTabPasswords');
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
-const txtPublicPart: HTMLInputElement = ui.getElementById('txtPublicPart');
-const spnPublicPartSize: HTMLInputElement = ui.getElementById('spnPublicPartSize');
-const btnGeneratePublicPart: HTMLInputElement = ui.getElementById('btnGeneratePublicPart');
-const btnClearPublicPart: HTMLInputElement = ui.getElementById('btnClearPublicPart');
-const btnCopyPublicPart: HTMLInputElement = ui.getElementById('btnCopyPublicPart');
-const btnShowHidePasswordOptionalFeatures: HTMLInputElement = ui.getElementById('btnShowHidePasswordOptionalFeatures');
+const txtPublicPart = ui.getElementById('txtPublicPart') as HTMLInputElement;
+const spnPublicPartSize = ui.getElementById('spnPublicPartSize');
+const btnGeneratePublicPart = ui.getElementById('btnGeneratePublicPart') as HTMLButtonElement;
+const btnClearPublicPart = ui.getElementById('btnClearPublicPart') as HTMLButtonElement;
+const btnCopyPublicPart = ui.getElementById('btnCopyPublicPart') as HTMLButtonElement;
+const btnShowHidePasswordOptionalFeatures = ui.getElementById('btnShowHidePasswordOptionalFeatures') as HTMLButtonElement;
 
-const lblAlphabetLength: HTMLInputElement = ui.getElementById('lblAlphabetLength');
-const numOutputSizeRange: HTMLInputElement = ui.getElementById('numOutputSizeRange');
-const numOutputSizeNum: HTMLInputElement = ui.getElementById('numOutputSizeNum');
+const lblAlphabetLength = ui.getElementById('lblAlphabetLength');
+const numOutputSizeRange = ui.getElementById('numOutputSizeRange') as HTMLInputElement;
+const numOutputSizeNum = ui.getElementById('numOutputSizeNum') as HTMLInputElement;
 
-const lblAlphabet: HTMLInputElement = ui.getElementById('lblAlphabet');
-const txtAlphabet: HTMLInputElement = ui.getElementById('txtAlphabet');
-const spnAlphabetSize: HTMLInputElement = ui.getElementById('spnAlphabetSize');
-const divPasswordAlphabetActions: HTMLInputElement = ui.getElementById('divPasswordAlphabetActions');
-const btnResetAlphabet: HTMLInputElement = ui.getElementById('btnResetAlphabet');
+const lblAlphabet = ui.getElementById('lblAlphabet');
+const txtAlphabet = ui.getElementById('txtAlphabet') as HTMLInputElement;
+const spnAlphabetSize = ui.getElementById('spnAlphabetSize');
+const divPasswordAlphabetActions = ui.getElementById('divPasswordAlphabetActions');
+const btnResetAlphabet = ui.getElementById('btnResetAlphabet') as HTMLButtonElement;
 
-const txtResultPassword: HTMLInputElement = ui.getElementById('txtResultPassword');
-const spnResultPasswordLength: HTMLInputElement = ui.getElementById('spnResultPasswordLength');
-const btnViewResultPassword: HTMLInputElement = ui.getElementById('btnViewResultPassword');
-const btnCopyResultPassword: HTMLInputElement = ui.getElementById('btnCopyResultPassword');
-const lblGeneratingPassword: HTMLInputElement = ui.getElementById('lblGeneratingPassword');
+const txtResultPassword = ui.getElementById('txtResultPassword') as HTMLInputElement;
+const spnResultPasswordLength = ui.getElementById('spnResultPasswordLength');
+const btnViewResultPassword = ui.getElementById('btnViewResultPassword') as HTMLButtonElement;
+const btnCopyResultPassword = ui.getElementById('btnCopyResultPassword') as HTMLButtonElement;
+const lblGeneratingPassword = ui.getElementById('lblGeneratingPassword');
 
-const DEFAULT_LENGTH: number = 64;
-const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+export const DEFAULT_LENGTH: number = 64;
+export const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
 const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
@@ -79,7 +82,7 @@ function onGeneratePublicPartButtonClick(): boolean {
 
     updatePasswordPublicPartLastUpdate();
 
-    run(CancellationToken.none);
+    run();
 
     return true;
 }
@@ -169,14 +172,14 @@ function updateOutputSizeNumToRange(): boolean {
 
 async function onOutputSizeRangeInput(): Promise<void> {
     updateOutputSizeRangeToNum();
-    await run(CancellationToken.none);
+    await run();
 }
 
 async function onOutputSizeNumInput(): Promise<void> {
     if (updateOutputSizeNumToRange()) {
         updateOutputSizeRangeToNum();
     }
-    await run(CancellationToken.none);
+    await run();
 }
 
 function updatePublicPartSize(): void {
@@ -205,7 +208,7 @@ async function onAlphabetTextInput(): Promise<void> {
     }
 
     updateAlphabetSize();
-    await run(CancellationToken.none);
+    await run();
 }
 
 async function onResetAlphabetButtonClick(): Promise<boolean> {
@@ -213,7 +216,7 @@ async function onResetAlphabetButtonClick(): Promise<boolean> {
         return false;
     }
 
-    await run(CancellationToken.none);
+    await run();
 
     return true;
 }
@@ -240,7 +243,7 @@ function canRun(publicPart?: string): boolean {
     return true;
 }
 
-export async function generatePasswordString(publicPart: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function generatePasswordString(publicPart: string, alphabet: string, cancellationToken: CancellationToken): Promise<string | null> {
     if (canRun(publicPart) === false) {
         return null;
     }
@@ -250,12 +253,12 @@ export async function generatePasswordString(publicPart: string, cancellationTok
     const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPart);
     const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes, cancellationToken);
 
-    return arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
+    return arrayUtils.toCustomBaseOneWay(keyBytes, alphabet);
 }
 
 const passwordTaskRunner: TaskRunner<void> = new TaskRunner<void>();
 
-async function run(cancellationToken: CancellationToken): Promise<void> {
+export async function run(): Promise<void> {
     if (canRun() === false) {
         clearOutputs();
         return;
@@ -271,7 +274,7 @@ async function run(cancellationToken: CancellationToken): Promise<void> {
 }
 
 async function runCore(cancellationToken: CancellationToken): Promise<void> {
-    const keyString: string | null = await generatePasswordString(txtPublicPart.value, cancellationToken);
+    const keyString: string | null = await generatePasswordString(txtPublicPart.value, txtAlphabet.value, cancellationToken);
     if (keyString === null) {
         return;
     }
@@ -298,23 +301,25 @@ function resetAlphabet(): boolean {
 async function onPublicPartTextInput(): Promise<void> {
     updatePublicPartSize();
     updatePasswordPublicPartLastUpdate();
-    await run(CancellationToken.none);
+    await run();
 }
 
 export class PasswordComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLInputElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabPasswords;
     }
-    getTabContent(): HTMLInputElement {
+
+    public getTabContent(): HTMLElement {
         return divTabPasswords;
     }
-    onTabSelected(): void {
+
+    public onTabSelected(): void {
         storageOutputComponent.show();
         updatePasswordGenerationParameters();
     }
 
-    init(): void {
-        privatePartComponent.registerOnChanged(async () => await run(CancellationToken.none));
+    public init(): void {
+        privatePartComponent.registerOnChanged(run);
 
         // dafuq!?
         numOutputSizeRange.max = DEFAULT_LENGTH.toString();
@@ -351,5 +356,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
         updatePublicPartSize();
         updateOutputSizeRangeToNum();
         resetAlphabet();
+
+        serviceManager.registerService('password', new PasswordService());
     }
 };
