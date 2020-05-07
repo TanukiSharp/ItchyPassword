@@ -42,8 +42,8 @@ const btnViewResultPassword = ui.getElementById('btnViewResultPassword') as HTML
 const btnCopyResultPassword = ui.getElementById('btnCopyResultPassword') as HTMLButtonElement;
 const lblGeneratingPassword = ui.getElementById('lblGeneratingPassword');
 
-const DEFAULT_LENGTH: number = 64;
-const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+export const DEFAULT_LENGTH: number = 64;
+export const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
 const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
 
@@ -79,7 +79,7 @@ function onGeneratePublicPartButtonClick(): boolean {
 
     updatePasswordPublicPartLastUpdate();
 
-    run(CancellationToken.none);
+    run();
 
     return true;
 }
@@ -169,14 +169,14 @@ function updateOutputSizeNumToRange(): boolean {
 
 async function onOutputSizeRangeInput(): Promise<void> {
     updateOutputSizeRangeToNum();
-    await run(CancellationToken.none);
+    await run();
 }
 
 async function onOutputSizeNumInput(): Promise<void> {
     if (updateOutputSizeNumToRange()) {
         updateOutputSizeRangeToNum();
     }
-    await run(CancellationToken.none);
+    await run();
 }
 
 function updatePublicPartSize(): void {
@@ -205,7 +205,7 @@ async function onAlphabetTextInput(): Promise<void> {
     }
 
     updateAlphabetSize();
-    await run(CancellationToken.none);
+    await run();
 }
 
 async function onResetAlphabetButtonClick(): Promise<boolean> {
@@ -213,7 +213,7 @@ async function onResetAlphabetButtonClick(): Promise<boolean> {
         return false;
     }
 
-    await run(CancellationToken.none);
+    await run();
 
     return true;
 }
@@ -240,7 +240,7 @@ function canRun(publicPart?: string): boolean {
     return true;
 }
 
-export async function generatePasswordString(publicPart: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function generatePasswordString(publicPart: string, alphabet: string, cancellationToken: CancellationToken): Promise<string | null> {
     if (canRun(publicPart) === false) {
         return null;
     }
@@ -250,12 +250,12 @@ export async function generatePasswordString(publicPart: string, cancellationTok
     const publicPartBytes: ArrayBuffer = stringUtils.stringToArray(publicPart);
     const keyBytes: ArrayBuffer = await passwordGenerator.generatePassword(privatePrivateBytes, publicPartBytes, cancellationToken);
 
-    return arrayUtils.toCustomBaseOneWay(keyBytes, txtAlphabet.value);
+    return arrayUtils.toCustomBaseOneWay(keyBytes, alphabet);
 }
 
 const passwordTaskRunner: TaskRunner<void> = new TaskRunner<void>();
 
-async function run(cancellationToken: CancellationToken): Promise<void> {
+export async function run(): Promise<void> {
     if (canRun() === false) {
         clearOutputs();
         return;
@@ -271,7 +271,7 @@ async function run(cancellationToken: CancellationToken): Promise<void> {
 }
 
 async function runCore(cancellationToken: CancellationToken): Promise<void> {
-    const keyString: string | null = await generatePasswordString(txtPublicPart.value, cancellationToken);
+    const keyString: string | null = await generatePasswordString(txtPublicPart.value, txtAlphabet.value, cancellationToken);
     if (keyString === null) {
         return;
     }
@@ -298,23 +298,25 @@ function resetAlphabet(): boolean {
 async function onPublicPartTextInput(): Promise<void> {
     updatePublicPartSize();
     updatePasswordPublicPartLastUpdate();
-    await run(CancellationToken.none);
+    await run();
 }
 
 export class PasswordComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLButtonElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabPasswords;
     }
-    getTabContent(): HTMLElement {
+
+    public getTabContent(): HTMLElement {
         return divTabPasswords;
     }
-    onTabSelected(): void {
+
+    public onTabSelected(): void {
         storageOutputComponent.show();
         updatePasswordGenerationParameters();
     }
 
-    init(): void {
-        privatePartComponent.registerOnChanged(async () => await run(CancellationToken.none));
+    public init(): void {
+        privatePartComponent.registerOnChanged(run);
 
         // dafuq!?
         numOutputSizeRange.max = DEFAULT_LENGTH.toString();

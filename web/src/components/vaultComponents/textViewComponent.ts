@@ -17,6 +17,7 @@ export class VaultTextViewComponent implements IComponent, ITabInfo, IVaultCompo
     public getTabButton(): HTMLButtonElement {
         return btnTabVaultTabTextView;
     }
+
     public getTabContent(): HTMLElement {
         return divTabVaultTabTextView;
     }

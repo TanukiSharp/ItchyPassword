@@ -161,18 +161,20 @@ async function onDecryptButtonClick(): Promise<boolean> {
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLButtonElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabCiphers;
     }
-    getTabContent(): HTMLElement {
+
+    public getTabContent(): HTMLElement {
         return divTabCiphers;
     }
-    onTabSelected(): void {
+
+    public onTabSelected(): void {
         storageOutputComponent.show();
         updateCipherParameters();
     }
 
-    init(): void {
+    public init(): void {
         ui.setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
 
         ui.setupFeedbackButton(btnEncrypt, onEncryptButtonClick);

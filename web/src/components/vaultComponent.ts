@@ -76,17 +76,19 @@ function onClearVaultSettingsButtonClick(): void {
 }
 
 export class VaultComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLButtonElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabVault;
     }
-    getTabContent(): HTMLElement {
+
+    public getTabContent(): HTMLElement {
         return divTabVault;
     }
-    onTabSelected(): void {
+
+    public onTabSelected(): void {
         storageOutputComponent.hide();
     }
 
-    init(): void {
+    public init(): void {
         setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);
 

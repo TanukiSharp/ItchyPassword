@@ -11,7 +11,7 @@ export function getElementById(elementName: string): HTMLElement {
     return element as HTMLElement;
 }
 
-async function writeToClipboard(text: string): Promise<boolean> {
+export async function writeToClipboard(text: string): Promise<boolean> {
     try {
         await navigator.clipboard.writeText(text);
         return true;

@@ -101,17 +101,19 @@ async function onReEncryptButtonClick(): Promise<boolean> {
 }
 
 export class ReEncryptComponent implements IComponent, ITabInfo {
-    getTabButton(): HTMLButtonElement {
+    public getTabButton(): HTMLButtonElement {
         return btnTabReEncrypt;
     }
-    getTabContent(): HTMLElement {
+
+    public getTabContent(): HTMLElement {
         return divTabReEncrypt;
     }
-    onTabSelected() {
+
+    public onTabSelected() {
         storageOutputComponent.hide();
     }
 
-    init(): void {
+    public init(): void {
         ui.setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget);
 
         // Mais est-ce que ce monde est serieux?

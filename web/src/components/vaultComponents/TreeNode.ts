@@ -1,9 +1,9 @@
 import * as plainObject from '../../PlainObject';
 import { SearchMatchFunction, PositionMarker } from '../../searchMatchFunctions';
 
-const DEEP_MODE_NONE = 0;
-const DEEP_MODE_UP = 1;
-const DEEP_MODE_DOWN = 2;
+export const DEEP_MODE_NONE = 0;
+export const DEEP_MODE_UP = 1;
+export const DEEP_MODE_DOWN = 2;
 
 const TREE_ELEMENT_HEIGHT = 24;
 
@@ -293,7 +293,7 @@ export class TreeNode {
         }
     }
 
-    private show(deepMode: number): void {
+    public show(deepMode: number): void {
         this.rootElement.style.display = 'grid';
 
         if (deepMode === DEEP_MODE_UP && this.parent) {
@@ -309,7 +309,7 @@ export class TreeNode {
         this.updateLines();
     }
 
-    private hide(deepMode: number): void {
+    public hide(deepMode: number): void {
         this.rootElement.style.display = 'none';
 
         if (deepMode === DEEP_MODE_UP && this.parent) {
@@ -359,8 +359,8 @@ export class TreeNode {
 
     public filter(searchText: string, matchFunction: SearchMatchFunction): void {
         if (!searchText) {
-            this.show(DEEP_MODE_DOWN);
             this.resetTitle(DEEP_MODE_DOWN);
+            this.show(DEEP_MODE_DOWN);
             this.updateLines();
             return;
         }
@@ -368,9 +368,9 @@ export class TreeNode {
         this.resetTitle(DEEP_MODE_DOWN);
 
         const markers: PositionMarker[] = [];
-        const isVisible = matchFunction(this.title, searchText, markers);
+        const isMatch = matchFunction(this.title, searchText, markers);
 
-        if (isVisible) {
+        if (isMatch) {
             if (this.titleElement) {
                 this.titleElement.innerHTML = '';
                 this.titleElement.appendChild(TreeNode.createColoredSpan(this.title, markers));

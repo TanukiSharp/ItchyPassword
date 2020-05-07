@@ -53,7 +53,7 @@ class VaultTreeNodeTitleElementFactory implements TreeNodeTitleElementFactory {
 }
 
 export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultComponent {
-    onVaultLoaded(vault: plainObject.PlainObject): void {
+    public onVaultLoaded(vault: plainObject.PlainObject): void {
         rootTreeNode = new TreeNode(null, '<root>', '', new VaultTreeNodeTitleElementFactory(), vault);
 
         trvVaultTreeView.innerHTML = '';
@@ -63,6 +63,7 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
     public getTabButton(): HTMLButtonElement {
         return btnTabVaultTabTreeView;
     }
+
     public getTabContent(): HTMLElement {
         return divTabVaultTabTreeView;
     }
