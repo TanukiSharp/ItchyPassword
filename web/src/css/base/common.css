@@ -38,6 +38,16 @@ button {
     width: 100%;
 }
 
+#lblMatchingPath, #lblMatchingPathLabel {
+    color: orange;
+    font-size: 0.8em;
+}
+
+#lblMatchingPathLabel {
+    color: gray;
+    margin-left: 2px;
+}
+
 .large-textarea {
     height: 200px;
 }

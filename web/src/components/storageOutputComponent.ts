@@ -1,10 +1,13 @@
 import { getElementById, ERROR_COLOR } from '../ui';
 import { PlainObject, objectDeepSort } from '../PlainObject';
 import { IComponent } from './IComponent';
+import * as serviceManager from '../services/serviceManger';
+import { VaultService } from '../services/vaultService';
 
 const divStorageOutput: HTMLElement = getElementById('divStorageOutput');
 
 const txtPath: HTMLInputElement = getElementById('txtPath') as HTMLInputElement;
+const lblMatchingPath: HTMLElement = getElementById('lblMatchingPath');
 
 const txtParameters: HTMLInputElement = getElementById('txtParameters') as HTMLInputElement;
 const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys') as HTMLInputElement;
@@ -66,7 +69,36 @@ function pathToObjectChain(path: string, chainInfo: IChainInfo | undefined = und
     return chainInfo;
 }
 
+function createMatchingPath(path: string, depth: number): string {
+    let position = 0;
+
+    for (let i = 0; i < depth; i += 1) {
+        position = path.indexOf('/', position);
+        if (position < 0) {
+            position = path.length + 1;
+            break;
+        }
+        position += 1;
+    }
+
+    return path.substr(0, position - 1);
+}
+
+function updateMatchingPath(): void {
+    const vaultService: VaultService = serviceManager.getService('vault');
+
+    const depth = vaultService.computeUserPathMatchDepth(txtPath.value);
+
+    if (depth > 0) {
+        const matchingPath = createMatchingPath(txtPath.value, depth);
+        lblMatchingPath.innerText = matchingPath;
+    } else {
+        lblMatchingPath.innerText = '';
+    }
+}
+
 function onPathTextInput() {
+    updateMatchingPath();
     update();
 }
 

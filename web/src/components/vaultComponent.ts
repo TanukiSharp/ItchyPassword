@@ -13,6 +13,9 @@ import * as plainObject from '../PlainObject';
 import { VaultTreeViewComponent } from './vaultComponents/treeViewComponent';
 import { VaultTextViewComponent } from './vaultComponents/textViewComponent';
 
+import * as serviceManager from '../services/serviceManger';
+import { VaultService } from '../services/vaultService';
+
 export interface IVaultComponent {
     onVaultLoaded(vault: plainObject.PlainObject): void;
 }
@@ -35,6 +38,30 @@ const subTabs = new TabControl(tabs);
 
 let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new SecureLocalStorage());
 
+let vaultObject: plainObject.PlainObject | null = null;
+
+function computeUserPathMatchDepth(path: string) {
+    if (vaultObject === null) {
+        return 0;
+    }
+
+    let obj = vaultObject;
+
+    const pathArray = path.split('/');
+
+    for (let i = 0; i < pathArray.length; i += 1) {
+        if (!obj[pathArray[i]]) {
+            return i;
+        }
+
+        // TODO: Filter here to not go further down ItchyObjects.
+
+        obj = obj[pathArray[i]];
+    }
+
+    return pathArray.length;
+}
+
 async function reloadVault(): Promise<boolean> {
     let content: string | null = await vaultStorage.getVaultContent();
 
@@ -46,6 +73,8 @@ async function reloadVault(): Promise<boolean> {
         let obj = JSON.parse(content) as plainObject.PlainObject;
         obj = plainObject.objectDeepSort(obj);
 
+        vaultObject = obj;
+
         let component: IVaultComponent;
         for (component of components) {
             component.onVaultLoaded(obj);
@@ -53,6 +82,7 @@ async function reloadVault(): Promise<boolean> {
 
         return true;
     } catch (error) {
+        vaultObject = null;
         console.error(error);
         return false;
     }
@@ -76,6 +106,10 @@ function onClearVaultSettingsButtonClick(): void {
 }
 
 export class VaultComponent implements IComponent, ITabInfo {
+    public computeUserPathMatchDepth(path: string) {
+        return computeUserPathMatchDepth(path);
+    }
+
     public getTabButton(): HTMLButtonElement {
         return btnTabVault;
     }
@@ -92,6 +126,9 @@ export class VaultComponent implements IComponent, ITabInfo {
     public init(): void {
         setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);
+
+        const vaultService = new VaultService(this);
+        serviceManager.registerService('vault', vaultService);
 
         let component: IComponent;
         for (component of components) {
