@@ -172,6 +172,7 @@ export class CipherComponent implements IComponent, ITabInfo {
     public onTabSelected(): void {
         storageOutputComponent.show();
         updateCipherParameters();
+        txtCipherName.focus();
     }
 
     public init(): void {

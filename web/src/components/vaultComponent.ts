@@ -31,7 +31,7 @@ const elements: any[] = [
 const tabs: ITabInfo[] = elements.filter(e => (e as ITabInfo).getTabButton !== undefined);
 const components: (IComponent & IVaultComponent)[] = elements.filter(e => (e as IComponent).init !== undefined);
 
-new TabControl(tabs);
+const subTabs = new TabControl(tabs);
 
 let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new SecureLocalStorage());
 
@@ -86,6 +86,7 @@ export class VaultComponent implements IComponent, ITabInfo {
 
     public onTabSelected(): void {
         storageOutputComponent.hide();
+        tabs[subTabs.activeTabIndex].onTabSelected();
     }
 
     public init(): void {

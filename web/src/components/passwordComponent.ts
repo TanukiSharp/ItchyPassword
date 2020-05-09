@@ -316,6 +316,7 @@ export class PasswordComponent implements IComponent, ITabInfo {
     public onTabSelected(): void {
         storageOutputComponent.show();
         updatePasswordGenerationParameters();
+        txtPublicPart.focus();
     }
 
     public init(): void {

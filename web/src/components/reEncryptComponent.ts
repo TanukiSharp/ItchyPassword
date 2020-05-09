@@ -111,6 +111,7 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
 
     public onTabSelected() {
         storageOutputComponent.hide();
+        txtReEncryptSource.focus();
     }
 
     public init(): void {

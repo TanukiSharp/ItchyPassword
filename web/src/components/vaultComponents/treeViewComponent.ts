@@ -94,6 +94,7 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
     }
 
     public onTabSelected(): void {
+        txtVaultTreeViewSearch.focus();
     }
 
     public init(): void {
