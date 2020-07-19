@@ -104,14 +104,14 @@ export abstract class GitHubVaultStorageBase implements IVaultStorage {
         return response;
     }
 
-    protected getSetVaultParameter(key: string, promptText: string): string | null {
+    protected getSetVaultParameter(key: string, promptText: string, defaultValue?: string): string | null {
         let value: string | null = window.localStorage.getItem(key);
 
         if (value) {
             return value;
         }
 
-        value = prompt(promptText);
+        value = prompt(promptText, defaultValue);
 
         if (!value) {
             return null;
@@ -123,19 +123,32 @@ export abstract class GitHubVaultStorageBase implements IVaultStorage {
     }
 
     protected ensureVaultParameters(): Promise<boolean> {
-        const username = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_USERNAME, 'GitHub account username:');
+        const url = new URL(window.location.toString());
+
+        let defaultAccountUsername = '';
+        let defaultRepo = '';
+
+        if (url.hostname === 'github.com') {
+            const pathElements = url.pathname.split('/');
+            if (pathElements.length >= 3) {
+                defaultAccountUsername = pathElements[1];
+                defaultRepo = `${pathElements[2]}Vault`;
+            }
+        }
+
+        const username = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_USERNAME, 'GitHub account username:', defaultAccountUsername);
         if (!username) {
             return Promise.resolve(false);
         }
         this.username = username;
 
-        const repositoryName: string | null = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_REPO, 'Vault GitHub repository name:');
+        const repositoryName: string | null = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_REPO, 'Vault GitHub repository name:', defaultRepo);
         if (!repositoryName) {
             return Promise.resolve(false);
         }
         this.repositoryName = repositoryName;
 
-        const vaultFilename: string | null = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_FILENAME, 'Vault filename:');
+        const vaultFilename: string | null = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_FILENAME, 'Vault filename:', 'vault.json');
         if (!vaultFilename) {
             return Promise.resolve(false);
         }
