@@ -131,11 +131,6 @@ export class TreeNode {
             }
         } else {
             this.value = value;
-
-            // const button = document.createElement('button');
-            // button.innerText = title;
-            // this.titleElement.innerHTML = '';
-            // this.titleElement.appendChild(button);
         }
 
         if (parent) {
