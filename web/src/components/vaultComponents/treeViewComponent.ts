@@ -83,6 +83,8 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
 
         trvVaultTreeView.innerHTML = '';
         trvVaultTreeView.appendChild(rootTreeNode.element);
+
+        onSearchVaultInputChanged();
     }
 
     public getTabButton(): HTMLButtonElement {
