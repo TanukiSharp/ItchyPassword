@@ -67,7 +67,7 @@ function clearAllVisualCues(): void {
 }
 
 async function onReEncryptButtonClick(): Promise<boolean> {
-    txtReEncryptTarget.value = '';
+    ui.clearText(txtReEncryptTarget);
     clearAllVisualCues();
 
     if (txtReEncryptSource.value.length === 0) {
@@ -128,11 +128,11 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
         });
 
         btnClearReEncryptSource.addEventListener('click', () => {
-            txtReEncryptSource.value = '';
+            ui.clearText(txtReEncryptSource);
         });
 
         btnClearReEncryptTarget.addEventListener('click', () => {
-            txtReEncryptTarget.value = '';
+            ui.clearText(txtReEncryptTarget);
         });
 
         ui.setupFeedbackButton(btnReEncrypt, onReEncryptButtonClick);

@@ -1,16 +1,16 @@
-import { getElementById, ERROR_COLOR } from '../ui';
+import * as ui from '../ui';
 import { PlainObject, objectDeepSort } from '../PlainObject';
 import { IComponent } from './IComponent';
 import * as serviceManager from '../services/serviceManger';
 import { VaultService } from '../services/vaultService';
 
-const divStorageOutput: HTMLElement = getElementById('divStorageOutput');
+const divStorageOutput: HTMLElement = ui.getElementById('divStorageOutput');
 
-const txtPath: HTMLInputElement = getElementById('txtPath') as HTMLInputElement;
-const lblMatchingPath: HTMLElement = getElementById('lblMatchingPath');
+const txtPath: HTMLInputElement = ui.getElementById('txtPath') as HTMLInputElement;
+const lblMatchingPath: HTMLElement = ui.getElementById('lblMatchingPath');
 
-const txtParameters: HTMLInputElement = getElementById('txtParameters') as HTMLInputElement;
-const txtCustomKeys: HTMLInputElement = getElementById('txtCustomKeys') as HTMLInputElement;
+const txtParameters: HTMLInputElement = ui.getElementById('txtParameters') as HTMLInputElement;
+const txtCustomKeys: HTMLInputElement = ui.getElementById('txtCustomKeys') as HTMLInputElement;
 
 function shallowMerge(source: PlainObject | null, target: PlainObject | null, reservedKeys: string[]): PlainObject {
     const result: PlainObject = {};
@@ -112,7 +112,7 @@ function updateCustomKeysDisplay(isValid: boolean): void {
         return;
     }
 
-    txtCustomKeys.style.setProperty('background', ERROR_COLOR);
+    txtCustomKeys.style.setProperty('background', ui.ERROR_COLOR);
 }
 
 function parseCustomKeys(): PlainObject | null {
@@ -161,7 +161,7 @@ export function clearOutputs(): void {
     _parameterKeys = undefined;
     _parameterPath = undefined;
     _reservedKeys = undefined;
-    txtParameters.value = '';
+    ui.clearText(txtParameters);
 }
 
 let _parameterKeys: PlainObject | undefined;

@@ -192,7 +192,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         });
 
         btnClearCipherSource.addEventListener('click', () => {
-            txtCipherSource.value = '';
+            ui.clearText(txtCipherSource);
         });
 
         btnClearCipherTarget.addEventListener('click', () => {

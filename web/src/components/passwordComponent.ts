@@ -60,7 +60,8 @@ function onClearPublicPartButtonClick(): boolean {
         }
     }
 
-    txtPublicPart.value = '';
+    ui.clearText(txtPublicPart);
+
     updatePublicPartSize();
 
     updatePasswordPublicPartLastUpdate();
@@ -222,7 +223,7 @@ async function onResetAlphabetButtonClick(): Promise<boolean> {
 }
 
 function clearOutputs(): void {
-    txtResultPassword.value = '';
+    ui.clearText(txtResultPassword);
     storageOutputComponent.clearOutputs();
     updateResultPasswordLength();
 }

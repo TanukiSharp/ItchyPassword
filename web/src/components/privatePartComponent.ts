@@ -1,4 +1,4 @@
-import { getElementById, SUCCESS_COLOR, ERROR_COLOR } from '../ui';
+import * as ui from '../ui';
 
 import { TimedAction } from '../TimedAction';
 import { IComponent } from './IComponent';
@@ -6,13 +6,13 @@ import { IComponent } from './IComponent';
 const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
 const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';
 
-const txtPrivatePart = getElementById('txtPrivatePart') as HTMLInputElement;
-const txtPrivatePartConfirmation = getElementById('txtPrivatePartConfirmation') as HTMLInputElement;
-const btnProtect = getElementById('btnProtect') as HTMLButtonElement;
-const spnProtectedConfirmation = getElementById('spnProtectedConfirmation');
+const txtPrivatePart = ui.getElementById('txtPrivatePart') as HTMLInputElement;
+const txtPrivatePartConfirmation = ui.getElementById('txtPrivatePartConfirmation') as HTMLInputElement;
+const btnProtect = ui.getElementById('btnProtect') as HTMLButtonElement;
+const spnProtectedConfirmation = ui.getElementById('spnProtectedConfirmation');
 
-const spnPrivatePartSize = getElementById('spnPrivatePartSize');
-const spnPrivatePartSizeConfirmation = getElementById('spnPrivatePartSizeConfirmation');
+const spnPrivatePartSize = ui.getElementById('spnPrivatePartSize');
+const spnPrivatePartSizeConfirmation = ui.getElementById('spnPrivatePartSizeConfirmation');
 
 const PRIVATE_PART_PROTECTION_TIMEOUT: number = 60 * 1000;
 
@@ -43,8 +43,9 @@ function protectAndLockPrivatePart(): void {
     privatePart = txtPrivatePart.value;
     spnProtectedConfirmation.innerHTML = 'Protected';
 
-    txtPrivatePart.value = '';
-    txtPrivatePartConfirmation.value = '';
+    ui.clearText(txtPrivatePart);
+
+    ui.clearText(txtPrivatePartConfirmation);
     spnPrivatePartSize.innerHTML = '0';
     spnPrivatePartSizeConfirmation.innerHTML = '0';
 
@@ -99,9 +100,9 @@ function onPrivatePartTextInput(): void {
 
 function updatePrivatePartsMatching(): void {
     if (txtPrivatePartConfirmation.value === txtPrivatePart.value) {
-        txtPrivatePartConfirmation.style.setProperty('background', SUCCESS_COLOR);
+        txtPrivatePartConfirmation.style.setProperty('background', ui.SUCCESS_COLOR);
     } else {
-        txtPrivatePartConfirmation.style.setProperty('background', ERROR_COLOR);
+        txtPrivatePartConfirmation.style.setProperty('background', ui.ERROR_COLOR);
     }
 };
 
