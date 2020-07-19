@@ -119,5 +119,6 @@ export class PrivatePartComponent implements IComponent {
 
         updatePrivatePartsMatching();
         btnProtect.title = btnProtectTitleForProtect;
+        txtPrivatePart.focus();
     }
 }
