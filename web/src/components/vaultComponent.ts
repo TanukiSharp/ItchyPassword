@@ -106,6 +106,8 @@ function onClearVaultSettingsButtonClick(): void {
 }
 
 export class VaultComponent implements IComponent, ITabInfo {
+    public readonly name: string = 'Vault';
+
     public computeUserPathMatchDepth(path: string) {
         return computeUserPathMatchDepth(path);
     }

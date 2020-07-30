@@ -101,6 +101,8 @@ async function onReEncryptButtonClick(): Promise<boolean> {
 }
 
 export class ReEncryptComponent implements IComponent, ITabInfo {
+    public readonly name: string = 'ReEncrypt';
+
     public getTabButton(): HTMLButtonElement {
         return btnTabReEncrypt;
     }

@@ -161,6 +161,8 @@ async function onDecryptButtonClick(): Promise<boolean> {
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
+    public readonly name: string = 'Cipher';
+
     public getTabButton(): HTMLButtonElement {
         return btnTabCiphers;
     }

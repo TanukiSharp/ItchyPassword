@@ -10,6 +10,8 @@ const divTabVaultTabTextView = getElementById('divTabVaultTabTextView');
 const txtVault = getElementById('txtVault') as HTMLInputElement;
 
 export class VaultTextViewComponent implements IComponent, ITabInfo, IVaultComponent {
+    public readonly name: string = 'VaultTextView';
+
     public onVaultLoaded(vault: plainObject.PlainObject): void {
         txtVault.value = JSON.stringify(vault, undefined, 4);
     }

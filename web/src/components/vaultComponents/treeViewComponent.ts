@@ -78,6 +78,8 @@ class VaultTreeNodeTitleElementFactory implements TreeNodeTitleElementFactory {
 }
 
 export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultComponent {
+    public readonly name: string = 'VaultTreeView';
+
     public onVaultLoaded(vault: plainObject.PlainObject): void {
         rootTreeNode = new TreeNode(null, '<root>', '', new VaultTreeNodeTitleElementFactory(), vault);
 

@@ -306,6 +306,8 @@ async function onPublicPartTextInput(): Promise<void> {
 }
 
 export class PasswordComponent implements IComponent, ITabInfo {
+    public readonly name: string = 'Password';
+
     public getTabButton(): HTMLButtonElement {
         return btnTabPasswords;
     }
