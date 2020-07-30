@@ -8,6 +8,10 @@ const gitRevisionPlugin = new GitRevisionPlugin();
 module.exports = {
     entry: './src/index.ts',
     devtool: 'source-map',
+    watchOptions: {
+        aggregateTimeout: 200,
+        poll: 1000
+    },
     module: {
         rules: [
             {
