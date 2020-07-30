@@ -96,23 +96,6 @@ function updatePasswordPublicPartLastUpdate(): void {
     }
 }
 
-function deepMerge(source: PlainObject, target: PlainObject): void {
-    for (const sourceKey of Object.keys(source)) {
-        const targetValue: any = target[sourceKey];
-        const sourceValue: any = source[sourceKey];
-
-        if (targetValue === undefined ||
-            targetValue === null ||
-            targetValue.constructor.name !== 'Object' ||
-            sourceValue.constructor.name !== 'Object') {
-            target[sourceKey] = sourceValue;
-            continue;
-        }
-
-        deepMerge(sourceValue, targetValue);
-    }
-}
-
 function updateResultPasswordLength(): void {
     spnResultPasswordLength.innerHTML = txtResultPassword.value.length.toString();
 }

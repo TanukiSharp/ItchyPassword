@@ -1,6 +1,8 @@
 import * as ui from '../ui';
+import * as stringUtils from '../stringUtils';
 import { PlainObject, objectDeepSort } from '../PlainObject';
 import { IComponent } from './IComponent';
+import { rootComponent, RootComponent } from './rootComponent';
 import * as serviceManager from '../services/serviceManger';
 import { VaultService } from '../services/vaultService';
 
@@ -164,10 +166,67 @@ function update(): void {
     txtParameters.value = JSON.stringify(objectDeepSort(chainInfo.head), undefined, 4);
 }
 
-async function pushToVault(): Promise<void> {
-    console.log('txtParameters.value:', txtParameters.value);
+function deepMerge(source: PlainObject, target: PlainObject): void {
+    for (const sourceKey of Object.keys(source)) {
+        const targetValue: any = target[sourceKey];
+        const sourceValue: any = source[sourceKey];
 
-    // vaultStorage.setVaultContent(
+        if (targetValue === undefined ||
+            targetValue === null ||
+            targetValue.constructor.name !== 'Object' ||
+            sourceValue.constructor.name !== 'Object') {
+            target[sourceKey] = sourceValue;
+            continue;
+        }
+
+        deepMerge(sourceValue, targetValue);
+    }
+}
+
+function generateUpdateMessage() {
+    const activeComponent: IComponent | null = (rootComponent as RootComponent).getActiveComponent();
+
+    if (activeComponent === null) {
+        throw new Error('Could not determine active component.');
+    }
+
+    let componentName: string = activeComponent.name.toLowerCase();
+
+    const matchingPath: string = lblMatchingPath.innerText;
+    const fullPath: string = txtPath.value;
+
+    if (!matchingPath) {
+        return `Added ${componentName} for '${fullPath}'`;
+    }
+
+    if (matchingPath === fullPath) {
+        return `Updated ${componentName} for '${fullPath}'`;
+    }
+
+    const remainingPath: string = stringUtils.trim(fullPath.substr(matchingPath.length), '/');
+
+    return `Updated ${componentName} for '${matchingPath}' adding '${remainingPath}'`;
+}
+
+async function pushToVault(): Promise<boolean> {
+    const vaultContentData: string | null = await vaultStorage.getVaultContent();
+
+    if (vaultContentData === null) {
+        return false;
+    }
+
+    const newData = JSON.parse(txtParameters.value);
+    let vaultContent = JSON.parse(vaultContentData);
+
+    deepMerge(newData, vaultContent);
+
+    const message: string = generateUpdateMessage();
+
+    const newVaultContentData: string = JSON.stringify(vaultContent, undefined, 4) + '\n';
+
+    await vaultStorage.setVaultContent(newVaultContentData, `[ItchyPassword] ${message}`);
+
+    return true;
 }
 
 export function clearOutputs(): void {
