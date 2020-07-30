@@ -10,6 +10,7 @@ export class TabControl {
     public get activeTabIndex(): number {
         return this._activeTabIndex;
     }
+
     public set activeTabIndex(index: number) {
         if (index < 0 || index >= this.tabs.length) {
             throw new Error(`Argument 'index' out of range. Must be in range [0;${this.tabs.length - 1}].`);
