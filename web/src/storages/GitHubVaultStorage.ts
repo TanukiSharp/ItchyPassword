@@ -20,7 +20,7 @@ interface IGitHubContent {
     content: string;
 }
 
-export abstract class GitHubVaultStorageBase implements IVaultStorage {
+abstract class GitHubVaultStorageBase implements IVaultStorage {
     static BASE_URL: string = 'https://api.github.com';
     static AUTH_TOKEN_KEY_NAME: string = 'GitHubVaultStorageBase.AuthToken';
 

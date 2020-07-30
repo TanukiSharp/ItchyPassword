@@ -21,9 +21,11 @@ export async function writeToClipboard(text: string): Promise<boolean> {
     }
 }
 
-export function clearText(txt: HTMLInputElement): void {
+export function clearText(txt: HTMLInputElement, refocus: boolean = false): void {
     txt.value = '';
-    txt.focus();
+    if (refocus) {
+        txt.focus();
+    }
 }
 
 interface ThrottleTimeout {

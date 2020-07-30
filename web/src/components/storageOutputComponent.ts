@@ -4,13 +4,20 @@ import { IComponent } from './IComponent';
 import * as serviceManager from '../services/serviceManger';
 import { VaultService } from '../services/vaultService';
 
+import { IVaultStorage } from '../storages/IVaultStorage';
+import { GitHubPersonalAccessTokenVaultStorage } from '../storages/GitHubVaultStorage';
+import { SecureLocalStorage } from '../storages/SecureLocalStorage';
+
 const divStorageOutput: HTMLElement = ui.getElementById('divStorageOutput');
 
 const txtPath: HTMLInputElement = ui.getElementById('txtPath') as HTMLInputElement;
 const lblMatchingPath: HTMLElement = ui.getElementById('lblMatchingPath');
 
 const txtParameters: HTMLInputElement = ui.getElementById('txtParameters') as HTMLInputElement;
+const btnPushToVault: HTMLButtonElement = ui.getElementById('btnPushToVault') as HTMLButtonElement;
 const txtCustomKeys: HTMLInputElement = ui.getElementById('txtCustomKeys') as HTMLInputElement;
+
+let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new SecureLocalStorage());
 
 function shallowMerge(source: PlainObject | null, target: PlainObject | null, reservedKeys: string[]): PlainObject {
     const result: PlainObject = {};
@@ -157,6 +164,12 @@ function update(): void {
     txtParameters.value = JSON.stringify(objectDeepSort(chainInfo.head), undefined, 4);
 }
 
+async function pushToVault(): Promise<void> {
+    console.log('txtParameters.value:', txtParameters.value);
+
+    // vaultStorage.setVaultContent(
+}
+
 export function clearOutputs(): void {
     _parameterKeys = undefined;
     _parameterPath = undefined;
@@ -186,6 +199,7 @@ export function hide(): void {
 export class StorageOutputComponent implements IComponent {
     init(): void {
         txtCustomKeys.addEventListener('input', onCustomKeysTextInput);
+        ui.setupFeedbackButton(btnPushToVault, pushToVault);
         txtPath.addEventListener('input', onPathTextInput);
     }
 }

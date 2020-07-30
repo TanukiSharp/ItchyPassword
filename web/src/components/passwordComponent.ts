@@ -60,7 +60,7 @@ function onClearPublicPartButtonClick(): boolean {
         }
     }
 
-    ui.clearText(txtPublicPart);
+    ui.clearText(txtPublicPart, true);
 
     updatePublicPartSize();
 

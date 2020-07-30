@@ -48,6 +48,13 @@ button {
     margin-left: 2px;
 }
 
+button#btnPushToVault {
+    margin-top: 6px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
 .large-textarea {
     height: 200px;
 }
