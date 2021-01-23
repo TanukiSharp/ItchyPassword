@@ -19,8 +19,8 @@ export interface TreeNodeContext {
     value: any;
 }
 
-export interface TreeNodeTitleElementFactory {
-    createTreeNodeTitleElement(context: TreeNodeContext): HTMLElement;
+export interface TreeNodeContentElementFactory {
+    createTreeNodeContentElement(context: TreeNodeContext): HTMLElement;
 }
 
 export class TreeNode {
@@ -77,7 +77,7 @@ export class TreeNode {
         this.children.push(child);
     }
 
-    constructor(parent: TreeNode | null, path: string, title: string, factory: TreeNodeTitleElementFactory, value: any) {
+    constructor(parent: TreeNode | null, path: string, title: string, factory: TreeNodeContentElementFactory, value: any) {
         this.parent = parent;
         this.title = title;
 
@@ -113,7 +113,7 @@ export class TreeNode {
             };
 
             // Construct title DOM element.
-            this.titleElement = factory.createTreeNodeTitleElement(context);
+            this.titleElement = factory.createTreeNodeContentElement(context);
             this.titleElement.innerText = title;
             this.rootElement.appendChild(this.titleElement);
             this.setTitleElementStyle();

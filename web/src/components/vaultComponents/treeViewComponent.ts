@@ -2,7 +2,7 @@ import { getElementById } from '../../ui';
 import { IComponent } from '../IComponent';
 import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
-import { TreeNode, TreeNodeTitleElementFactory, TreeNodeContext, DEEP_MODE_DOWN } from './TreeNode';
+import { TreeNode, TreeNodeContentElementFactory, TreeNodeContext, DEEP_MODE_DOWN } from './TreeNode';
 import * as plainObject from '../../PlainObject';
 import * as ui from '../../ui';
 import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
@@ -50,7 +50,7 @@ function populateSearchFunctions(): void {
     }
 }
 
-class VaultTreeNodeTitleElementFactory implements TreeNodeTitleElementFactory {
+class VaultTreeNodeContentElementFactory implements TreeNodeContentElementFactory {
     private readonly passwordService: PasswordService;
 
     public constructor() {
@@ -62,7 +62,7 @@ class VaultTreeNodeTitleElementFactory implements TreeNodeTitleElementFactory {
         await this.passwordService.generateAndCopyPasswordToClipboard(value.public, value.alphabet, value.length);
     }
 
-    createTreeNodeTitleElement(context: TreeNodeContext): HTMLElement {
+    createTreeNodeContentElement(context: TreeNodeContext): HTMLElement {
         if (context.isPassword) {
             const button = document.createElement('button');
             button.style.justifySelf = 'start';
@@ -81,7 +81,7 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
     public readonly name: string = 'VaultTreeView';
 
     public onVaultLoaded(vault: plainObject.PlainObject): void {
-        rootTreeNode = new TreeNode(null, '<root>', '', new VaultTreeNodeTitleElementFactory(), vault);
+        rootTreeNode = new TreeNode(null, '<root>', '', new VaultTreeNodeContentElementFactory(), vault);
 
         trvVaultTreeView.innerHTML = '';
         trvVaultTreeView.appendChild(rootTreeNode.element);
