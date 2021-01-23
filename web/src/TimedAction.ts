@@ -10,7 +10,7 @@ export class TimedAction {
 
         const delay = overrideDelay !== undefined ? overrideDelay : this.delay;
 
-        this.timeout = setTimeout(() => {
+        this.timeout = window.setTimeout(() => {
             this.action();
             this.timeout = undefined;
         }, delay);
