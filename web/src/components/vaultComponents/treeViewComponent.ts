@@ -67,13 +67,22 @@ class VaultTreeNodeContentElementFactory implements TreeNodeContentElementFactor
             const button = document.createElement('button');
             button.style.justifySelf = 'start';
             button.style.minWidth = '80px';
+            button.innerText = 'Password';
 
             ui.setupFeedbackButton(button, async () => await this.run(context));
 
             return button;
+        } else if (context.isHint) {
+            const label = document.createElement('span');
+            label.style.justifySelf = 'start';
+            label.innerText = `${context.key}: ${context.value}`;
+
+            return label;
         }
 
-        return document.createElement('div');
+        const div = document.createElement('div');
+        div.innerText = context.key;
+        return div;
     }
 }
 
