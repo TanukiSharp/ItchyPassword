@@ -40,7 +40,7 @@ let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new 
 
 let vaultObject: plainObject.PlainObject | null = null;
 
-function computeUserPathMatchDepth(path: string) {
+function computeUserPathMatchDepth(path: string): number {
     if (vaultObject === null) {
         return 0;
     }
