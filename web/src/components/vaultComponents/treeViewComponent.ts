@@ -2,7 +2,7 @@ import { getElementById } from '../../ui';
 import { IComponent } from '../IComponent';
 import { ITabInfo } from '../../TabControl';
 import { IVaultComponent } from '../vaultComponent';
-import { TreeNode, TreeNodeContentElementFactory, TreeNodeContext, DEEP_MODE_DOWN } from './TreeNode';
+import { TreeNode, TreeNodeCreationController, DEEP_MODE_DOWN } from './TreeNode';
 import * as plainObject from '../../PlainObject';
 import * as ui from '../../ui';
 import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
@@ -50,38 +50,103 @@ function populateSearchFunctions(): void {
     }
 }
 
-class VaultTreeNodeContentElementFactory implements TreeNodeContentElementFactory {
+class VaultTreeNodeCreationController implements TreeNodeCreationController {
     private readonly passwordService: PasswordService;
 
     public constructor() {
         this.passwordService = serviceManager.getService('password');
     }
 
-    private async run(context: TreeNodeContext): Promise<void> {
-        const value = context.value;
+    private async run(value: any): Promise<void> {
         await this.passwordService.generateAndCopyPasswordToClipboard(value.public, value.alphabet, value.length);
     }
 
-    createTreeNodeContentElement(context: TreeNodeContext): HTMLElement {
-        if (context.isPassword) {
+    private static isPasswordObject(key: string, obj: plainObject.PlainObject): boolean {
+        if (key !== 'password') {
+            return false;
+        }
+
+        if (!obj || !plainObject.isPlainObject(obj) || typeof obj.public !== 'string' || obj.public.length < 4) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static isCipherObject(obj: plainObject.PlainObject): boolean {
+        if (!obj || !plainObject.isPlainObject(obj)) {
+            return false;
+        }
+
+        if (typeof obj.value !== 'string' || obj.value.length <= 0) {
+            return false;
+        }
+
+        if (typeof obj.version !== 'number' || obj.version < 0) {
+            return false;
+        }
+
+        return true;
+    }
+
+    private static isCiphersObject(key: string, obj: plainObject.PlainObject): boolean {
+        if (key !== 'ciphers') {
+            return false;
+        }
+
+        if (!obj || !plainObject.isPlainObject(obj)) {
+            return false;
+        }
+
+        for (const sub of Object.values(obj)) {
+            if (!VaultTreeNodeCreationController.isCipherObject(sub)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static isHint(key: string, value: any) {
+        if (VaultTreeNodeCreationController.isCiphersObject(key, value) ||
+            VaultTreeNodeCreationController.isCipherObject(value) ||
+            VaultTreeNodeCreationController.isPasswordObject(key, value) ||
+            plainObject.isPlainObject(value)) {
+            return false;
+        }
+
+        return true;
+    }
+
+    public isLeaf(path: string, key: string, value: any): boolean {
+        if (VaultTreeNodeCreationController.isCipherObject(value) ||
+            VaultTreeNodeCreationController.isPasswordObject(key, value)) {
+            return true;
+        }
+
+        return plainObject.isPlainObject(value) === false;
+    }
+
+    createTreeNodeContentElement(path: string, key: string, value: any): HTMLElement {
+        if (VaultTreeNodeCreationController.isPasswordObject(key, value)) {
             const button = document.createElement('button');
             button.style.justifySelf = 'start';
             button.style.minWidth = '80px';
             button.innerText = 'Password';
 
-            ui.setupFeedbackButton(button, async () => await this.run(context));
+            ui.setupFeedbackButton(button, async () => await this.run(value));
 
             return button;
-        } else if (context.isHint) {
+        } else if (VaultTreeNodeCreationController.isHint(key, value)) {
             const label = document.createElement('span');
             label.style.justifySelf = 'start';
-            label.innerText = `${context.key}: ${context.value}`;
+            label.innerText = `${key}: ${value}`;
 
             return label;
         }
 
         const div = document.createElement('div');
-        div.innerText = context.key;
+        div.innerText = key;
         return div;
     }
 }
@@ -90,7 +155,7 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
     public readonly name: string = 'VaultTreeView';
 
     public onVaultLoaded(vault: plainObject.PlainObject): void {
-        rootTreeNode = new TreeNode(null, '<root>', '', new VaultTreeNodeContentElementFactory(), vault);
+        rootTreeNode = new TreeNode(null, '<root>', '', vault, new VaultTreeNodeCreationController());
 
         trvVaultTreeView.innerHTML = '';
         trvVaultTreeView.appendChild(rootTreeNode.element);

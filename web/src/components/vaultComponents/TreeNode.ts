@@ -11,17 +11,9 @@ const HORIZONTAL_LINE_VERTICAL_OFFSET = 11;
 const HORIZONTAL_LINE_LENGTH = 12;
 const VERTICAL_BAR_OFFSET = 6;
 
-export interface TreeNodeContext {
-    isCipher: boolean;
-    isPassword: boolean;
-    isHint: boolean;
-    path: string;
-    key: string;
-    value: any;
-}
-
-export interface TreeNodeContentElementFactory {
-    createTreeNodeContentElement(context: TreeNodeContext): HTMLElement;
+export interface TreeNodeCreationController {
+    isLeaf(path: string, key: string, value: any): boolean;
+    createTreeNodeContentElement(path: string, key: string, value: any): HTMLElement;
 }
 
 export class TreeNode {
@@ -32,15 +24,11 @@ export class TreeNode {
     protected readonly titleElement: HTMLElement;
     protected readonly childrenContainerElement: HTMLElement;
 
-    protected readonly context: TreeNodeContext;
-    protected readonly factory: TreeNodeContentElementFactory;
+    protected readonly treeNodeCreationController: TreeNodeCreationController;
 
-    protected readonly title: string;
+    protected readonly path: string;
+    protected readonly key: string;
     protected readonly value: any;
-
-    protected readonly isHint: boolean = false;
-    protected readonly isCipher: boolean = false;
-    protected readonly isPassword: boolean = false;
 
     public get element(): HTMLElement {
         return this.rootElement;
@@ -81,48 +69,22 @@ export class TreeNode {
         this.children.push(child);
     }
 
-    constructor(parent: TreeNode | null, path: string, title: string, factory: TreeNodeContentElementFactory, value: any) {
+    constructor(parent: TreeNode | null, path: string, key: string, value: any, treeNodeCreationController: TreeNodeCreationController) {
         this.parent = parent;
-        this.title = title;
-        this.factory = factory;
-
-        let isLeaf: boolean = false;
-
-        if (TreeNode.isCiphersObject(title, value)) {
-            //this.titleElement.style.backgroundColor = '#FF0000';
-        } else if (TreeNode.isCipherObject(value)) {
-            //this.titleElement.style.backgroundColor = '#FF8080';
-            this.isCipher = true;
-            isLeaf = true;
-        } else if (TreeNode.isPasswordObject(title, value)) {
-            //this.titleElement.style.backgroundColor = '#0000FF';
-            this.isPassword = true;
-            isLeaf = true;
-        } else if (plainObject.isPlainObject(value)) {
-            //this.titleElement.style.backgroundColor = '#00FF00';
-        } else {
-            //this.titleElement.style.backgroundColor = '#FFFF00';
-            this.isHint = true;
-            isLeaf = true;
-        }
+        this.path = path;
+        this.key = key;
+        this.value = value;
+        this.treeNodeCreationController = treeNodeCreationController;
 
         this.rootElement = document.createElement('div');
         this.setRootElementStyle();
 
-        this.context = {
-            isCipher: this.isCipher,
-            isPassword: this.isPassword,
-            isHint: this.isHint,
-            path,
-            key: title,
-            value
-        };
 
         // Construct title DOM element.
         this.titleElement = document.createElement('div');
         this.setTitleElementStyle();
 
-        this.titleElement.appendChild(factory.createTreeNodeContentElement(this.context));
+        this.titleElement.appendChild(this.createTreeNodeContentElement());
 
         this.rootElement.appendChild(this.titleElement);
 
@@ -131,13 +93,13 @@ export class TreeNode {
         this.rootElement.appendChild(this.childrenContainerElement);
         this.setChildrenContainerElementStyle();
 
+        const isLeaf = treeNodeCreationController.isLeaf(path, key, value);
+
         if (isLeaf === false && plainObject.isPlainObject(value)) {
             for (const [childKey, childValue] of Object.entries(value)) {
-                const child = new TreeNode(this, `${path}/${childKey}`, childKey, factory, childValue);
+                const child = new TreeNode(this, `${path}/${childKey}`, childKey, childValue, treeNodeCreationController);
                 this.addChild(child);
             }
-        } else {
-            this.value = value;
         }
 
         if (parent) {
@@ -146,50 +108,8 @@ export class TreeNode {
         }
     }
 
-    private static isPasswordObject(key: string, obj: plainObject.PlainObject): boolean {
-        if (key !== 'password') {
-            return false;
-        }
-
-        if (!obj || !plainObject.isPlainObject(obj) || typeof obj.public !== 'string' || obj.public.length < 4) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static isCipherObject(obj: plainObject.PlainObject): boolean {
-        if (!obj || !plainObject.isPlainObject(obj)) {
-            return false;
-        }
-
-        if (typeof obj.value !== 'string' || obj.value.length <= 0) {
-            return false;
-        }
-
-        if (typeof obj.version !== 'number' || obj.version < 0) {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static isCiphersObject(key: string, obj: plainObject.PlainObject): boolean {
-        if (key !== 'ciphers') {
-            return false;
-        }
-
-        if (!obj || !plainObject.isPlainObject(obj)) {
-            return false;
-        }
-
-        for (const sub of Object.values(obj)) {
-            if (!TreeNode.isCipherObject(sub)) {
-                return false;
-            }
-        }
-
-        return true;
+    private createTreeNodeContentElement(): HTMLElement {
+        return this.treeNodeCreationController.createTreeNodeContentElement(this.path, this.key, this.value);
     }
 
     private setRootElementStyle(): void {
@@ -281,7 +201,7 @@ export class TreeNode {
     private resetTitle(deepMode: number): void {
         if (this.titleElement) {
             this.titleElement.innerHTML = '';
-            this.titleElement.appendChild(this.factory.createTreeNodeContentElement(this.context));
+            this.titleElement.appendChild(this.createTreeNodeContentElement());
         }
 
         if (deepMode === DEEP_MODE_UP && this.parent) {
@@ -368,12 +288,12 @@ export class TreeNode {
         }
 
         const markers: PositionMarker[] = [];
-        const isMatch = matchFunction(this.title, searchText, markers);
+        const isMatch = matchFunction(this.key, searchText, markers);
 
         if (isMatch) {
             if (this.titleElement) {
                 this.titleElement.innerHTML = '';
-                const title = this.factory.createTreeNodeContentElement(this.context);
+                const title = this.createTreeNodeContentElement();
                 this.titleElement.appendChild(TreeNode.createColoredSpan(title.innerText, markers));
             }
 
