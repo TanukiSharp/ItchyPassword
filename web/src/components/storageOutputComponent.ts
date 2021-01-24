@@ -204,7 +204,7 @@ async function pushToVault(): Promise<boolean> {
 
     const message: string = generateUpdateMessage();
 
-    const newVaultContentData: string = JSON.stringify(vaultContent, undefined, 4) + '\n';
+    const newVaultContentData: string = JSON.stringify(objectDeepSort(vaultContent), undefined, 4) + '\n';
 
     await vaultStorage.setVaultContent(newVaultContentData, `[ItchyPassword] ${message}`);
 
