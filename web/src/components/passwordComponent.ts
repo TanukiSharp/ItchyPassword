@@ -48,8 +48,6 @@ const lblGeneratingPassword = ui.getElementById('lblGeneratingPassword');
 export const DEFAULT_LENGTH: number = 64;
 export const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~';
 
-const RESERVED_KEYS: string[] = ['alphabet', 'length', 'public', 'datetime'];
-
 let passwordPublicPartLastChange: string | undefined;
 let copyPasswordFunction: () => void;
 
@@ -134,7 +132,7 @@ function updatePasswordGenerationParameters(): void {
         passwordParamters.alphabet = alphabet;
     }
 
-    storageOutputComponent.setParameters(passwordParamters, 'password', RESERVED_KEYS);
+    storageOutputComponent.setParameters(passwordParamters, 'password');
 }
 
 function updateOutputSizeRangeToNum(): void {

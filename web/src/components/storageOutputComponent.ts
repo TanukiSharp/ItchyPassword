@@ -21,26 +21,6 @@ const txtCustomKeys: HTMLInputElement = ui.getElementById('txtCustomKeys') as HT
 
 let vaultStorage: IVaultStorage = new GitHubPersonalAccessTokenVaultStorage(new SecureLocalStorage());
 
-function shallowMerge(source: PlainObject | null, target: PlainObject | null, reservedKeys: string[]): PlainObject {
-    const result: PlainObject = {};
-
-    if (source !== null) {
-        for (const [key, value] of Object.entries(source)) {
-            if (reservedKeys.includes(key) === false) {
-                result[key] = value;
-            }
-        }
-    }
-
-    if (target !== null) {
-        for (const [key, value] of Object.entries(target)) {
-            result[key] = value;
-        }
-    }
-
-    return result;
-}
-
 type IChainInfo = {
     head: PlainObject,
     tailParent: PlainObject,
@@ -126,7 +106,7 @@ function updateCustomKeysDisplay(isValid: boolean): void {
 
 function parseCustomKeys(): PlainObject | null {
     if (txtCustomKeys.value === '') {
-        return {};
+        return null;
     }
 
     try {
@@ -141,7 +121,7 @@ function parseCustomKeys(): PlainObject | null {
 }
 
 function update(): void {
-    if (_parameterKeys === undefined || _parameterPath === undefined || _reservedKeys === undefined) {
+    if (_parameterKeys === undefined || _parameterPath === undefined) {
         return;
     }
 
@@ -153,14 +133,16 @@ function update(): void {
     }
 
     const customKeys: PlainObject | null = parseCustomKeys();
-    updateCustomKeysDisplay(customKeys !== null);
-    const resultParameters: PlainObject = shallowMerge(customKeys, leaf, _reservedKeys);
 
-    if (Object.keys(resultParameters).length === 0) {
-        // Set the value of the first (single) property of the object to null.
+    updateCustomKeysDisplay(txtCustomKeys.value === '' || customKeys !== null);
+
+    if (customKeys !== null) {
+        leaf.customKeys = customKeys;
+    }
+
+    if (Object.keys(leaf).length === 0) {
+        // Remove the leaf object.
         chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = null;
-    } else {
-        chainInfo.tailParent[Object.keys(chainInfo.tailParent)[0]] = resultParameters;
     }
 
     txtParameters.value = JSON.stringify(objectDeepSort(chainInfo.head), undefined, 4);
@@ -232,18 +214,15 @@ async function pushToVault(): Promise<boolean> {
 export function clearOutputs(): void {
     _parameterKeys = undefined;
     _parameterPath = undefined;
-    _reservedKeys = undefined;
     ui.clearText(txtParameters);
 }
 
 let _parameterKeys: PlainObject | undefined;
 let _parameterPath: string | undefined;
-let _reservedKeys: string[] | undefined;
 
-export function setParameters(parameterKeys: PlainObject, parameterPath: string, reservedKeys: string[]) {
+export function setParameters(parameterKeys: PlainObject, parameterPath: string) {
     _parameterKeys = parameterKeys;
     _parameterPath = parameterPath;
-    _reservedKeys = reservedKeys;
     update();
 }
 

@@ -13,8 +13,6 @@ import * as storageOutputComponent from './storageOutputComponent';
 
 import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyncUtils';
 
-const RESERVED_KEYS: string[] = ['version', 'value'];
-
 const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
 const divTabCiphers = ui.getElementById('divTabCiphers');
 
@@ -73,7 +71,7 @@ function updateCipherParameters(): void {
 
     const path = `ciphers/${txtCipherName.value}`;
 
-    storageOutputComponent.setParameters(cipherParameters, path, RESERVED_KEYS);
+    storageOutputComponent.setParameters(cipherParameters, path);
 }
 
 export async function encryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
