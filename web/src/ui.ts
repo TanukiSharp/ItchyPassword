@@ -82,7 +82,7 @@ export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackB
             }
         } catch (error) {
             button.classList.add('bad-flash');
-            console.error(error.message || error);
+            console.error(error.stack || error);
         } finally {
             throttleTimeout.end();
             button.disabled = false;
