@@ -200,6 +200,8 @@ async function pushToVault(): Promise<boolean> {
     const newData = JSON.parse(txtParameters.value);
     let vaultContent = JSON.parse(vaultContentData);
 
+    // Keep deepMerge despite now all properties are explicitly defined, because of
+    // the datetime property that really need to be overwritten only if it exists.
     deepMerge(newData, vaultContent);
 
     const message: string = generateUpdateMessage();

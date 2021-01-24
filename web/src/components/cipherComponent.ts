@@ -28,6 +28,8 @@ const btnClearCipherSource = ui.getElementById('btnClearCipherSource') as HTMLBu
 const btnCopyCipherTarget = ui.getElementById('btnCopyCipherTarget') as HTMLButtonElement;
 const btnClearCipherTarget = ui.getElementById('btnClearCipherTarget') as HTMLButtonElement;
 
+let cipherTargetLastChange: string | undefined;
+
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
 }
@@ -49,8 +51,25 @@ function clearAllVisualCues(): void {
     clearTargetVisualCue();
 }
 
-function setCipherTargetValue(value: string): void {
+function clearCipherTargetLastUpdate(): void {
+    cipherTargetLastChange = undefined;
+}
+
+function updateCipherTargetLastUpdate(): void {
+    cipherTargetLastChange = new Date().toISOString();
+}
+
+function setCipherTargetValue(value: string, isEncrypt: boolean): void {
+    const needDateTimeUpdate = value.length > 0 && txtCipherTarget.value !== value;
+
     txtCipherTarget.value = value;
+
+    if (needDateTimeUpdate && isEncrypt) {
+        updateCipherTargetLastUpdate();
+    } else {
+        clearCipherTargetLastUpdate();
+    }
+
     onCipherTargetChanged();
 }
 
@@ -65,6 +84,7 @@ function updateCipherParameters(): void {
     }
 
     const cipherParameters = {
+        datetime: cipherTargetLastChange,
         version: cipher.version,
         value: txtCipherTarget.value
     }
@@ -117,7 +137,7 @@ export async function decryptString(value: string, cancellationToken: Cancellati
 
 async function onEncryptButtonClick(): Promise<boolean> {
     txtCipherSource.focus();
-    setCipherTargetValue('');
+    setCipherTargetValue('', true);
     clearAllVisualCues();
 
     if (txtCipherSource.value.length === 0) {
@@ -131,14 +151,15 @@ async function onEncryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    setCipherTargetValue(encryptedString);
+    setCipherTargetValue(encryptedString, true);
+    updateCipherParameters();
 
     return true;
 }
 
 async function onDecryptButtonClick(): Promise<boolean> {
     txtCipherSource.focus();
-    setCipherTargetValue('');
+    setCipherTargetValue('', false);
     clearAllVisualCues();
 
     if (txtCipherSource.value.length === 0) {
@@ -153,7 +174,7 @@ async function onDecryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    setCipherTargetValue(decryptedString);
+    setCipherTargetValue(decryptedString, false);
 
     return true;
 }
@@ -196,7 +217,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         });
 
         btnClearCipherTarget.addEventListener('click', () => {
-            setCipherTargetValue('');
+            setCipherTargetValue('', false);
         });
     }
 }

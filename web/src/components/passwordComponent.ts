@@ -119,18 +119,11 @@ function updatePasswordGenerationParameters(): void {
 
     const passwordParamters: PlainObject = {
         public: txtPublicPart.value,
-        datetime: passwordPublicPartLastChange
+        datetime: passwordPublicPartLastChange,
+        version: passwordGenerator.version,
+        length: txtResultPassword.value.length,
+        alphabet: txtAlphabet.value
     };
-
-    const numericValue: number = txtResultPassword.value.length;
-    if (numericValue !== DEFAULT_LENGTH) {
-        passwordParamters.length = numericValue;
-    }
-
-    const alphabet: string = txtAlphabet.value;
-    if (alphabet !== DEFAULT_ALPHABET) {
-        passwordParamters.alphabet = alphabet;
-    }
 
     storageOutputComponent.setParameters(passwordParamters, 'password');
 }
