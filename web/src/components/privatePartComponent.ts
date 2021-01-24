@@ -35,7 +35,7 @@ export function getPrivatePart(): string {
     return txtPrivatePart.value;
 }
 
-function protectAndLockPrivatePart(): void {
+export function protectAndLockPrivatePart(): void {
     if (txtPrivatePart.value.length === 0) {
         return;
     }

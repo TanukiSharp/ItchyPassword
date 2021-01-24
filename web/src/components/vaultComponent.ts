@@ -8,7 +8,7 @@ import * as storageOutputComponent from './storageOutputComponent';
 import { SecureLocalStorage } from '../storages/SecureLocalStorage';
 import { IVaultStorage } from '../storages/IVaultStorage';
 import { GitHubPersonalAccessTokenVaultStorage } from '../storages/GitHubVaultStorage';
-import { hasPrivatePart } from './privatePartComponent';
+import { hasPrivatePart, protectAndLockPrivatePart } from './privatePartComponent';
 import * as plainObject from '../PlainObject';
 import { VaultTreeViewComponent } from './vaultComponents/treeViewComponent';
 import { VaultTextViewComponent } from './vaultComponents/textViewComponent';
@@ -94,7 +94,13 @@ async function onRefreshVaultButtonClick(): Promise<boolean> {
         return false;
     }
 
-    return await reloadVault();
+    const result: boolean = await reloadVault();
+
+    if (result) {
+        protectAndLockPrivatePart();
+    }
+
+    return result;
 }
 
 function onClearVaultSettingsButtonClick(): void {
