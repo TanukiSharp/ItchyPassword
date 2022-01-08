@@ -2,7 +2,6 @@
     "name": "itchy-password",
     "version": "0.1.0",
     "description": "Secrets management web application.",
-    "main": "index.js",
     "repository": {
         "url": "https://github.com/TanukiSharp/ItchyPassword"
     },
