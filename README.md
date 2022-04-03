@@ -11,7 +11,7 @@ Works fine with Chromium-based browsers (Edge, Chrome) and Firefox on desktop (W
 
 There is the possibility to plug vault storages to automatically fetch and store data from/to external services, so this will require an internet access, but it is optional and those actions (fetch/store) can be performed manually instead.
 
-In any case, your master key never leaves the machine. Never. Meaning you have to enter it each time you start the application or refresh the page. This is by design.
+In any case, your master key never leaves the machine and is never stored anywhere, neither in clear nor even encrypted. Never. Meaning you have to enter it each time you start the application or refresh the page. This is by design.
 
 ## Web app
 
