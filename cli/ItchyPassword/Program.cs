@@ -27,7 +27,10 @@ namespace ItchyPassword
             while (true)
             {
                 Console.Write($"Output password length (default to {DefaultPasswordLength}): ");
-                string passwordLengthStr = Console.ReadLine();
+                string? passwordLengthStr = Console.ReadLine();
+
+                if (passwordLengthStr == null)
+                    return -1;
 
                 if (passwordLengthStr.Length == 0)
                 {
@@ -71,7 +74,10 @@ namespace ItchyPassword
             }
 
             Console.Write("Input public part: ");
-            string publicPart = Console.ReadLine();
+            string? publicPart = Console.ReadLine();
+
+            if (publicPart == null)
+                return;
 
             if (publicPart.Length == 0)
             {
@@ -80,6 +86,9 @@ namespace ItchyPassword
             }
 
             int passwordLength = GetPasswordLength();
+
+            if (passwordLength < 0)
+                return;
 
             byte[] passwordBytes = Crypto.GeneratePassword(Encoding.UTF8.GetBytes(privatePart), Encoding.UTF8.GetBytes(publicPart), "Password");
 
