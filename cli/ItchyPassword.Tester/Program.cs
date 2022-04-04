@@ -9,6 +9,14 @@ namespace ItchyPassword.Tester
     {
         static void Main(string[] args)
         {
+            string encryptedEncoded = "M7tfwICPmfNIIj3J5aoafz1NTkc4gRLa4UDTREBMTDW2CJXmqiViFhTUXzMEpmoQpmPSsH4Gh";
+
+            byte[] encrypted = encryptedEncoded.FromCustomBase("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+            byte[] decrypted = Crypto.Decrypt(encrypted, Encoding.UTF8.GetBytes(Console.ReadLine()));
+            Console.WriteLine(Encoding.UTF8.GetString(decrypted));
+
+            Console.Read();
+
             //byte[] privatePart = "a483ec2b6a773fc0b1bc1030c6356606ac64c712130da68a0d5082c797c7735679c63619451a3e412a5671a81669d9f553ae1a56d9cea158925a8f6aa3285155".FromBase16();
             //byte[] publicPart = "c2424e1857bc5dd90265ce83bc878ccd6326cbf4d9761ba652945146dbb20be5c44597530388e3fc3c0b4ef6d88089af2d240d211c615f73420ce20a6a33703e".FromBase16();
 
@@ -72,18 +80,28 @@ namespace ItchyPassword.Tester
             //if (new Span<byte>(privatePartBytes).SequenceEqual(decrypted) == false)
             //    throw new Exception();
 
-            string base62Input = "dcXya8LSBxGwXT2hWMSc8yXiZbeZLm088UdS2yM5CYB3xuYbazBx9PaTvHa1hhJRG6XbsrDO27mw9UZTmerd8oAzQo4Al";
 
-            byte[] decoded = base62Input.FromCustomBase("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
 
-            string base64Input = Convert.ToBase64String(decoded, Base64FormattingOptions.None);
+            // ======================================================================================================
 
-            Console.WriteLine(base62Input.Length);
-            Console.WriteLine(base64Input.Length);
-            Console.WriteLine();
+            //var bytes = Crypto.GeneratePassword(Encoding.UTF8.GetBytes("abcdefgh"), Encoding.UTF8.GetBytes("abcdefgh"), "Password");
+            ////var str = Encoding.UTF8.GetString(bytes);
+            //var str = bytes.ToCustomBase("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 
-            byte[] decrypted = Crypto.Decrypt(decoded, Encoding.UTF8.GetBytes("abcd1234"));
-            Console.WriteLine(Encoding.UTF8.GetString(decrypted));
+
+
+            //string base62Input = "dcXya8LSBxGwXT2hWMSc8yXiZbeZLm088UdS2yM5CYB3xuYbazBx9PaTvHa1hhJRG6XbsrDO27mw9UZTmerd8oAzQo4Al";
+
+            //byte[] decoded = base62Input.FromCustomBase("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789");
+
+            //string base64Input = Convert.ToBase64String(decoded, Base64FormattingOptions.None);
+
+            //Console.WriteLine(base62Input.Length);
+            //Console.WriteLine(base64Input.Length);
+            //Console.WriteLine();
+
+            //byte[] decrypted = Crypto.Decrypt(decoded, Encoding.UTF8.GetBytes("abcd1234"));
+            //Console.WriteLine(Encoding.UTF8.GetString(decrypted));
         }
     }
 }
