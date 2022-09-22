@@ -83,7 +83,8 @@ async function reloadVault(): Promise<boolean> {
         return true;
     } catch (error) {
         vaultObject = null;
-        console.error(error);
+        alert('Failed to parse vault content, needs to be fixed.');
+        console.error((error as Error).message);
         return false;
     }
 }
