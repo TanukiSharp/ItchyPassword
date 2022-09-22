@@ -204,6 +204,11 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
                 this.oneTimePassword = null;
 
                 return await this.getVaultContent();
+            } else if (response.status === 404) {
+                if (await this.setVaultContent('{}', '[ItchyPassword] Creation of vault file')) {
+                    return '{}';
+                }
+                return null;
             }
 
             console.error(`Failed to fetch vault file '${this.vaultFilename}'.`, response);
