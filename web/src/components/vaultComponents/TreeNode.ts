@@ -79,7 +79,6 @@ export class TreeNode {
         this.rootElement = document.createElement('div');
         this.setRootElementStyle();
 
-
         // Construct title DOM element.
         this.titleElement = document.createElement('div');
         this.setTitleElementStyle();
