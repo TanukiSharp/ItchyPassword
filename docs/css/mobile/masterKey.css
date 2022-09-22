@@ -8,7 +8,7 @@
 }
 
 #masterKeyTitle {
-    grid-column: 1 / span 4;
+    grid-column: 1 / span 3;
     grid-row: 1;
 }
 
@@ -16,6 +16,7 @@
     justify-self: stretch;
     grid-column: 1;
     grid-row: 2;
+    width: auto;
 }
 
 #spnPrivatePartSize {
@@ -38,6 +39,7 @@
 #txtPrivatePartConfirmation {
     grid-column: 1;
     grid-row: 3;
+    width: auto;
 }
 
 #spnPrivatePartSizeConfirmation {

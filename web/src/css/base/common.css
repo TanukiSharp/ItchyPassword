@@ -35,7 +35,13 @@ button {
 }
 
 #txtPath {
-    width: 100%;
+    width: auto;
+}
+
+#divStoragePathContainer {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-rows: auto;
 }
 
 #lblMatchingPath, #lblMatchingPathLabel {
