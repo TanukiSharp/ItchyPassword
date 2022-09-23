@@ -57,7 +57,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
         this.passwordService = serviceManager.getService('password');
     }
 
-    private async run(value: any): Promise<void> {
+    private async runPassword(value: any): Promise<void> {
         await this.passwordService.generateAndCopyPasswordToClipboard(value.public, value.alphabet, value.length);
     }
 
@@ -134,7 +134,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             button.style.minWidth = '80px';
             button.innerText = 'Password';
 
-            ui.setupFeedbackButton(button, async () => await this.run(value));
+            ui.setupFeedbackButton(button, async () => await this.runPassword(value));
 
             return button;
         } else if (VaultTreeNodeCreationController.isHint(key, value)) {
