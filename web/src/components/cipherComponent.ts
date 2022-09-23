@@ -128,9 +128,11 @@ export async function decryptString(value: string, cancellationToken: Cancellati
 
         return arrayUtils.arrayToString(decrypted);
     } catch (error) {
-        rethrowCancelled(error);
+        const typedError = error as Error;
 
-        console.warn(`Failed to decrypt${error.message ? `, error: ${error.message}` : ', no error message'}`);
+        rethrowCancelled(typedError);
+
+        console.warn(`Failed to decrypt${typedError.message ? `, error: ${typedError.message}` : ', no error message'}`);
         return null;
     }
 }
