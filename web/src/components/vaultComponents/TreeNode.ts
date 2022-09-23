@@ -285,6 +285,14 @@ export class TreeNode {
         return root;
     }
 
+    private static findLeafElement(element: Element): Element {
+        if (element.children.length === 0) {
+            return element;
+        }
+
+        return TreeNode.findLeafElement(element.children[0]);
+    }
+
     public filter(searchText: string, matchFunction: SearchMatchFunction): void {
         if (!searchText) {
             this.resetTitle(DEEP_MODE_DOWN);
@@ -298,9 +306,10 @@ export class TreeNode {
 
         if (isMatch) {
             if (this.titleElement) {
-                this.titleElement.innerHTML = '';
+                const element = TreeNode.findLeafElement(this.titleElement);
+                element.innerHTML = '';
                 const title = this.createTreeNodeContentElement();
-                this.titleElement.appendChild(TreeNode.createColoredSpan(title.innerText, markers));
+                element.appendChild(TreeNode.createColoredSpan(title.innerText, markers));
             }
 
             this.show(DEEP_MODE_UP);
