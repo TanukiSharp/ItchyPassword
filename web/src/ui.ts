@@ -16,7 +16,8 @@ export async function writeToClipboard(text: string): Promise<boolean> {
         await navigator.clipboard.writeText(text);
         return true;
     } catch (error) {
-        console.error(error.stack || error);
+        const typedError = error as Error;
+        console.error(typedError.stack || error);
         return false;
     }
 }
@@ -81,8 +82,9 @@ export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackB
                 button.classList.add('bad-flash');
             }
         } catch (error) {
+            const typedError = error as Error;
             button.classList.add('bad-flash');
-            console.error(error.stack || error);
+            console.error(typedError.stack || error);
         } finally {
             throttleTimeout.end();
             button.disabled = false;
