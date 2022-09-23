@@ -294,7 +294,7 @@ export class TreeNode {
         }
 
         const markers: PositionMarker[] = [];
-        const isMatch = matchFunction(this.key, searchText, markers);
+        const isMatch = matchFunction(this.titleElement.innerText, searchText, markers);
 
         if (isMatch) {
             if (this.titleElement) {
