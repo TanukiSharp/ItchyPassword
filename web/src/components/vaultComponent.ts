@@ -70,10 +70,6 @@ async function reloadVault(): Promise<boolean> {
     }
 
     try {
-        if (content.trim() === '') {
-            content = '{}';
-        }
-
         let obj = JSON.parse(content) as plainObject.PlainObject;
         obj = plainObject.objectDeepSort(obj);
 

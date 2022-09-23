@@ -220,7 +220,13 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
 
         this.currentVaultContentHash = responseContent.sha;
 
-        return atob(responseContent.content);
+        const decodedContent = atob(responseContent.content);
+
+        if (decodedContent.trim() === '') {
+            return '{}';
+        }
+
+        return decodedContent;
     }
 
     async setVaultContent(newContent: string, updateMessage: string): Promise<boolean> {
