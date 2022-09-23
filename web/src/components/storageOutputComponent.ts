@@ -34,8 +34,8 @@ function pathToObjectChain(path: string, chainInfo: IChainInfo | undefined = und
 
     const tail: PlainObject = {};
 
-    const firstPath: string = separatorIndex >= 0 ? path.substr(0, separatorIndex) : path;
-    const remainingPath: string | undefined = separatorIndex >= 0 ? path.substr(separatorIndex + 1) : undefined;
+    const firstPath: string = separatorIndex >= 0 ? path.substring(0, separatorIndex) : path;
+    const remainingPath: string | undefined = separatorIndex >= 0 ? path.substring(separatorIndex + 1) : undefined;
 
     if (chainInfo === undefined) {
         const node: PlainObject = {};
@@ -70,7 +70,7 @@ function createMatchingPath(path: string, depth: number): string {
         position += 1;
     }
 
-    return path.substr(0, position - 1);
+    return path.substring(0, position - 1);
 }
 
 function updateMatchingPath(): void {
@@ -185,7 +185,7 @@ function generateUpdateMessage() {
         return `Updated ${hint} for '${fullPath}'`;
     }
 
-    const remainingPath: string = stringUtils.trim(fullPath.substr(matchingPath.length), '/');
+    const remainingPath: string = stringUtils.trim(fullPath.substring(matchingPath.length), '/');
 
     return `Updated ${hint} for '${matchingPath}' adding '${remainingPath}'`;
 }

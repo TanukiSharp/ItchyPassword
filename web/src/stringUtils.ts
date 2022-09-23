@@ -30,7 +30,7 @@ export function truncate(input: string, length: number): string {
         return input;
     }
 
-    return input.substr(0, length);
+    return input.substring(0, length);
 }
 
 export function stringToArray(str: string): ArrayBuffer {
@@ -46,7 +46,8 @@ export function fromBase16(str: string): ArrayBuffer {
     const result: Uint8Array = new Uint8Array(str.length / 2);
 
     for (let i = 0; i < result.byteLength; i += 1) {
-        result[i] = parseInt(str.substr(i * 2, 2), 16);
+        const position = i * 2;
+        result[i] = parseInt(str.substring(position, position + 2), 16);
     }
 
     return result.buffer;

@@ -264,16 +264,16 @@ export class TreeNode {
 
         for (const marker of markers) {
             if (marker.pos !== pos) {
-                root.appendChild(TreeNode.createSpan(text.substr(pos, marker.pos - pos)));
+                root.appendChild(TreeNode.createSpan(text.substring(pos, marker.pos)));
             }
 
-            root.appendChild(TreeNode.createSpan(text.substr(marker.pos, marker.len), '#80C0FF'));
+            root.appendChild(TreeNode.createSpan(text.substring(marker.pos, marker.pos + marker.len), '#80C0FF'));
 
             pos = marker.pos + marker.len;
         }
 
         if (pos < text.length) {
-            root.appendChild(TreeNode.createSpan(text.substr(pos, text.length - pos)));
+            root.appendChild(TreeNode.createSpan(text.substring(pos, text.length)));
         }
 
         return root;

@@ -417,7 +417,7 @@ export class GitHubApiVaultStorage extends GitHubVaultStorageBase {
             return false;
         }
 
-        this.basicAuthHeader = this.constructBasicAuthString(username, password.substr(0, passwordLength));
+        this.basicAuthHeader = this.constructBasicAuthString(username, password.substring(0, passwordLength));
 
         const browserName: string | null = this.getSetVaultParameter(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_BROWSER_NAME, 'Current device/browser name:');
         if (!browserName) {

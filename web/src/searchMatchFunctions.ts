@@ -14,7 +14,7 @@ function indexedAggresiveSearchMatchFunction(lhs: string, lhsIndex: number, rhs:
     rhs = rhs.toLowerCase();
 
     for (let len = rhs.length; len >= 1; len -= 1) {
-        const subWord = rhs.substr(0, len);
+        const subWord = rhs.substring(0, len);
         const foundPos = lhs.indexOf(subWord, lhsIndex);
 
         if (foundPos >= 0) {
@@ -23,7 +23,7 @@ function indexedAggresiveSearchMatchFunction(lhs: string, lhsIndex: number, rhs:
                 len: subWord.length
             });
 
-            return indexedAggresiveSearchMatchFunction(lhs, foundPos + subWord.length, rhs.substr(len), markers);
+            return indexedAggresiveSearchMatchFunction(lhs, foundPos + subWord.length, rhs.substring(len), markers);
         }
     }
 
