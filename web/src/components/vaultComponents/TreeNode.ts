@@ -69,6 +69,13 @@ export class TreeNode {
         this.children.push(child);
     }
 
+    private createChildNodes(object: plainObject.PlainObject) {
+        for (const [childKey, childValue] of Object.entries(object)) {
+            const child = new TreeNode(this, `${this.path}/${childKey}`, childKey, childValue, this.treeNodeCreationController);
+            this.addChild(child);
+        }
+}
+
     constructor(parent: TreeNode | null, path: string, key: string, value: any, treeNodeCreationController: TreeNodeCreationController) {
         this.parent = parent;
         this.path = path;
@@ -95,10 +102,9 @@ export class TreeNode {
         const isLeaf = treeNodeCreationController.isLeaf(path, key, value);
 
         if (isLeaf === false && plainObject.isPlainObject(value)) {
-            for (const [childKey, childValue] of Object.entries(value)) {
-                const child = new TreeNode(this, `${path}/${childKey}`, childKey, childValue, treeNodeCreationController);
-                this.addChild(child);
-            }
+            this.createChildNodes(value);
+        } else if (isLeaf && value.customKeys) {
+            this.createChildNodes(value.customKeys);
         }
 
         if (parent) {
