@@ -239,7 +239,7 @@ export function hide(): void {
 export class StorageOutputComponent implements IComponent {
     public readonly name: string = 'StorageOutput';
 
-    init(): void {
+    public init(): void {
         txtCustomKeys.addEventListener('input', onCustomKeysTextInput);
         ui.setupFeedbackButton(btnPushToVault, pushToVault);
         txtPath.addEventListener('input', onPathTextInput);

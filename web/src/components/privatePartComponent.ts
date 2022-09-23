@@ -115,7 +115,7 @@ function onPrivatePartConfirmationTextInput(): void {
 export class PrivatePartComponent implements IComponent {
     public readonly name: string = 'PrivatePart';
 
-    init(): void {
+    public init(): void {
         btnProtect.addEventListener('click', onProtectButtonClick);
         txtPrivatePart.addEventListener('input', onPrivatePartTextInput);
         txtPrivatePartConfirmation.addEventListener('input', onPrivatePartConfirmationTextInput);
