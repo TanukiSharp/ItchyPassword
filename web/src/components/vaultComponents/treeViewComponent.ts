@@ -8,6 +8,7 @@ import * as ui from '../../ui';
 import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
 import * as serviceManager from '../../services/serviceManger';
 import { PasswordService } from '../../services/passwordService';
+import { CipherService } from 'services/cipherService';
 
 const btnTabVaultTabTreeView = getElementById('btnTabVaultTabTreeView') as HTMLButtonElement;
 const divTabVaultTabTreeView = getElementById('divTabVaultTabTreeView');
@@ -59,6 +60,16 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
 
     private async runPassword(value: any): Promise<void> {
         await this.passwordService.generateAndCopyPasswordToClipboard(value.public, value.alphabet, value.length);
+    }
+
+    private async runCipher(path: string, key: string, value: any): Promise<boolean> {
+        const cipherService: CipherService | null = serviceManager.getService('cipher');
+
+        if (cipherService === null) {
+            return false;
+        }
+
+        return await cipherService.activate(path, key, value);
     }
 
     private static isPasswordObject(key: string, obj: plainObject.PlainObject): boolean {
@@ -135,6 +146,15 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             button.innerText = 'Password';
 
             ui.setupFeedbackButton(button, async () => await this.runPassword(value));
+
+            return button;
+        } else if (VaultTreeNodeCreationController.isCipherObject(value)) {
+            const button = document.createElement('button');
+            button.style.justifySelf = 'start';
+            button.innerText = key;
+            button.title = 'Open in ciphers';
+
+            ui.setupFeedbackButton(button, async () => await this.runCipher(path, key, value));
 
             return button;
         } else if (VaultTreeNodeCreationController.isHint(key, value)) {

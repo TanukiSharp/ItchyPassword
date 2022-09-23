@@ -228,6 +228,15 @@ export function setParameters(parameterKeys: PlainObject, parameterPath: string)
     update();
 }
 
+export function setPathUI(path: string) {
+    txtPath.value = path;
+    onPathTextInput();
+}
+
+export function setCustomKeysUI(customKeys: string) {
+    txtCustomKeys.value = customKeys;
+}
+
 export function show(): void {
     divStorageOutput.style.setProperty('display', 'initial');
 }

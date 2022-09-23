@@ -11,7 +11,11 @@ import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
 
+import * as serviceManager from '../services/serviceManger';
+import { CipherService } from '../services/cipherService';
+
 import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyncUtils';
+import { PlainObject } from '../PlainObject';
 
 const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
 const divTabCiphers = ui.getElementById('divTabCiphers');
@@ -198,6 +202,58 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherName.focus();
     }
 
+    private static fullPathToStoragePath(fullPath: string, cipherName: string): string | null {
+        const prefix = '<root>/';
+        const suffix = `/ciphers/${cipherName}`;
+
+        if (fullPath.startsWith(prefix) === false) {
+            return null;
+        }
+
+        if (fullPath.endsWith(suffix) === false) {
+            return null;
+        }
+
+        return fullPath.substring(prefix.length, fullPath.length - suffix.length);
+    }
+
+    public async setParameters(cipherName: string, parameterKeys: PlainObject, storageFullPath: string): Promise<boolean> {
+        txtCipherName.value = '';
+        txtCipherSource.value = '';
+        txtCipherTarget.value = '';
+        storageOutputComponent.setPathUI('');
+        storageOutputComponent.setCustomKeysUI('');
+
+        const decrypted: string | null = await decryptString(parameterKeys.value, CancellationToken.none);
+
+        if (decrypted === null) {
+            alert(`Failed to decrypt cipher '${cipherName}'.`);
+            return false;
+        }
+
+        const storagePath: string | null = CipherComponent.fullPathToStoragePath(storageFullPath, cipherName);
+
+        if (storagePath === null) {
+            console.error(`Failed to retrieve storage path from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve storage path from full path.');
+            return false;
+        }
+
+        if (parameterKeys.customKeys) {
+            storageOutputComponent.setCustomKeysUI(JSON.stringify(parameterKeys.customKeys, null, 4));
+        }
+
+        delete parameterKeys.customKeys;
+
+        txtCipherName.value = cipherName;
+        txtCipherSource.value = decrypted;
+
+        storageOutputComponent.setPathUI(storagePath);
+        storageOutputComponent.setParameters(parameterKeys, `ciphers/${cipherName}`);
+
+        return true;
+    }
+
     public getVaultHint(): string {
         return `${this.name.toLowerCase()} '${txtCipherName.value}'`;
     }
@@ -225,5 +281,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         btnClearCipherTarget.addEventListener('click', () => {
             setCipherTargetValue('', false);
         });
+
+        serviceManager.registerService('cipher', new CipherService(this));
     }
 }
