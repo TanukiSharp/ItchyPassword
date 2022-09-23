@@ -132,6 +132,10 @@ export class VaultComponent implements IComponent, ITabInfo {
         tabs[subTabs.activeTabIndex].onTabSelected();
     }
 
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
+
     public init(): void {
         setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);

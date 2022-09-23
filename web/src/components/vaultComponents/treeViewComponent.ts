@@ -175,6 +175,10 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
         txtVaultTreeViewSearch.focus();
     }
 
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
+
     public init(): void {
         populateSearchFunctions();
 

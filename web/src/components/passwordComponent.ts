@@ -296,6 +296,10 @@ export class PasswordComponent implements IComponent, ITabInfo {
         txtPublicPart.focus();
     }
 
+    public getVaultHint(): string {
+        return this.name.toLowerCase();
+    }
+
     public init(): void {
         privatePartComponent.registerOnChanged(run);
 

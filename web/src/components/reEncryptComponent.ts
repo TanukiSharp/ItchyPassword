@@ -116,6 +116,10 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
         txtReEncryptSource.focus();
     }
 
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
+
     public init(): void {
         ui.setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget);
 

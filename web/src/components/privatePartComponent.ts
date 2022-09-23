@@ -115,6 +115,10 @@ function onPrivatePartConfirmationTextInput(): void {
 export class PrivatePartComponent implements IComponent {
     public readonly name: string = 'PrivatePart';
 
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
+
     public init(): void {
         btnProtect.addEventListener('click', onProtectButtonClick);
         txtPrivatePart.addEventListener('input', onPrivatePartTextInput);

@@ -198,6 +198,10 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherName.focus();
     }
 
+    public getVaultHint(): string {
+        return `${this.name.toLowerCase()} '${txtCipherName.value}'`;
+    }
+
     public init(): void {
         ui.setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
 

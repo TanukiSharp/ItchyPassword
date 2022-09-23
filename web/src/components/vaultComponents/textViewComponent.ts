@@ -27,6 +27,10 @@ export class VaultTextViewComponent implements IComponent, ITabInfo, IVaultCompo
     public onTabSelected(): void {
     }
 
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
+
     public init(): void {
     }
 }

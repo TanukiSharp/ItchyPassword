@@ -172,22 +172,22 @@ function generateUpdateMessage() {
         throw new Error('Could not determine active component.');
     }
 
-    let componentName: string = activeComponent.name.toLowerCase();
+    let hint: string = activeComponent.getVaultHint();
 
     const matchingPath: string = lblMatchingPath.innerText;
     const fullPath: string = txtPath.value;
 
     if (!matchingPath) {
-        return `Added ${componentName} for '${fullPath}'`;
+        return `Added ${hint} for '${fullPath}'`;
     }
 
     if (matchingPath === fullPath) {
-        return `Updated ${componentName} for '${fullPath}'`;
+        return `Updated ${hint} for '${fullPath}'`;
     }
 
     const remainingPath: string = stringUtils.trim(fullPath.substr(matchingPath.length), '/');
 
-    return `Updated ${componentName} for '${matchingPath}' adding '${remainingPath}'`;
+    return `Updated ${hint} for '${matchingPath}' adding '${remainingPath}'`;
 }
 
 async function pushToVault(): Promise<boolean> {
@@ -238,6 +238,10 @@ export function hide(): void {
 
 export class StorageOutputComponent implements IComponent {
     public readonly name: string = 'StorageOutput';
+
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
 
     public init(): void {
         txtCustomKeys.addEventListener('input', onCustomKeysTextInput);

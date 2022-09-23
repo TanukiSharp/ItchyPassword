@@ -43,6 +43,10 @@ export class RootComponent implements IComponent {
     public constructor() {
     }
 
+    public getVaultHint(): string {
+        throw new Error('Not supported.');
+    }
+
     public init(): void {
         let component: IComponent;
         for (component of components) {
