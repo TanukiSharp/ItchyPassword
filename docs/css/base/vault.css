@@ -50,3 +50,7 @@
     background-color: white;
     border: 1px solid lightgray;
 }
+
+#trvVaultTreeView button {
+    zoom: 1.25;
+}

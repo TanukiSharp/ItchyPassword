@@ -5,9 +5,9 @@ export const DEEP_MODE_NONE = 0;
 export const DEEP_MODE_UP = 1;
 export const DEEP_MODE_DOWN = 2;
 
-const TREE_ELEMENT_HEIGHT = 24;
+const TREE_ELEMENT_HEIGHT = 30;
 
-const HORIZONTAL_LINE_VERTICAL_OFFSET = 11;
+const HORIZONTAL_LINE_VERTICAL_OFFSET = Math.floor(TREE_ELEMENT_HEIGHT / 2);
 const HORIZONTAL_LINE_LENGTH = 12;
 const VERTICAL_BAR_OFFSET = 6;
 
@@ -189,6 +189,7 @@ export class TreeNode {
         this.titleElement.style.gridColumn = '2 / span 2';
         this.titleElement.style.gridRow = '1';
         this.titleElement.style.marginLeft = '3px';
+        this.titleElement.style.alignSelf = 'center';
     }
 
     private setChildrenContainerElementStyle(): void {
