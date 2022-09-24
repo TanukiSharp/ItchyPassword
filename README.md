@@ -23,7 +23,11 @@ You need to have NPM installed to fetch packages, and optionally NVM to help you
 
 NodeJS is useless for this project.
 
-Tested with NPM 6.0.0, 6.13.0 and 7.24.0.
+Tested with NPM versions:
+- 6.0.0
+- 6.13.0
+- 7.24.0
+- 8.19.2
 
 ```sh
 cd web

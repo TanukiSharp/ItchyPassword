@@ -40,8 +40,11 @@ export class CancellationTokenSource {
 }
 
 export class CancellationToken {
-    private static readonly _none: CancellationToken = new CancellationToken(new CancellationTokenSource());
+    private static _none: CancellationToken | null = null;
     public static get none(): CancellationToken {
+        if (CancellationToken._none === null) {
+            CancellationToken._none = new CancellationToken(new CancellationTokenSource());
+        }
         return CancellationToken._none;
     }
 
@@ -103,7 +106,7 @@ export class TaskRunner<TValue> {
                 try {
                     await this.currentTask;
                 } catch (error) {
-                    if (TaskCancelledError.isMatching(error)) {
+                    if (TaskCancelledError.isMatching(error as  Error)) {
                         if (throwTaskCanceledError) {
                             throw error;
                         }
@@ -144,7 +147,7 @@ export class TaskRunner<TValue> {
             this.currentTask = taskFactory(this.currentTokenSource.token);
             return await this.currentTask;
         } catch (error) {
-            if (TaskCancelledError.isMatching(error) && throwTaskCanceledError === false) {
+            if (TaskCancelledError.isMatching(error as Error) && throwTaskCanceledError === false) {
                 return undefined;
             }
             throw error;
