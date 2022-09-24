@@ -35,7 +35,7 @@
     <br/>
     <br/>
 
-    <button id="btnTabNothing">Nothing</button><button id="btnTabPasswords">Password</button><button id="btnTabCiphers">Ciphers</button><button id="btnTabReEncrypt">Re-encrypt</button><button id="btnTabVault">Vault</button>
+    <button id="btnTabNothing">Nothing</button><button id="btnTabPasswords">Password</button><button id="btnTabCiphers">Ciphers</button><button id="btnTabReEncrypt" title="Re-encrypt">...</button><button id="btnTabVault">Vault</button>
 
     <br/>
     <br/>
@@ -75,12 +75,15 @@
     </div>
 
     <div id="divTabCiphers" class="divTab">
+        <button id="btnClearAllCipherInfo">Clear all</button>
+
         <span id="lblCipher">Cipher name:</span>
         <input id="txtCipherName" aria-labelledby="lblCipher" type="text"></input>
 
         <textarea id="txtCipherSource" aria-label="Cipher source"></textarea>
         <div id="divCipherSourceActions">
-            <button id="btnClearCipherSource">Clear</button>
+            <button id="btnCopyCipherSource">Copy</button><!--
+            --><button id="btnClearCipherSource">Clear</button>
         </div>
 
         <div id="divCipherActions">
@@ -153,11 +156,11 @@
         </div><br/>
         <br/>
         <span id="lblStorageData">Storage data:</span><br/>
-        <textarea id="txtParameters" aria-labelledby="lblStorageData" class="readonlyText very-large-textarea" style="width: 100%" readonly></textarea><br/>
+        <textarea id="txtParameters" aria-labelledby="lblStorageData" class="readonlyText very-large-textarea" readonly></textarea><br/>
         <button id="btnPushToVault">Push to vault</button><br/>
         <br/>
         <span id="lblCustomKeys">Custom keys:</span><br/>
-        <textarea id="txtCustomKeys" aria-labelledby="lblCustomKeys" class="very-large-textarea" style="width: 100%"></textarea>
+        <textarea id="txtCustomKeys" aria-labelledby="lblCustomKeys" class="very-large-textarea"></textarea>
     </div>
 
     <script type="text/javascript" src="bundle.js"></script>
