@@ -25,9 +25,11 @@ const cipher: crypto.ICipher = new CipherV2();
 const txtCipherName = ui.getElementById('txtCipherName') as HTMLInputElement;
 const txtCipherSource = ui.getElementById('txtCipherSource') as HTMLInputElement;
 const txtCipherTarget = ui.getElementById('txtCipherTarget') as HTMLInputElement;
+
 const btnEncrypt = ui.getElementById('btnEncrypt') as HTMLButtonElement;
 const btnDecrypt = ui.getElementById('btnDecrypt') as HTMLButtonElement;
 
+const btnCopyCipherSource = ui.getElementById('btnCopyCipherSource') as HTMLButtonElement;
 const btnClearCipherSource = ui.getElementById('btnClearCipherSource') as HTMLButtonElement;
 const btnCopyCipherTarget = ui.getElementById('btnCopyCipherTarget') as HTMLButtonElement;
 const btnClearCipherTarget = ui.getElementById('btnClearCipherTarget') as HTMLButtonElement;
@@ -259,6 +261,7 @@ export class CipherComponent implements IComponent, ITabInfo {
     }
 
     public init(): void {
+        ui.setupCopyButton(txtCipherSource, btnCopyCipherSource);
         ui.setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
 
         ui.setupFeedbackButton(btnEncrypt, onEncryptButtonClick);
