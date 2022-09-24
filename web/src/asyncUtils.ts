@@ -106,7 +106,7 @@ export class TaskRunner<TValue> {
                 try {
                     await this.currentTask;
                 } catch (error) {
-                    if (TaskCancelledError.isMatching(error as  Error)) {
+                    if (TaskCancelledError.isMatching(error as Error)) {
                         if (throwTaskCanceledError) {
                             throw error;
                         }
