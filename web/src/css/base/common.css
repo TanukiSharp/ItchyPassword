@@ -36,6 +36,7 @@ button {
 
 #txtPath {
     width: auto;
+    min-width: 0;
 }
 
 #divStoragePathContainer {
@@ -66,6 +67,8 @@ button#btnPushToVault {
 }
 
 .very-large-textarea {
+    width: 99%;
+    min-width: 0;
     height: 300px;
 }
 
