@@ -22,6 +22,8 @@ const divTabCiphers = ui.getElementById('divTabCiphers');
 
 const cipher: crypto.ICipher = new CipherV2();
 
+const btnClearAllCipherInfo = ui.getElementById('btnClearAllCipherInfo') as HTMLButtonElement;
+
 const txtCipherName = ui.getElementById('txtCipherName') as HTMLInputElement;
 const txtCipherSource = ui.getElementById('txtCipherSource') as HTMLInputElement;
 const txtCipherTarget = ui.getElementById('txtCipherTarget') as HTMLInputElement;
@@ -275,6 +277,16 @@ export class CipherComponent implements IComponent, ITabInfo {
             if (txtCipherSource.value.length > 0) {
                 clearSourceVisualCue();
             }
+        });
+
+        btnClearAllCipherInfo.addEventListener('click', () => {
+            txtCipherName.value = '';
+            txtCipherSource.value = '';
+            txtCipherTarget.value = '';
+            clearCipherTargetLastUpdate();
+            clearAllVisualCues();
+
+            storageOutputComponent.clearUI();
         });
 
         btnClearCipherSource.addEventListener('click', () => {

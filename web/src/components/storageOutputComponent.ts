@@ -245,6 +245,15 @@ export function hide(): void {
     divStorageOutput.style.setProperty('display', 'none');
 }
 
+export function clearUI(): void {
+    txtPath.value = '';
+    txtParameters.value = '';
+    txtCustomKeys.value = '';
+    _parameterKeys = undefined;
+    _parameterPath = undefined;
+    updateCustomKeysDisplay(true);
+}
+
 export class StorageOutputComponent implements IComponent {
     public readonly name: string = 'StorageOutput';
 
