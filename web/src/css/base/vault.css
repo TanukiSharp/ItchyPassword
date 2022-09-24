@@ -54,3 +54,7 @@
 #trvVaultTreeView button {
     zoom: 1.25;
 }
+
+#trvVaultTreeView .treenode-title {
+    white-space: nowrap;
+}
