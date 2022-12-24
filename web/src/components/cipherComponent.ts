@@ -283,6 +283,7 @@ export class CipherComponent implements IComponent, ITabInfo {
             txtCipherName.value = '';
             txtCipherSource.value = '';
             txtCipherTarget.value = '';
+            storageOutputComponent.clearMatchingPath();
             clearCipherTargetLastUpdate();
             clearAllVisualCues();
 

@@ -254,6 +254,10 @@ export function clearUI(): void {
     updateCustomKeysDisplay(true);
 }
 
+export function clearMatchingPath(): void {
+    lblMatchingPath.innerText = '';
+}
+
 export class StorageOutputComponent implements IComponent {
     public readonly name: string = 'StorageOutput';
 
