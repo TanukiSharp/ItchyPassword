@@ -23,6 +23,13 @@ button {
     max-width: 900px;
 }
 
+#divTabButtonContainer {
+    display: grid;
+    justify-content: start;
+    grid-template-columns: repeat(6, auto); /* Yes CSS is garbage... */
+    grid-template-rows: auto;
+}
+
 #divInfo {
     position: fixed;
     right: 0;
