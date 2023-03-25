@@ -10,6 +10,7 @@
     <link rel="stylesheet" type="text/css" href="css/base/password.css" />
     <link rel="stylesheet" type="text/css" href="css/base/cipher.css" />
     <link rel="stylesheet" type="text/css" href="css/base/reEncrypt.css" />
+    <link rel="stylesheet" type="text/css" href="css/base/errorLogs.css" />
     <link rel="stylesheet" type="text/css" href="css/base/vault.css" />
     <link rel="stylesheet" type="text/css" href="css/mobile/common.css" media="screen and (max-width: 40.5em)" />
     <link rel="stylesheet" type="text/css" href="css/mobile/masterKey.css" media="screen and (max-width: 40.5em)" />
@@ -35,7 +36,14 @@
     <br/>
     <br/>
 
-    <button id="btnTabNothing">Nothing</button><button id="btnTabPasswords">Password</button><button id="btnTabCiphers">Ciphers</button><button id="btnTabReEncrypt" title="Re-encrypt">...</button><button id="btnTabVault">Vault</button>
+    <div id="divTabButtonContainer">
+        <button id="btnTabNothing">Nothing</button>
+        <button id="btnTabPasswords">Password</button>
+        <button id="btnTabCiphers">Ciphers</button>
+        <button id="btnTabReEncrypt" title="Re-encrypt">...</button>
+        <button id="btnTabErrorLogs">Logs</button>
+        <button id="btnTabVault">Vault</button>
+    </div>
 
     <br/>
     <br/>
@@ -121,6 +129,14 @@
             <button id="btnCopyReEncryptTarget">Copy</button><!--
             --><button id="btnClearReEncryptTarget">Clear</button>
         </div>
+    </div>
+
+    <div id="divErrorLogs" class="divTab">
+        <div id="divErrorLogsControls">
+            <button id="btnClearErrorLogs">Clear logs</button>
+        </div>
+
+        <textarea id="txtErrorLogs" class="readonlyText very-large-textarea" readonly></textarea>
     </div>
 
     <div id="divTabVault" class="divTab">

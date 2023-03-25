@@ -266,8 +266,11 @@ export class StorageOutputComponent implements IComponent {
     }
 
     public init(): void {
+        const errorLogsService = serviceManager.getService('errorLogs');
+        const logFunc = errorLogsService.createLogErrorMessageFunction();
+
         txtCustomKeys.addEventListener('input', onCustomKeysTextInput);
-        ui.setupFeedbackButton(btnPushToVault, pushToVault);
+        ui.setupFeedbackButton(btnPushToVault, pushToVault, logFunc);
         txtPath.addEventListener('input', onPathTextInput);
     }
 }

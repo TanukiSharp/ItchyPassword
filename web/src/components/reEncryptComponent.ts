@@ -4,6 +4,7 @@ import * as arrayUtils from '../arrayUtils';
 import { ITabInfo } from '../TabControl';
 import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
+import * as serviceManager from '../services/serviceManger';
 
 import { CipherV1 } from '../ciphers/v1';
 import { CipherV2 } from '../ciphers/v2';
@@ -121,7 +122,10 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
     }
 
     public init(): void {
-        ui.setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget);
+        const errorLogsService = serviceManager.getService('errorLogs');
+        const logFunc = errorLogsService.createLogErrorMessageFunction();
+
+        ui.setupCopyButton(txtReEncryptTarget, btnCopyReEncryptTarget, logFunc);
 
         // Mais est-ce que ce monde est serieux?
         fillCipherComboBox(<HTMLSelectElement><any>cboReEncryptFrom, ciphers.length - 2);
@@ -141,6 +145,6 @@ export class ReEncryptComponent implements IComponent, ITabInfo {
             ui.clearText(txtReEncryptTarget, true);
         });
 
-        ui.setupFeedbackButton(btnReEncrypt, onReEncryptButtonClick);
+        ui.setupFeedbackButton(btnReEncrypt, onReEncryptButtonClick, logFunc);
     }
 }

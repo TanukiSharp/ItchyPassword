@@ -9,6 +9,7 @@ import { ReEncryptComponent } from './reEncryptComponent';
 import { VaultComponent } from './vaultComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
+import { ErrorLogsComponent } from './errorLogsComponent';
 
 const nothingTabInfo: ITabInfo = {
     getTabButton(): HTMLButtonElement {
@@ -28,6 +29,7 @@ const elements: any[] = [
     new PasswordComponent(),
     new CipherComponent(),
     new ReEncryptComponent(),
+    new ErrorLogsComponent(),
     new storageOutputComponent.StorageOutputComponent(),
     new VaultComponent(),
 ];

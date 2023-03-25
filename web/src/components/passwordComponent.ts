@@ -301,25 +301,28 @@ export class PasswordComponent implements IComponent, ITabInfo {
     }
 
     public init(): void {
+        const errorLogsService = serviceManager.getService('errorLogs');
+        const logFunc = errorLogsService.createLogErrorMessageFunction();
+
         privatePartComponent.registerOnChanged(run);
 
         // dafuq!?
         numOutputSizeRange.max = DEFAULT_LENGTH.toString();
         numOutputSizeRange.value = DEFAULT_LENGTH.toString();
 
-        ui.setupFeedbackButton(btnClearPublicPart, onClearPublicPartButtonClick);
-        ui.setupFeedbackButton(btnGeneratePublicPart, onGeneratePublicPartButtonClick);
+        ui.setupFeedbackButton(btnClearPublicPart, onClearPublicPartButtonClick, logFunc);
+        ui.setupFeedbackButton(btnGeneratePublicPart, onGeneratePublicPartButtonClick, logFunc);
 
         ui.setupViewButton(txtResultPassword, btnViewResultPassword);
 
-        ui.setupCopyButton(txtPublicPart, btnCopyPublicPart);
-        copyPasswordFunction = ui.setupCopyButton(txtResultPassword, btnCopyResultPassword);
+        ui.setupCopyButton(txtPublicPart, btnCopyPublicPart, logFunc);
+        copyPasswordFunction = ui.setupCopyButton(txtResultPassword, btnCopyResultPassword, logFunc);
 
         numOutputSizeRange.addEventListener('input', onOutputSizeRangeInput);
         numOutputSizeNum.addEventListener('input', onOutputSizeNumInput);
 
         txtAlphabet.addEventListener('input', onAlphabetTextInput);
-        ui.setupFeedbackButton(btnResetAlphabet, onResetAlphabetButtonClick);
+        ui.setupFeedbackButton(btnResetAlphabet, onResetAlphabetButtonClick, logFunc);
 
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
 

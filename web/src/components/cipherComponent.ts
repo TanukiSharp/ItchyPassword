@@ -263,11 +263,14 @@ export class CipherComponent implements IComponent, ITabInfo {
     }
 
     public init(): void {
-        ui.setupCopyButton(txtCipherSource, btnCopyCipherSource);
-        ui.setupCopyButton(txtCipherTarget, btnCopyCipherTarget);
+        const errorLogsService = serviceManager.getService('errorLogs');
+        const logFunc = errorLogsService.createLogErrorMessageFunction();
 
-        ui.setupFeedbackButton(btnEncrypt, onEncryptButtonClick);
-        ui.setupFeedbackButton(btnDecrypt, onDecryptButtonClick);
+        ui.setupCopyButton(txtCipherSource, btnCopyCipherSource, logFunc);
+        ui.setupCopyButton(txtCipherTarget, btnCopyCipherTarget, logFunc);
+
+        ui.setupFeedbackButton(btnEncrypt, onEncryptButtonClick, logFunc);
+        ui.setupFeedbackButton(btnDecrypt, onDecryptButtonClick, logFunc);
 
         txtCipherName.addEventListener('input', () => {
             updateCipherParameters();

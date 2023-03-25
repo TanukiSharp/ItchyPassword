@@ -2,6 +2,7 @@ import { CancellationToken } from '../asyncUtils';
 import * as stringUtils from '../stringUtils';
 import * as ui from '../ui';
 import * as passwordComponent from '../components/passwordComponent';
+import * as serviceManager from './serviceManger';
 
 export class PasswordService {
     async generateAndCopyPasswordToClipboard(publicPart: string, alphabet?: string, length?: number): Promise<boolean> {
@@ -16,6 +17,9 @@ export class PasswordService {
 
         const password = stringUtils.truncate(keyString, Math.max(4, length));
 
-        return await ui.writeToClipboard(password);
+        const errorLogsService = serviceManager.getService('errorLogs');
+        const logFunc = errorLogsService.createLogErrorMessageFunction();
+
+        return await ui.writeToClipboard(password, logFunc);
     }
 }

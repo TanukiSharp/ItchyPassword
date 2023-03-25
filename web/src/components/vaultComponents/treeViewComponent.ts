@@ -145,7 +145,10 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             button.style.minWidth = '80px';
             button.innerText = 'Password';
 
-            ui.setupFeedbackButton(button, async () => await this.runPassword(value));
+            const errorLogsService = serviceManager.getService('errorLogs');
+            const logFunc = errorLogsService.createLogErrorMessageFunction();
+
+            ui.setupFeedbackButton(button, async () => await this.runPassword(value), logFunc);
 
             return button;
         } else if (VaultTreeNodeCreationController.isCipherObject(value)) {
@@ -154,7 +157,10 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             button.innerText = key;
             button.title = 'Open in ciphers';
 
-            ui.setupFeedbackButton(button, async () => await this.runCipher(path, key, value));
+            const errorLogsService = serviceManager.getService('errorLogs');
+            const logFunc = errorLogsService.createLogErrorMessageFunction();
+
+            ui.setupFeedbackButton(button, async () => await this.runCipher(path, key, value), logFunc);
 
             return button;
         } else if (VaultTreeNodeCreationController.isHint(key, value)) {

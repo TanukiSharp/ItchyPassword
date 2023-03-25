@@ -83,8 +83,12 @@ async function reloadVault(): Promise<boolean> {
         return true;
     } catch (error) {
         vaultObject = null;
-        alert('Failed to parse vault content, needs to be fixed.');
-        console.error((error as Error).message);
+        alert('Failed to parse vault content, it needs to be fixed and be valid JSON data.');
+        const message = (error as Error).message;
+        if (message) {
+            alert(message);
+            console.error(message);
+        }
         return false;
     }
 }
@@ -137,7 +141,10 @@ export class VaultComponent implements IComponent, ITabInfo {
     }
 
     public init(): void {
-        setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick);
+        const errorLogsService = serviceManager.getService('errorLogs');
+        const logFunc = errorLogsService.createLogErrorMessageFunction();
+
+        setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick, logFunc);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);
 
         const vaultService = new VaultService(this);

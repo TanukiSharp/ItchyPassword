@@ -11,13 +11,14 @@ export function getElementById(elementName: string): HTMLElement {
     return element as HTMLElement;
 }
 
-export async function writeToClipboard(text: string): Promise<boolean> {
+export async function writeToClipboard(text: string, logFunc?: (..._: any[]) => void): Promise<boolean> {
     try {
         await navigator.clipboard.writeText(text);
         return true;
     } catch (error) {
         const typedError = error as Error;
         console.error(typedError.stack || error);
+        logFunc?.(typedError.stack || error);
         return false;
     }
 }
@@ -56,7 +57,7 @@ function createThrottleTimeout(clearFunc: Function, duration: number): ThrottleT
 
 export type FeedbackButtonAsyncFunction = () => Promise<boolean> | boolean | Promise<void> | void;
 
-export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackButtonAsyncFunction): () => void {
+export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackButtonAsyncFunction, logError?: (error: any) => any): () => void {
     const throttleTimeout: ThrottleTimeout = createThrottleTimeout(() => {
         button.classList.remove('good-flash');
         button.classList.remove('bad-flash');
@@ -85,6 +86,7 @@ export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackB
             const typedError = error as Error;
             button.classList.add('bad-flash');
             console.error(typedError.stack || error);
+            logError?.(typedError.stack || error);
         } finally {
             throttleTimeout.end();
             button.disabled = false;
@@ -96,8 +98,8 @@ export function setupFeedbackButton(button: HTMLButtonElement, action: FeedbackB
     return clickFunction;
 }
 
-export function setupCopyButton(txt: HTMLInputElement, button: HTMLButtonElement): () => void {
-    return setupFeedbackButton(button, () => writeToClipboard(txt.value));
+export function setupCopyButton(txt: HTMLInputElement, button: HTMLButtonElement, logFunc?: (..._: any[]) => void): () => void {
+    return setupFeedbackButton(button, () => writeToClipboard(txt.value), logFunc);
 }
 
 export function setupViewButton(txt: HTMLInputElement, button: HTMLButtonElement): void {
