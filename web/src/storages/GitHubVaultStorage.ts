@@ -229,7 +229,7 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
         return decodedContent;
     }
 
-    async setVaultContent(newContent: string, updateMessage: string): Promise<boolean> {
+    public async setVaultContent(newContent: string, updateMessage: string): Promise<boolean> {
         if (await this.ensureVaultParameters() === false) {
             return false;
         }
@@ -261,7 +261,7 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
         this.currentVaultContentHash = (responseContent.content as IGitHubContent).sha;
 
         return true;
-    };
+    }
 }
 
 // ================================================================================================
