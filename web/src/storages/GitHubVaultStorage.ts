@@ -262,6 +262,18 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
 
         return true;
     }
+
+    public getVaultSettings(): string {
+        const username = window.localStorage.getItem(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_USERNAME);
+        const repositoryName = window.localStorage.getItem(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_REPO);
+        const vaultFilename = window.localStorage.getItem(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_FILENAME);
+
+        const usernameDisplay = username == null ? '<null>' : `'${username}'`;
+        const repositoryNameDisplay = repositoryName == null ? '<null>' : `'${repositoryName}'`;
+        const vaultFilenameDisplay = vaultFilename == null ? '<null>' : `'${vaultFilename}'`;
+
+        return `username: ${usernameDisplay}\nrepository name: ${repositoryNameDisplay}\nvault filename: ${vaultFilenameDisplay}`;
+    }
 }
 
 // ================================================================================================

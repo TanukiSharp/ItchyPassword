@@ -25,6 +25,7 @@ const btnTabVault = getElementById('btnTabVault') as HTMLButtonElement;
 
 const btnRefreshVault = getElementById('btnRefreshVault') as HTMLButtonElement;
 const btnClearVaultSettings = getElementById('btnClearVaultSettings') as HTMLButtonElement;
+const btnViewVaultSettings = getElementById('btnViewVaultSettings') as HTMLButtonElement;
 
 const elements: any[] = [
     new VaultTreeViewComponent(),
@@ -116,6 +117,10 @@ function onClearVaultSettingsButtonClick(): void {
     vaultStorage.clear();
 }
 
+function onViewVaultSettingsButtonClick(): void {
+    alert(vaultStorage.getVaultSettings());
+}
+
 export class VaultComponent implements IComponent, ITabInfo {
     public readonly name: string = 'Vault';
 
@@ -146,6 +151,7 @@ export class VaultComponent implements IComponent, ITabInfo {
 
         setupFeedbackButton(btnRefreshVault, onRefreshVaultButtonClick, logFunc);
         btnClearVaultSettings.addEventListener('click', onClearVaultSettingsButtonClick);
+        btnViewVaultSettings.addEventListener('click', onViewVaultSettingsButtonClick);
 
         const vaultService = new VaultService(this);
         serviceManager.registerService('vault', vaultService);
