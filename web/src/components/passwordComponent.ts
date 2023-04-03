@@ -22,6 +22,8 @@ const divTabPasswords = ui.getElementById('divTabPasswords');
 
 const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
 
+const btnClearAllPasswordInfo = ui.getElementById('btnClearAllPasswordInfo') as HTMLButtonElement;
+
 const txtPublicPart = ui.getElementById('txtPublicPart') as HTMLInputElement;
 const spnPublicPartSize = ui.getElementById('spnPublicPartSize');
 const btnGeneratePublicPart = ui.getElementById('btnGeneratePublicPart') as HTMLButtonElement;
@@ -341,6 +343,18 @@ export class PasswordComponent implements IComponent, ITabInfo {
         updatePublicPartSize();
         updateOutputSizeRangeToNum();
         resetAlphabet();
+
+        btnClearAllPasswordInfo.addEventListener('click', () => {
+            if (onClearPublicPartButtonClick() === false) {
+                return;
+            }
+
+            txtResultPassword.value = '';
+            updateResultPasswordLength();
+
+            storageOutputComponent.clearMatchingPath();
+            storageOutputComponent.clearUI();
+        });
 
         serviceManager.registerService('password', new PasswordService());
     }
