@@ -136,6 +136,10 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
             }
         }
 
+        if (!defaultRepo) {
+            defaultRepo = 'ItchyPasswordVault';
+        }
+
         const username = this.getSetVaultParameter(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_USERNAME, 'GitHub account username:', defaultAccountUsername);
         if (!username) {
             return Promise.resolve(false);
