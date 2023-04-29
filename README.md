@@ -209,40 +209,31 @@ Note that by the time you read it, it may have change on GitHub side and not upd
     d. Login to GitHub with the generated password in the `Password` field.
 
 2. Once logged-in to GitHub, find the `Settings`, then `Developer settings`, then `Personal access tokens`.
-
-3. Here you can choose `Tokens (classic)` or `Fine-grained tokens`.
-
+3. Here you can choose `Tokens (classic)` or `Fine-grained tokens`.<br/>
     I recommend `Fine-grained tokens`, but the classic will do too.
-
 4. Click on the `Generate new token` button.
-
 5. On the token creation page, for the field `Token name` (or `Note` if you chose `Tokens (classic)`), I recommend to name the token `ItchyPassword (<user> / <device-type> / <browser-name>)`, but again, this field is completely up to you.
-
     > **Warning**
     > As of now, the fine-grained token name is limited to 40 characters, which clearly sucks in my opinion. I opened an issue to ask, but nobody gives a damn.
     > https://github.com/orgs/community/discussions/41568
 
     The reason for specifying all this is (user, device type and browser), is because:
-
     - `user`: you may at some point need to generate a token for another person, like your child
     - `device`: you may want to know on which device this token is stored, in case you loose this device, you know which token to invalidate
     - `browser`: you may use several browsers on the same device, and each will need its own token
 
     Here are some examples with my naming convention:
-
     - `ItchyPassword (Alice / Living room TV desktop / Edge)`
     - `ItchyPassword (Bob / Pixel 6a / Chrome)`
     - `ItchyPassword (Bob / Pixel 6a / Firefox)`
 
 6. For the `Expiration` field, you can safely set 90 days, but avoid setting a longer duration.<br/> This means you will have to re-generate a new token every 90 days (3 months), but re-generating is much simpler.
-
 7. For the last setting:
 
     a. If you chose `Tokens (classic)`, then for the field `Select scope`, check the `repo` box, and your screen should look like this:
     ![](./Documentation/08_generate_token_01.png)
 
     b. If you chose `Fine-grained tokens`, then:
-
     - Set a `Description` if you want. Can be useful if the `Token name` field is too limiting.
     - Make sure the `Resource owner` is set to you (or the right owner)
     - In the `Repository access` section, you must select `Only select repositories`, and select only your "ItchyPasswordVault" repository. This is all the point of fine-grained tokens, they can be limited to a given set of repositories.
@@ -251,7 +242,6 @@ Note that by the time you read it, it may have change on GitHub side and not upd
     Your screen should look like this:
     ![](./Documentation/08_generate_token_02.png)
     **Note** that `Metadata` permission is mandatory and will automatically be set to `Read-only`.
-
 8. Finally, click the `Generate token` button.<br/>
     You should end up on a page with a token that you can copy to the clipboard. This is the personal access token you have to provide to ItchyPassword in the `Vault` tab.
 
