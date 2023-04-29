@@ -201,8 +201,11 @@ Note that by the time you read it, it may have change on GitHub side and not upd
     If you are setting up things on a new device:
 
     a. Open [ItchyPassword].
+
     b. Enter your master key in `Master key` field.
+
     c. Enter your predictable public part for GitHub, such as `github.com/<your-email-address>`.
+
     d. Login to GitHub with the generated password in the `Password` field.
 
 2. Once logged-in to GitHub, find the `Settings`, then `Developer settings`, then `Personal access tokens`.
