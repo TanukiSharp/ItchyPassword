@@ -61,7 +61,7 @@ The `Master key` field is where you enter your master key, which is the only "pa
 
 The green field below is just a convenience field for you to retype your master key, if it turns green, it means both fields match, if it turns red, they don't, as simple as that.
 
-This is useful when you work fully offline and when you create your very first passwords or ciphers, you need to make extra sure they are not generate with the wrong master key.
+This is useful when you work fully offline and when you create your very first passwords or ciphers, you need to make extra sure they are not generated with the wrong master key.
 
 The button `Protect and lock` removes your master key from the UI text element and stores it in memory. This is to avoid a person with physical access to your machine to be able to copy and paste it somewhere readable.
 
@@ -77,19 +77,19 @@ This tab is just here if you want to hide content, if you have visitors or what.
 
 ### Password tab
 
-This is where you can generate a password. This tab might be merged with the `Cipher` tab in the future.
+This is where you can generate a password.
 
 ![](./Documentation/02_password.png)
 
 ### Ciphers tab
 
-This is where you can encrypt and decrypt any text content. It should be named `Cipher` actually, but anyways, it might be merged with the `Password` tab in the future.
+This is where you can encrypt and decrypt any text content. (it should be named `Cipher` actually)
 
 ![](./Documentation/03_cipher.png)
 
 ### Re-encrypt tab
 
-This tab is named `...` to keep it short and avoid taking space in the UI, because it is almost never used, is experimental, and probably buggy. Let's skip it for now.
+This tab is named `...` to keep it short and avoid taking too much space in the UI, because it is almost never used, is experimental, and probably buggy. Let's skip it for now.
 
 ### Logs tab
 
@@ -101,7 +101,9 @@ This is where you will be able to load and save information about your passwords
 
 ![](./Documentation/04_vault.png)
 
-For now, only GitHub storage is supported, but the application is designed to be extended with other types of vault. Your GitHub personal access token is stored in browser's local storage, encrypted with your master key.
+For now, only GitHub storage is supported, but the application is designed to be extended with other types of vault. To access GitHub, you will need a personal access token. Your GitHub personal access token is stored in the browser's local storage, encrypted with your master key.
+
+More details on the personal access token later.
 
 When the vault is fetched successfully, that means GitHub access was granted, which means your personal access token was successfully decrypted, which means your master key is correct, and so the `Master key` field is automatically "protected and locked", just as if you had clicked on the `Protect and lock` button.
 
@@ -115,29 +117,26 @@ When the vault is fetched successfully, that means GitHub access was granted, wh
 Note that as you type, once the public part is long enough, a password is generated in the `Password` field and it is also copied to the clipboard for you to paste it somewhere later on, if the `Copy` button flashed green. If it flashed red, that means something failed.
     - You can set some options if you need to, by clicking the `...` button:
     ![](./Documentation/05_password_options.png)
-    Here the fields `Alphabet` and `Length` appears, the former to let you choose the available characters in the generated password, the latter to let you choose the generated password length.
-
+    Here the fields `Alphabet` and `Length` appear, the former let you choose the available characters that can end up in the generated password, the latter let you choose the generated password length.
 4. Copy (if not already done) the password generated in the `Password` field and use it anywhere needed.
 
 For a given master key and a given public part, the same password is generated, so if the public part changes, you get a different password, and that's all the point.
 
-Of course if you type a given public part but miss your master key, you get the wrong password, so watch out.
+Of course if you type a given public part correctly but make a mistake in your master key, you get the wrong password, so watch out.
 
 The public part is something you have to remember if you do not use the vault feature. To be honest, remembering the public part for all the services you use can be quite challenging, so the vault is getting handy, and in this case, because you do not have to remember the public part, you can just generate it with the `Generate` button.
 
 > **Warning**
-> At least for GitHub, the public part should be something you know and remember.
-> If you generate a random string, and you push it to your vault, then when you need to setup a new machine or phone, you will need your password to access GitHub, and the public part to generate your GitHub password will be in your vault, in GitHub, and you will be locked out.
+> At least for GitHub, the public part should be something you know and remember.<br/>
+> If you generate a random string, and you push it to your vault, then when you need to setup a new device, you will need your password to access GitHub, and the public part to generate your GitHub password will be in your vault, in GitHub, and you will have locked yourself out.
 
 ### Encrypt / decrypt
 
 1. Input your master key in the `Master key` field.
 2. Go to the `Ciphers` tab.
-3. Type a cipher name in the `Cypher name` field. This is just for you to understand what cipher it is.
+3. Type a cipher name in the `Cypher name` field. This is just for you to understand what cipher it is, and is only relevant when you store your cipher in the vault.
 4. Type what you want to encrypt or decrypt in the box below on the left, and click either the `Encrypt` or `Decrypt` button for your clear text to be encrypted in the box on the right, or your encrypted text to be decrypted and appear in the box on the right.
     ![](./Documentation/06_cipher.png)
-
-Note that this feature is almost useless if you are not using the vault. The purpose is to store sensitive data somewhere, in an encrypted form.
 
 ## How to use the vault
 
@@ -147,7 +146,7 @@ For the moment, ItchyPassword has only one vault storage implementation, and it 
 
 So first, you will need a GitHub account.
 
-You can create an account very quickly and for free if you don't already have one. Just go to https://gitup.com and sign up.
+You can create an account very quickly and for free if you don't already have one. Just go to https://github.com and sign up.
 
 By the way, if you just sign up, I recommend you to already use ItchyPassword to create your GitHub password.
 
