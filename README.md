@@ -148,7 +148,7 @@ So first, you will need a GitHub account.
 
 You can create an account very quickly and for free if you don't already have one. Just go to https://github.com and sign up.
 
-By the way, if you just sign up, I recommend you to already use ItchyPassword to create your GitHub password.
+By the way, if you are just about to sign up, I recommend you to already use ItchyPassword to create your GitHub password.
 
 Quick summary if you didn't read the sections above:
 
@@ -201,11 +201,8 @@ Note that by the time you read it, it may have change on GitHub side and not upd
     If you are setting up things on a new device:
 
     a. Open [ItchyPassword].
-
     b. Enter your master key in `Master key` field.
-
     c. Enter your predictable public part for GitHub, such as `github.com/<your-email-address>`.
-
     d. Login to GitHub with the generated password in the `Password` field.
 
 2. Once logged-in to GitHub, find the `Settings`, then `Developer settings`, then `Personal access tokens`.
