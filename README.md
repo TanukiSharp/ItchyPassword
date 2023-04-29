@@ -195,7 +195,7 @@ In case of success, your browser has an encrypted personal access token in its l
 ### Generate a personal access token (on GitHub)
 
 The procedure described below is correct as of April 2023.<br/>
-Note that by the time you read it, it may have change on GitHub side and not updated here.
+Note that by the time you read it, it may have changed on GitHub side and not updated here.
 
 1. Open https://github.com and log in.<br/>
     If you are setting up things on a new device:
@@ -217,9 +217,9 @@ Note that by the time you read it, it may have change on GitHub side and not upd
     > As of now, the fine-grained token name is limited to 40 characters, which clearly sucks in my opinion. I opened an issue to ask, but nobody gives a damn.
     > https://github.com/orgs/community/discussions/41568
 
-    The reason for specifying all this is (user, device type and browser), is because:
+    The reason for specifying all this (user, device type and browser), is because:
     - `user`: you may at some point need to generate a token for another person, like your child
-    - `device`: you may want to know on which device this token is stored, in case you loose this device, you know which token to invalidate
+    - `device`: you may want to know on which device this token is stored, in case you loose it (the device), you know which token to invalidate
     - `browser`: you may use several browsers on the same device, and each will need its own token
 
     Here are some examples with my naming convention:
@@ -227,7 +227,9 @@ Note that by the time you read it, it may have change on GitHub side and not upd
     - `ItchyPassword (Bob / Pixel 6a / Chrome)`
     - `ItchyPassword (Bob / Pixel 6a / Firefox)`
 
-6. For the `Expiration` field, you can safely set 90 days, but avoid setting a longer duration.<br/> This means you will have to re-generate a new token every 90 days (3 months), but re-generating is much simpler.
+6. For the `Expiration` field, you can safely set 90 days, but avoid setting a longer duration.<br/> This means you will have to re-generate a new token every 90 days (3 months), but re-generating is much simpler.<br/>
+    > **Note**
+    > If you need to generate a token for testing something or because you need to access one of your information only once from another device, I recommend in this case to generate a token with the shortest lifetime possible.
 7. For the last setting:
 
     a. If you chose `Tokens (classic)`, then for the field `Select scope`, check the `repo` box, and your screen should look like this:
