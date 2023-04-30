@@ -4,7 +4,7 @@ This project is still under development, getting stable but will probably keep c
 
 ![](nothing-to-see-here.gif)
 
-ItchyPassword is a web-based password manager, that should be usable for anyone.<br/>
+[ItchyPassword] is a web-based password manager, that should be usable for anyone.<br/>
 It works fully offline with all the cryptography happening in the browser. It requires a browser with SubtleCrypto API available.
 
 Works fine with Chromium-based browsers (Edge, Chrome) and Firefox on desktop (Windows 10 and 11) and mobile (Chrome and Edge on Android).
@@ -49,7 +49,7 @@ You do not need to make the files served by a web server, just open the file wit
 
 ## How it looks like
 
-First, let me give you an overview of ItchyPassword.
+First, let me give you an overview of [ItchyPassword].
 
 When you run it, it should look like this:
 
@@ -77,7 +77,7 @@ This tab is just here if you want to hide content, if you have visitors or what.
 
 ### Password tab
 
-This is where you can generate a password.
+This is where you can generate passwords.
 
 ![](./Documentation/02_password.png)
 
@@ -142,20 +142,20 @@ The public part is something you have to remember if you do not use the vault fe
 
 ### Create a vault
 
-For the moment, ItchyPassword has only one vault storage implementation, and it is based on GitHub repository, meaning that your data is stored in a JSON file in a GitHub repository, and pushing changes is actually making commits to the repository, so your data is also versioned and can be reverted in case of problem.
+For the moment, [ItchyPassword] has only one vault storage implementation, and it is based on GitHub repository, meaning that your data is stored in a JSON file in a GitHub repository, and pushing changes is actually making commits to the repository, so your data is also versioned and can be reverted in case of problem.
 
 So first, you will need a GitHub account.
 
 You can create an account very quickly and for free if you don't already have one. Just go to https://github.com and sign up.
 
-By the way, if you are just about to sign up, I recommend you to already use ItchyPassword to create your GitHub password.
+By the way, if you are just about to sign up, I recommend you to already use [ItchyPassword] to create your GitHub password.
 
 Quick summary if you didn't read the sections above:
 
 1. Open https://tanukisharp.github.io/ItchyPassword/ in a web browser.
 2. In the `Master key` field, type your master key.
 3. In the `Password` tab, type a public part. I recommend `github.com/<your-email-address>`, but anything long enough and that you will always remember for sure will do.
-4. Copy the resulting password in the `Password` field in order to use it. (ItchyPassword does it for you though)
+4. Copy the resulting password in the `Password` field in order to use it. ([ItchyPassword] does it for you though)
 
 Here I assume you know how to use GitHub, teaching you that is beyond the scope of this document.
 
@@ -178,10 +178,10 @@ Once you have a GitHub account and you are logged in, create a repository that w
     You can name the file that will store your data the way you want. By default the value `vault.json` is pre-filled, but again, this is a free field.
 8. In the next (and last) dialog, you are asked to enter a `Personal access token`:
     ![](./Documentation/07_setup_vault_step_04.png)
-    **Note:** I detail the procedure to generate a personal access token in the next section.<br/>
+    **Note:** I detail the procedure to generate a personal access token in the section `Generate a personal access token (on GitHub)` below.<br/>
     This token is for GitHub to grant you access to the `ItchyPasswordVault` repository. This is required to fetch the data file from GitHub, and also to push changes to the data file back to GitHub.
 9. Once you have a personal access token, it is encrypted with your master key and stored in the browser's local storage. That's why you needed to enter your master key first, at step 2.<br/>
-Anyway, if you click the `Refresh` button of the `Vault` tab without having a master key entered first, ItchyPassword tells you that you must enter a master key first, to make sure you can't accidentally paste a personal access token that would not be persisted, or even worst, persisted in clear. 😱
+Anyway, if you click the `Refresh` button of the `Vault` tab without having a master key entered first, [ItchyPassword] tells you that you must enter a master key first, to make sure you can't accidentally paste a personal access token that would not be persisted, or even worst, persisted in clear. 😱
 
 Once the procedure is done, the `Refresh` button should flash green to indicate that everything went according to plan. Otherwise, the button will flash red to indicate that an error occurred.
 
@@ -191,6 +191,82 @@ In case of success, your browser has an encrypted personal access token in its l
 - on another browser or in another session of the same browser, you won't have this token
 - only your master key can make this token usable (decrypt).
 - from now on, you will only need to type your master key and click the `Refresh` button in order to get your vault loaded
+
+### Push to vault
+
+The `Password` and `Ciphers` tabs have a `Push to vault` button. Roughly, when clicking this button that is just below the `Storage data` text field, everything that is in this field (the `Storage data`) will be pushed to your vault on GitHub.
+
+Here is an image of the empty `Password` tab:
+![](./Documentation/09_vault_05.png)
+
+#### Password case
+
+Hereafter is an image of a real world password generation:
+
+![](./Documentation/09_vault_06.png)
+
+The `Public part` is filled with long enough text (must be at least 8 characters). You can see that the `Password` field has also been filled up by [ItchyPassword].
+
+The `Storage path` describes "where" you want to store the details used to (re-)generate the password. By "where", I mean in which object node, you can see this as directories and sub-directories. You can add (virtually) as many as want.
+
+The `alphabet`, `lenght` and `public` properties are the key ingredients to generate the password, and are what will be needed to re-generate it when ou will need it.
+
+The `customKeys` property is defined by the `Custom keys` text field at the bottom of the image. This can be empty, but if not, it must be a valid JSON object text representation. Custom keys is free data for you to remember, they are not encrypted and have no impact in password generation.
+
+A good use case is when a service assigns you a huge ID that you will never remember but need to sign-in, you may want to put it here.
+
+When clicking the `Push to vault` button, the exact content of the `Storage data` field will be pushed to GitHub in the form of a commit, and will appear as a "diff" in the vault data file.
+
+#### Cipher case
+
+The `Ciphers` feature work mostly the same way as the `Password` feature.
+
+Hereafter is a real world cipher:
+
+![](./Documentation/09_vault_07.png)
+
+Unlike a password, you may have multiple ciphers in a single node, and therefore you have to give it a name, via the `Cipher name` field.
+
+Below, the left text field is writable and is where the content you want to encrypt (or decrypt) goes. Then click the `Encrypt` or `Decrypt` button, and the result goes into the text field on the right, which is read-only, to make sure you cannot edit it by mistake before pushing to your vault.
+
+The `Storage path` and `Custom keys` fields work the same as in the `Password` feature.
+
+#### Update case
+
+For both `Password` and `Ciphers` feature, you may have notice a `Matching path` gray label just below the `Storage path` field.
+
+This is for, in case you need to update an existing node, you can confirm you didn't mistake. Also, when you create a new password or cipher, it can be useful to check if you didn't already input an existing path by mistake.
+
+![](./Documentation/09_vault_08.png)
+
+### Use the vault
+
+Once your vault is correctly setup and functional, clicking the `Refresh` button should fetch the vault data file and display it, as follow:
+
+![](./Documentation/09_vault_01.png)
+
+The `Clear settings` button will erase the local storage, the four values you were asked via dialog boxes when you have setup your vault.<br/>
+Before clearing the settings, it will ask you for confirmation, so if you click the button by mistake, no worries.
+
+The `View settings` will just display what's in the local storage, except the personal access token, as follow:
+
+![](./Documentation/09_vault_02.png)
+
+This can be useful to confirm what you entered if something goes wrong.
+
+The `Search` box allows you to filter elements with specific text. The aggressive search mode will find more matches then the regular mode, as follow.
+
+Aggressive:
+![](./Documentation/09_vault_03.png)
+
+Regular:
+![](./Documentation/09_vault_04.png)
+
+Finally, in the `Tree view`, you should see buttons appear. A button is create for each password and cipher.
+
+Clicking on a password button will automatically re-generate the password a copy it to the clipboard, for your convenience.
+
+Clicking on a cipher button will open the `Ciphers` tab and copy the encrypted and decrypted content in the UI.
 
 ### Generate a personal access token (on GitHub)
 
@@ -245,7 +321,7 @@ Note that by the time you read it, it may have changed on GitHub side and not up
     ![](./Documentation/08_generate_token_02.png)
     **Note** that `Metadata` permission is mandatory and will automatically be set to `Read-only`.
 8. Finally, click the `Generate token` button.<br/>
-    You should end up on a page with a token that you can copy to the clipboard. This is the personal access token you have to provide to ItchyPassword in the `Vault` tab.
+    You should end up on a page with a token that you can copy to the clipboard. This is the personal access token you have to provide to [ItchyPassword] in the `Vault` tab.
 
 ## Details
 
