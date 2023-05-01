@@ -2,8 +2,12 @@ body, input {
     font-family: consolas;
 }
 
-input {
+input, select {
     margin: 2px;
+}
+
+select {
+    padding: 1px;
 }
 
 button {
