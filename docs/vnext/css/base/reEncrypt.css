@@ -1,0 +1,88 @@
+#divTabReEncrypt {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-rows: auto 1fr auto;
+    justify-content: stretch;
+    align-content: stretch;
+}
+
+/******************************************/
+
+#lblReEncryptTitle {
+    font-weight: bold;
+    justify-self: start;
+    grid-column: 1 / span 3;
+    grid-row: 1;
+    margin-bottom: 20px;
+}
+
+/******************************************/
+
+#txtReEncryptSource {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+#divReEncryptSourceActions {
+    grid-column: 1;
+    grid-row: 3;
+    align-self: start;
+    justify-self: end;
+}
+
+/******************************************/
+
+#divReEncryptActions {
+    margin-left: 4px;
+    margin-right: 4px;
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(5, auto);
+    align-self: start;
+    justify-self: stretch;
+}
+
+#lblReEncryptFrom {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+#cboReEncryptFrom {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+#lblReEncryptTo {
+    margin-top: 12px;
+    grid-column: 1;
+    grid-row: 3;
+}
+
+#cboReEncryptTo {
+    grid-column: 1;
+    grid-row: 4;
+}
+
+#btnReEncrypt {
+    margin-top: 12px;
+    margin-bottom: 32px;
+    grid-column: 1;
+    grid-row: 6;
+    justify-self: center;
+}
+
+/******************************************/
+
+#txtReEncryptTarget {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+#divReEncryptTargetActions {
+    grid-column: 3;
+    grid-row: 3;
+    align-self: start;
+    justify-self: end;
+}

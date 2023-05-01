@@ -1,0 +1,112 @@
+body, input {
+    font-family: consolas;
+}
+
+input, select {
+    margin: 2px;
+}
+
+select {
+    padding: 1px;
+}
+
+button {
+    margin: 1px;
+}
+
+.readonlyText {
+    background-color: #F9F9F9;
+}
+
+.divTab {
+    display: none;
+    background-color: #F4F4F4;
+    padding: 8px;
+    border: solid 1px #D8D8D8;
+    border-radius: 3px;
+    max-width: 900px;
+}
+
+#divTabButtonContainer {
+    display: grid;
+    justify-content: start;
+    grid-template-columns: repeat(6, auto); /* Yes CSS is garbage... */
+    grid-template-rows: auto;
+}
+
+#divInfo {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    background-color: white;
+    font-size: 9pt;
+    text-align: right;
+    margin-bottom: 2px;
+    margin-right: 2px;
+}
+
+#txtPath {
+    width: auto;
+    min-width: 0;
+}
+
+#divStoragePathContainer {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-rows: auto;
+}
+
+#lblMatchingPath, #lblMatchingPathLabel {
+    color: orange;
+    font-size: 0.8em;
+}
+
+#lblMatchingPathLabel {
+    color: gray;
+    margin-left: 2px;
+}
+
+button#btnPushToVault {
+    margin-top: 6px;
+    margin-left: 0;
+    margin-right: 0;
+    margin-bottom: 0;
+}
+
+.large-textarea {
+    height: 200px;
+}
+
+.very-large-textarea {
+    width: 99%;
+    min-width: 0;
+    height: 300px;
+}
+
+@keyframes kf_good_flash {
+    from { background-color: initial }
+    to { background-color: #80D080 }
+}
+
+@keyframes kf_bad_flash {
+    from { background-color: initial }
+    to { background-color: #D08080 }
+}
+
+.good-flash {
+    background-color: transparent;
+    animation-name: kf_good_flash;
+    animation-duration: 100ms;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
+
+.bad-flash {
+    background-color: transparent;
+    animation-name: kf_bad_flash;
+    animation-duration: 100ms;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-direction: alternate;
+}
