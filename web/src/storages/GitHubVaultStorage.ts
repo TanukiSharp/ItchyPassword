@@ -403,54 +403,6 @@ export class GitHubApiVaultStorage extends GitHubVaultStorageBase {
         return null;
     }
 
-    // protected async ensureVaultParameters(): Promise<boolean> {
-    //     if (await super.ensureVaultParameters() === false) {
-    //         return false;
-    //     }
-
-    //     const username: string | null = this.getUsername();
-    //     if (!username) {
-    //         return false;
-    //     }
-
-    //     const passwordPublicPart: string | null = this.getSetVaultParameter(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_PASSWORD_PUBLIC, 'GitHub account password public part:');
-    //     if (!passwordPublicPart) {
-    //         return false;
-    //     }
-
-    //     const passwordLengthString: string | null = this.getSetVaultParameter(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_PASSWORD_LENGTH, 'GitHub account password length:');
-    //     if (!passwordLengthString) {
-    //         return false;
-    //     }
-
-    //     const passwordLength: number = parseInt(passwordLengthString, 10);
-    //     if (Number.isSafeInteger(passwordLength) === false || passwordLength <= 0) {
-    //         return false;
-    //     }
-
-    //     let password: string | null = await passwordComponent.generatePasswordString(
-    //         passwordPublicPart,
-    //         passwordComponent.DEFAULT_ALPHABET,
-    //         passwordComponent.CURRENT_PASSWORD_GENERATOR_VERSION,
-    //         CancellationToken.none
-    //     );
-
-    //     if (!password) {
-    //         return false;
-    //     }
-
-    //     this.basicAuthHeader = this.constructBasicAuthString(username, password.substring(0, passwordLength));
-
-    //     const browserName: string | null = this.getSetVaultParameter(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_BROWSER_NAME, 'Current device/browser name:');
-    //     if (!browserName) {
-    //         return false;
-    //     }
-
-    //     this.authorizationName = `${GitHubApiVaultStorage.AUTHORIZATION_NAME} (${browserName})`;
-
-    //     return true;
-    // }
-
     protected async getToken(): Promise<string | null> {
         const authorizations: IAuthorization[] | null = await this.listAuthorizations();
 
