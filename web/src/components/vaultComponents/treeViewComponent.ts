@@ -59,7 +59,12 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
     }
 
     private async runPassword(value: any): Promise<void> {
-        await this.passwordService.generateAndCopyPasswordToClipboard(value.public, value.alphabet, value.length);
+        await this.passwordService.generateAndCopyPasswordToClipboard(
+            value.public,
+            value.alphabet,
+            value.length,
+            value.version,
+        );
     }
 
     private async runCipher(path: string, key: string, value: any): Promise<boolean> {
