@@ -9,6 +9,10 @@ input {
     zoom: 1.2;
 }
 
+select {
+    zoom: 1.2;
+}
+
 button {
     zoom: 1.25;
     margin: 1px;
