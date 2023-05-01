@@ -2,6 +2,8 @@ import { ICipher, getDerivedBytes } from '../crypto';
 import { CancellationToken, ensureNotCancelled } from '../asyncUtils';
 
 export class CipherV2 implements ICipher {
+    private iterations: number = 100000;
+
     public get version(): number {
         return 2;
     }
@@ -28,7 +30,7 @@ export class CipherV2 implements ICipher {
 
         const passwordKey: CryptoKey = await window.crypto.subtle.importKey(
             'raw',
-            await getDerivedBytes(password, passwordSalt, cancellationToken),
+            await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken),
             aesKeyAlgorithm,
             false,
             ['encrypt']
@@ -60,7 +62,7 @@ export class CipherV2 implements ICipher {
             length: 256
         };
 
-        const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt, cancellationToken);
+        const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken);
 
         ensureNotCancelled(cancellationToken);
 

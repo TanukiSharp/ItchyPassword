@@ -16,7 +16,7 @@ export interface ICipher {
     decrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer>;
 }
 
-export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
+export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, iterations: number, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
     const baseKey: CryptoKey = await window.crypto.subtle.importKey(
         'raw',
         password,
@@ -30,7 +30,7 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, 
     const algorithm: Pbkdf2Params = {
         name: 'PBKDF2',
         hash: 'SHA-512',
-        iterations: 100000,
+        iterations: iterations,
         salt
     };
 
