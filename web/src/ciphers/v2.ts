@@ -2,14 +2,14 @@ import { ICipher, getDerivedBytes } from '../crypto';
 import { CancellationToken, ensureNotCancelled } from '../asyncUtils';
 
 export class CipherV2 implements ICipher {
-    private iterations: number = 100000;
+    private iterations: number = 100_000;
 
     public get version(): number {
         return 2;
     }
 
     public get description(): string {
-        return 'PBKDF2 + AES-GCM';
+        return 'PBKDF2 + AES-GCM 256';
     }
 
     async encrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {

@@ -1,24 +1,24 @@
 import { ICipher, getDerivedBytes } from '../crypto';
 import { CancellationToken, ensureNotCancelled } from '../asyncUtils';
 
-const encryptionKeyDerivationSalt: ArrayBuffer = new Uint8Array([ 0xf2, 0xcf, 0xef, 0x8e, 0x13, 0x40, 0x46, 0x49, 0x92, 0x2a, 0xde, 0x5c, 0xbc, 0x88, 0x38, 0xa8 ]).buffer;
+// TODO: Should refactor v2 and v3 common code into a reusable component instead of shamelessly copy/pasting...
 
-export class CipherV1 implements ICipher {
-    private iterations: number = 100000;
+export class CipherV3 implements ICipher {
+    private iterations: number = 400_000;
 
     public get version(): number {
-        return 1;
+        return 3;
     }
 
     public get description(): string {
-        return 'PBKDF2 + AES-GCM';
+        return 'PBKDF2 + AES-GCM 512';
     }
 
     async encrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
-        const output: ArrayBuffer = new ArrayBuffer(12 + 16 + input.byteLength);
+        const output: ArrayBuffer = new ArrayBuffer(12 + 16 + 16 + input.byteLength);
 
-        const nonce: DataView = new DataView(output, 0, 12);
-        crypto.getRandomValues(new Uint8Array(output, 0, 12));
+        const nonce: Uint8Array = crypto.getRandomValues(new Uint8Array(output, 0, 12));
+        const passwordSalt: Uint8Array = crypto.getRandomValues(new Uint8Array(output, 12, 16));
 
         const aesGcmParams: AesGcmParams = {
             name: 'AES-GCM',
@@ -27,12 +27,12 @@ export class CipherV1 implements ICipher {
 
         const aesKeyAlgorithm: AesKeyAlgorithm = {
             name: 'AES-GCM',
-            length: 256
+            length: 512
         };
 
         const passwordKey: CryptoKey = await window.crypto.subtle.importKey(
             'raw',
-            await getDerivedBytes(password, encryptionKeyDerivationSalt, this.iterations, cancellationToken),
+            await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken),
             aesKeyAlgorithm,
             false,
             ['encrypt']
@@ -44,14 +44,15 @@ export class CipherV1 implements ICipher {
 
         ensureNotCancelled(cancellationToken);
 
-        new Uint8Array(output).set(new Uint8Array(result), 12);
+        new Uint8Array(output).set(new Uint8Array(result), 12 + 16);
 
         return output;
     }
 
     async decrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
-        const nonce: DataView = new DataView(input, 0, 12);
-        const payload: DataView = new DataView(input, 12);
+        const nonce: Uint8Array = new Uint8Array(input, 0, 12);
+        const passwordSalt: Uint8Array = new Uint8Array(input, 12, 16);
+        const payload: Uint8Array = new Uint8Array(input, 12 + 16);
 
         const aesGcmParams: AesGcmParams = {
             name: 'AES-GCM',
@@ -60,10 +61,10 @@ export class CipherV1 implements ICipher {
 
         const aesKeyAlgorithm: AesKeyAlgorithm = {
             name: 'AES-GCM',
-            length: 256
+            length: 512
         };
 
-        const derivedKey: ArrayBuffer = await getDerivedBytes(password, encryptionKeyDerivationSalt, this.iterations, cancellationToken);
+        const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken);
 
         ensureNotCancelled(cancellationToken);
 

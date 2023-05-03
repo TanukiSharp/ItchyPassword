@@ -34,7 +34,16 @@ export class SecureLocalStorage implements IAsyncStorage {
             return null;
         }
 
-        return await cipherComponent.decryptString(encryptedItem, CancellationToken.none);
+        const sortedCiphers = cipherComponent.ciphers.map(x => x).sort((a, b) => b.version - a.version);
+
+        for (const cipher of sortedCiphers) {
+            const result: string | null = await cipherComponent.decryptStringWithCipher(encryptedItem, cipher, CancellationToken.none);
+            if (result !== null) {
+                return result;
+            }
+        }
+
+        return null;
     }
 
     async setItem(key: string, value: string): Promise<void> {

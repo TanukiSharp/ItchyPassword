@@ -6,6 +6,7 @@ import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
 import { CipherV2 } from '../ciphers/v2';
+import { CipherV3 } from '../ciphers/v3';
 import { ITabInfo } from '../TabControl';
 import { IComponent } from './IComponent';
 
@@ -20,7 +21,10 @@ import { PlainObject } from '../PlainObject';
 const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
 const divTabCiphers = ui.getElementById('divTabCiphers');
 
-const cipher: crypto.ICipher = new CipherV2();
+export const ciphers: crypto.ICipher[] = [
+    new CipherV2(),
+    new CipherV3(),
+];
 
 const btnClearAllCipherInfo = ui.getElementById('btnClearAllCipherInfo') as HTMLButtonElement;
 
@@ -28,6 +32,7 @@ const txtCipherName = ui.getElementById('txtCipherName') as HTMLInputElement;
 const txtCipherSource = ui.getElementById('txtCipherSource') as HTMLInputElement;
 const txtCipherTarget = ui.getElementById('txtCipherTarget') as HTMLInputElement;
 
+const cboCipherVersion = ui.getElementById('cboCipherVersion') as HTMLSelectElement;
 const btnEncrypt = ui.getElementById('btnEncrypt') as HTMLButtonElement;
 const btnDecrypt = ui.getElementById('btnDecrypt') as HTMLButtonElement;
 
@@ -37,6 +42,42 @@ const btnCopyCipherTarget = ui.getElementById('btnCopyCipherTarget') as HTMLButt
 const btnClearCipherTarget = ui.getElementById('btnClearCipherTarget') as HTMLButtonElement;
 
 let cipherTargetLastChange: string | undefined;
+
+export function findCipherByVersion(version: number): crypto.ICipher | null {
+    for (const cipher of ciphers) {
+        if (cipher.version === version) {
+            return cipher;
+        }
+    }
+
+    return null;
+}
+
+export function findLatestCipher(): crypto.ICipher {
+    if (ciphers.length === 0) {
+        throw new Error('No ciphers registered.');
+    }
+
+    let bestCipher: crypto.ICipher = ciphers[0];
+
+    for (const cipher of ciphers) {
+        if (cipher.version > bestCipher.version) {
+            bestCipher = cipher;
+        }
+    }
+
+    return bestCipher;
+}
+
+function findCipherDropdownIndexByVersion(version: number): number {
+    for (let i = 0; i < ciphers.length; i++) {
+        if (ciphers[i].version === version) {
+            return i;
+        }
+    }
+
+    return -1;
+}
 
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
@@ -93,7 +134,7 @@ function updateCipherParameters(): void {
 
     const cipherParameters = {
         datetime: cipherTargetLastChange,
-        version: cipher.version,
+        version: ciphers[cboCipherVersion.selectedIndex].version,
         value: txtCipherTarget.value
     }
 
@@ -104,6 +145,7 @@ function updateCipherParameters(): void {
 
 export async function encryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
+
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
         return null;
@@ -112,15 +154,16 @@ export async function encryptString(value: string, cancellationToken: Cancellati
     const input: ArrayBuffer = stringUtils.stringToArray(value);
     const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
-    const encrypted: ArrayBuffer = await cipher.encrypt(input, password, cancellationToken);
+    const encrypted: ArrayBuffer = await findLatestCipher().encrypt(input, password, cancellationToken);
 
     ensureNotCancelled(cancellationToken);
 
     return arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
 }
 
-export async function decryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function decryptStringWithCipher(value: string, cipher: crypto.ICipher, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
+
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
         return null;
@@ -143,6 +186,16 @@ export async function decryptString(value: string, cancellationToken: Cancellati
         console.warn(`Failed to decrypt${typedError.message ? `, error: ${typedError.message}` : ', no error message'}`);
         return null;
     }
+}
+
+export async function decryptStringWithVersion(value: string, version: number, cancellationToken: CancellationToken): Promise<string | null> {
+    const cipher = findCipherByVersion(version);
+
+    if (cipher === null) {
+        throw new Error(`Failed to find cip[her for version ${version}.`);
+    }
+
+    return decryptStringWithCipher(value, cipher, cancellationToken);
 }
 
 async function onEncryptButtonClick(): Promise<boolean> {
@@ -177,7 +230,11 @@ async function onDecryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const decryptedString: string | null = await decryptString(txtCipherSource.value, CancellationToken.none);
+    const decryptedString: string | null = await decryptStringWithCipher(
+        txtCipherSource.value,
+        ciphers[cboCipherVersion.selectedIndex],
+        CancellationToken.none
+    );
 
     if (decryptedString === null) {
         setTargetVisualCueError();
@@ -187,6 +244,16 @@ async function onDecryptButtonClick(): Promise<boolean> {
     setCipherTargetValue(decryptedString, false);
 
     return true;
+}
+
+function setupCipherVersionsDropdown() {
+    for (const cipher of ciphers) {
+        const option = document.createElement('option');
+        option.text = `v${cipher.version}`;
+        cboCipherVersion.appendChild(option);
+    }
+
+    cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
@@ -225,10 +292,15 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherName.value = '';
         txtCipherSource.value = '';
         txtCipherTarget.value = '';
+        cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
         storageOutputComponent.setPathUI('');
         storageOutputComponent.setCustomKeysUI('');
 
-        const decrypted: string | null = await decryptString(parameterKeys.value, CancellationToken.none);
+        const decrypted: string | null = await decryptStringWithVersion(
+            parameterKeys.value,
+            parameterKeys.version,
+            CancellationToken.none
+        );
 
         if (decrypted === null) {
             alert(`Failed to decrypt cipher '${cipherName}'.`);
@@ -251,6 +323,7 @@ export class CipherComponent implements IComponent, ITabInfo {
 
         txtCipherName.value = cipherName;
         txtCipherSource.value = decrypted;
+        cboCipherVersion.selectedIndex = findCipherDropdownIndexByVersion(parameterKeys.version);
 
         storageOutputComponent.setPathUI(storagePath);
         storageOutputComponent.setParameters(parameterKeys, `ciphers/${cipherName}`);
@@ -282,10 +355,15 @@ export class CipherComponent implements IComponent, ITabInfo {
             }
         });
 
+        cboCipherVersion.addEventListener('input', () => {
+            updateCipherParameters();
+        });
+
         btnClearAllCipherInfo.addEventListener('click', () => {
             txtCipherName.value = '';
             txtCipherSource.value = '';
             txtCipherTarget.value = '';
+            cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
             storageOutputComponent.clearMatchingPath();
             clearCipherTargetLastUpdate();
             clearAllVisualCues();
@@ -300,6 +378,8 @@ export class CipherComponent implements IComponent, ITabInfo {
         btnClearCipherTarget.addEventListener('click', () => {
             setCipherTargetValue('', false);
         });
+
+        setupCipherVersionsDropdown();
 
         serviceManager.registerService('cipher', new CipherService(this));
     }

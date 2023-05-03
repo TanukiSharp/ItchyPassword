@@ -1,10 +1,6 @@
-import * as passwordComponent from '../components/passwordComponent';
-
 import { SecureLocalStorage } from './SecureLocalStorage';
 import { IVaultStorage } from './IVaultStorage';
 import { PlainObject } from '../PlainObject';
-
-import { CancellationToken } from '../asyncUtils';
 
 interface IApp {
     name: string;
@@ -24,6 +20,10 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
     static BASE_URL: string = 'https://api.github.com';
     static AUTH_TOKEN_KEY_NAME: string = 'GitHubVaultStorageBase.AuthToken';
 
+    static LOCAL_STORAGE_KEY_USERNAME: string = 'GitHubVaultStorageBase.Username';
+    static LOCAL_STORAGE_KEY_REPO: string = 'GitHubVaultStorageBase.Repository';
+    static LOCAL_STORAGE_KEY_FILENAME: string = 'GitHubVaultStorageBase.Filename';
+
     private token: string | null = null;
     private oneTimePassword: string | null = null;
     private currentVaultContentHash: string | null = null;
@@ -32,9 +32,7 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
     private repositoryName: string | null = null;
     private vaultFilename: string | null = null;
 
-    static LOCAL_STORAGE_KEY_USERNAME: string = 'GitHubVaultStorageBase.Username';
-    static LOCAL_STORAGE_KEY_REPO: string = 'GitHubVaultStorageBase.Repository';
-    static LOCAL_STORAGE_KEY_FILENAME: string = 'GitHubVaultStorageBase.Filename';
+
 
     protected getUsername(): string | null {
         return this.username;
@@ -52,9 +50,9 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
     }
 
     public clear(): void {
-        this.secureLocalStorage.removeItem(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_USERNAME);
-        this.secureLocalStorage.removeItem(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_REPO);
-        this.secureLocalStorage.removeItem(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_FILENAME);
+        this.secureLocalStorage.removeItem(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_USERNAME);
+        this.secureLocalStorage.removeItem(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_REPO);
+        this.secureLocalStorage.removeItem(GitHubVaultStorageBase.LOCAL_STORAGE_KEY_FILENAME);
 
         this.secureLocalStorage.removeItem(GitHubVaultStorageBase.AUTH_TOKEN_KEY_NAME);
     }
@@ -168,10 +166,10 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
 
         if (token === null) {
             token = await this.getToken();
-        }
 
-        if (!token) {
-            return false;
+            if (token === null) {
+                return false;
+            }
         }
 
         await this.secureLocalStorage.setItem(GitHubVaultStorageBase.AUTH_TOKEN_KEY_NAME, token);
@@ -286,138 +284,5 @@ export class GitHubPersonalAccessTokenVaultStorage extends GitHubVaultStorageBas
     protected getToken(): Promise<string | null> {
         const authToken: string | null = prompt('Personal access token:');
         return Promise.resolve(authToken);
-    }
-}
-
-// ================================================================================================
-
-export class GitHubApiVaultStorage extends GitHubVaultStorageBase {
-    static AUTHORIZATION_NAME: string = 'github.com/TanukiSharp/ItchyPassword';
-
-    static LOCAL_STORAGE_KEY_PASSWORD_PUBLIC: string = 'GitHubApiVaultStorage.PasswordPublicPart';
-    static LOCAL_STORAGE_KEY_PASSWORD_LENGTH: string = 'GitHubApiVaultStorage.PasswordLength';
-    static LOCAL_STORAGE_KEY_BROWSER_NAME: string = 'GitHubApiVaultStorage.BrowserName';
-
-    private basicAuthHeader: string | null = null;
-    private authorizationName: string | null = null;
-
-    public constructor(secureLocalStorage: SecureLocalStorage) {
-        super(secureLocalStorage);
-    }
-
-    public clear(): void {
-        super.clear();
-
-        this.secureLocalStorage.removeItem(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_PASSWORD_PUBLIC);
-        this.secureLocalStorage.removeItem(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_PASSWORD_LENGTH);
-        this.secureLocalStorage.removeItem(GitHubApiVaultStorage.LOCAL_STORAGE_KEY_BROWSER_NAME);
-    }
-
-    private constructBasicAuthString(username: string, password: string): string {
-        console.log('username:', username);
-        console.log('password:', password);
-
-        const authString = btoa(`${username}:${password}`);
-        return `Basic ${authString}`;
-    }
-
-    private async listAuthorizations(): Promise<IAuthorization[] | null> {
-        if (!this.basicAuthHeader) {
-            return null;
-        }
-
-        const response: Response | null = await this.request(true, 'GET', '/authorizations', this.basicAuthHeader);
-
-        if (response === null) {
-            console.warn('List authorizations aborted.');
-            return null;
-        }
-
-        if (response.ok === false) {
-            console.error('Failed to list authorizations.', response);
-            return null;
-        }
-
-        return await response.json();
-    }
-
-    private async deleteAuthorization(authorization: IAuthorization): Promise<boolean> {
-        if (!this.basicAuthHeader) {
-            return false;
-        }
-
-        const response: Response | null = await this.request(true, 'DELETE', `/authorizations/${authorization.id}`, this.basicAuthHeader);
-
-        if (response === null) {
-            console.warn('Delete authorization aborted.');
-            return false;
-        }
-
-        if (response.ok === false) {
-            console.error(`Failed to delete authorization '${authorization.id}'.`, response);
-        }
-
-        return response.ok;
-    }
-
-    private async createAuthorization(): Promise<string | null> {
-        if (!this.authorizationName) {
-            return null;
-        }
-
-        if (!this.basicAuthHeader) {
-            return null;
-        }
-
-        const body: PlainObject = {
-            scopes: ['repo'],
-            note: this.authorizationName
-        };
-
-        const response: Response | null = await this.request(true, 'POST', '/authorizations', this.basicAuthHeader, body);
-
-        if (response === null) {
-            console.warn('Create new authorization aborted.');
-            return null;
-        }
-
-        if (response.ok === false) {
-            console.error('Failed to create new authorization.', response);
-            return null;
-        }
-
-        return (await response.json()).token as string;
-    }
-
-    private findAuthorization(authorizations: IAuthorization[]): IAuthorization | null {
-        if (!this.authorizationName) {
-            return null;
-        }
-
-        for (const authorization of authorizations) {
-            if (authorization.app && authorization.app.name === this.authorizationName) {
-                return authorization;
-            }
-        }
-
-        return null;
-    }
-
-    protected async getToken(): Promise<string | null> {
-        const authorizations: IAuthorization[] | null = await this.listAuthorizations();
-
-        if (authorizations === null) {
-            return null;
-        }
-
-        const authorization: IAuthorization | null = this.findAuthorization(authorizations);
-
-        if (authorization !== null) {
-            if (await this.deleteAuthorization(authorization) === false) {
-                return null;
-            }
-        }
-
-        return await this.createAuthorization();
     }
 }
