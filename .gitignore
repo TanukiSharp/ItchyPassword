@@ -4,6 +4,4 @@
 **/bin/Release/
 obj/
 *.csproj.user
-docs/validation.html
-/web/dist/
 node_modules/
