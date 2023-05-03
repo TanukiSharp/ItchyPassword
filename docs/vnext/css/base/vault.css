@@ -56,6 +56,42 @@
 
 #trvVaultTreeView button {
     zoom: 1.25;
+    position: relative;
+    padding: 0px;
+}
+
+#trvVaultTreeView button > .content-container {
+    display: inline-grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #00ff0040, #ffff0040, #ff000040);
+}
+
+#trvVaultTreeView button > .content-container > .timestamp {
+    grid-column: 1;
+    grid-row: 1;
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    right: 0;
+    z-index: 1;
+}
+
+#trvVaultTreeView button > .content-container > .text {
+    grid-column: 1;
+    grid-row: 1;
+    padding: 1px 6px 1px 6px;
+    z-index: 2;
+}
+
+#trvVaultTreeView button.not-latest::after {
+    content: attr(not-latest);
+    position: absolute;
+    margin-left: 5px;
+    font-size: 0.75em;
+    color: darkorange;
 }
 
 #trvVaultTreeView .treenode-title {
