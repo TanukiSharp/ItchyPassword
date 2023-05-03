@@ -5,6 +5,14 @@ import * as passwordComponent from '../components/passwordComponent';
 import * as serviceManager from './serviceManger';
 
 export class PasswordService {
+    isLatestVersion(version: number): boolean {
+        return version === this.getLatestVersion();
+    }
+
+    getLatestVersion(): number {
+        return passwordComponent.CURRENT_PASSWORD_GENERATOR_VERSION;
+    }
+
     async generateAndCopyPasswordToClipboard(publicPart: string, alphabet?: string, length?: number, version?: number): Promise<boolean> {
         alphabet = alphabet !== undefined ? alphabet : passwordComponent.DEFAULT_ALPHABET;
         length = length !== undefined ? length : passwordComponent.DEFAULT_LENGTH;

@@ -56,6 +56,14 @@
 
 #trvVaultTreeView button {
     zoom: 1.25;
+    position: relative;
+}
+
+#trvVaultTreeView button.not-latest::after {
+    content: attr(not-latest);
+    position: absolute;
+    margin-left: 16px;
+    font-size: 0.75em;
 }
 
 #trvVaultTreeView .treenode-title {

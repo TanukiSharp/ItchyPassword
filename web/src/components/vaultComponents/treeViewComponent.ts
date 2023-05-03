@@ -53,9 +53,11 @@ function populateSearchFunctions(): void {
 
 class VaultTreeNodeCreationController implements TreeNodeCreationController {
     private readonly passwordService: PasswordService;
+    private readonly cipherService: CipherService;
 
     public constructor() {
         this.passwordService = serviceManager.getService('password');
+        this.cipherService = serviceManager.getService('cipher');
     }
 
     private async runPassword(value: any): Promise<void> {
@@ -68,13 +70,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
     }
 
     private async runCipher(path: string, key: string, value: any): Promise<boolean> {
-        const cipherService: CipherService | null = serviceManager.getService('cipher');
-
-        if (cipherService === null) {
-            return false;
-        }
-
-        return await cipherService.activate(path, key, value);
+        return await this.cipherService.activate(path, key, value);
     }
 
     private static isPasswordObject(key: string, obj: plainObject.PlainObject): boolean {
@@ -145,10 +141,18 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
 
     createTreeNodeContentElement(path: string, key: string, value: any): HTMLElement {
         if (VaultTreeNodeCreationController.isPasswordObject(key, value)) {
+            const version: number = value.version;
+            const isLatest = this.passwordService.isLatestVersion(version);
+
             const button = document.createElement('button');
             button.style.justifySelf = 'start';
             button.style.minWidth = '80px';
             button.innerText = 'Password';
+
+            if (isLatest === false) {
+                button.setAttribute('not-latest', `⚠️ Password version ${version}, latest is ${this.passwordService.getLatestVersion()}`);
+                button.classList.add('not-latest');
+            }
 
             const errorLogsService = serviceManager.getService('errorLogs');
             const logFunc = errorLogsService.createLogErrorMessageFunction();
@@ -157,10 +161,18 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
 
             return button;
         } else if (VaultTreeNodeCreationController.isCipherObject(value)) {
+            const version: number = value.version;
+            const isLatest = this.cipherService.isLatestVersion(version);
+
             const button = document.createElement('button');
             button.style.justifySelf = 'start';
             button.innerText = key;
             button.title = 'Open in ciphers';
+
+            if (isLatest === false) {
+                button.setAttribute('not-latest', `⚠️ Cipher version ${version}, latest is ${this.cipherService.getLatestVersion()}`);
+                button.classList.add('not-latest');
+            }
 
             const errorLogsService = serviceManager.getService('errorLogs');
             const logFunc = errorLogsService.createLogErrorMessageFunction();
