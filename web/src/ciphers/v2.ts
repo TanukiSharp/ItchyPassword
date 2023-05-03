@@ -9,7 +9,7 @@ export class CipherV2 implements ICipher {
     }
 
     public get description(): string {
-        return 'PBKDF2 + AES-GCM 256';
+        return 'PBKDF2 + AES-GCM (100k iterations)';
     }
 
     async encrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
@@ -25,7 +25,7 @@ export class CipherV2 implements ICipher {
 
         const aesKeyAlgorithm: AesKeyAlgorithm = {
             name: 'AES-GCM',
-            length: 256
+            length: 0, // Key length is ignored here.
         };
 
         const passwordKey: CryptoKey = await window.crypto.subtle.importKey(
@@ -59,7 +59,7 @@ export class CipherV2 implements ICipher {
 
         const aesKeyAlgorithm: AesKeyAlgorithm = {
             name: 'AES-GCM',
-            length: 256
+            length: 0, // Key length is ignored here.
         };
 
         const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken);

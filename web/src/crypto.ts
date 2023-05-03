@@ -35,7 +35,9 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, 
     };
 
     const derivedKeyType: AesDerivedKeyParams = {
-        name: 'AES-GCM', // Using AES-CBC or AES-GCM here produces the same result.
+        // Algorithm name must be a recognized one,
+        // but any AES-* produces the same result...
+        name: 'AES-GCM',
         length: 256
     };
 
