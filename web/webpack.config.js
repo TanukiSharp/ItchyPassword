@@ -1,6 +1,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const CopyPlugin = require('copy-webpack-plugin');
+const RemovePlugin = require('remove-files-webpack-plugin');
 const { GitRevisionPlugin } = require('git-revision-webpack-plugin');
 
 const gitRevisionPlugin = new GitRevisionPlugin();
@@ -36,6 +37,12 @@ module.exports = {
         }),
         new webpack.DefinePlugin({
             'COMMITHASH': JSON.stringify(gitRevisionPlugin.commithash())
+        }),
+        new RemovePlugin({
+            after: {
+                root: '../docs',
+                include: ['validation.html'],
+            }
         })
     ]
 };
