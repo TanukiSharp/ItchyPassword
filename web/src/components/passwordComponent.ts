@@ -82,6 +82,16 @@ function findPasswordGeneratorFromUserInterface(): crypto.IPasswordGenerator {
     return passwordGenerator;
 }
 
+function findPasswordDropdownIndexByVersion(version: number): number {
+    for (let i = 0; i < passwordGenerators.length; i++) {
+        if (passwordGenerators[i].version === version) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 function onClearPublicPartButtonClick(): boolean {
     if (txtPublicPart.value.length > 0) {
         if (prompt('Are you sure you want to clear the public part ?\nType \'y\' to accept', '') !== 'y') {
@@ -342,6 +352,39 @@ function setupPasswordGeneratorsDropdown(): void {
     cboPasswordVersion.selectedIndex = cboPasswordVersion.options.length - 1;
 }
 
+function clearAll(): boolean {
+    if (onClearPublicPartButtonClick() === false) {
+        return false;
+    }
+
+    ui.clearText(txtResultPassword, true);
+    updateResultPasswordLength();
+    resetAlphabet();
+    numOutputSizeRange.value = DEFAULT_LENGTH.toString();
+    updateOutputSizeRangeToNum();
+    cboPasswordVersion.selectedIndex = cboPasswordVersion.options.length - 1;
+
+    storageOutputComponent.clearMatchingPath();
+    storageOutputComponent.clearUI();
+
+    return true;
+}
+
+function fullPathToStoragePath(fullPath: string): string | null {
+    const prefix = '<root>/';
+    const suffix = '/password';
+
+    if (fullPath.startsWith(prefix) === false) {
+        return null;
+    }
+
+    if (fullPath.endsWith(suffix) === false) {
+        return null;
+    }
+
+    return fullPath.substring(prefix.length, fullPath.length - suffix.length);
+}
+
 export class PasswordComponent implements IComponent, ITabInfo {
     public readonly name: string = 'Password';
 
@@ -361,6 +404,53 @@ export class PasswordComponent implements IComponent, ITabInfo {
 
     public getVaultHint(): string {
         return this.name.toLowerCase();
+    }
+
+    public setParameters(parameterKeys: PlainObject, storageFullPath: string): boolean {
+        if (clearAll() === false) {
+            return false;
+        }
+
+        const storagePath: string | null = fullPathToStoragePath(storageFullPath);
+
+        if (storagePath === null) {
+            console.error(`Failed to retrieve storage path from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve storage path from full path.');
+            return false;
+        }
+
+        if (parameterKeys.customKeys) {
+            storageOutputComponent.setCustomKeysUI(JSON.stringify(parameterKeys.customKeys, null, 4));
+        }
+
+        delete parameterKeys.customKeys;
+
+        txtPublicPart.value = parameterKeys.public;
+        updatePublicPartSize();
+
+        txtAlphabet.value = parameterKeys.alphabet;
+        updateAlphabetValidityDisplay(isAlphabetValid(txtAlphabet.value));
+        updateAlphabetSize();
+
+        numOutputSizeNum.value = parameterKeys.length;
+        if (updateOutputSizeNumToRange() === false) {
+            console.error(`Failed to retrieve length from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve length from full path.');
+            return false;
+        }
+
+        const dropdownIndex = findPasswordDropdownIndexByVersion(parameterKeys.version);
+        if (dropdownIndex < 0) {
+            console.error(`Failed to retrieve version from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve version from full path.');
+            return false;
+        }
+        cboPasswordVersion.selectedIndex = dropdownIndex;
+
+        storageOutputComponent.setPathUI(storagePath);
+        storageOutputComponent.setParameters(parameterKeys, 'password');
+
+        return true;
     }
 
     public init(): void {
@@ -411,19 +501,8 @@ export class PasswordComponent implements IComponent, ITabInfo {
 
         setupPasswordGeneratorsDropdown();
 
-        btnClearAllPasswordInfo.addEventListener('click', () => {
-            if (onClearPublicPartButtonClick() === false) {
-                return;
-            }
+        btnClearAllPasswordInfo.addEventListener('click', clearAll);
 
-            txtResultPassword.value = '';
-            updateResultPasswordLength();
-            cboPasswordVersion.selectedIndex = cboPasswordVersion.options.length - 1;
-
-            storageOutputComponent.clearMatchingPath();
-            storageOutputComponent.clearUI();
-        });
-
-        serviceManager.registerService('password', new PasswordService());
+        serviceManager.registerService('password', new PasswordService(this));
     }
 };

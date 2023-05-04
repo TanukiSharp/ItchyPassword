@@ -76,6 +76,10 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
         );
     }
 
+    private editPassword(path: string, value: any): boolean {
+        return this.passwordService.activate(path, value);
+    }
+
     private async runCipher(path: string, key: string, value: any): Promise<boolean> {
         return await this.cipherService.activate(path, key, value);
     }
@@ -184,7 +188,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
         return button;
     }
 
-    public createTreeNodeContentElement(path: string, key: string, value: any): HTMLElement {
+    public createTreeNodeContentElements(path: string, key: string, value: any): HTMLElement[] {
         if (VaultTreeNodeCreationController.isPasswordObject(key, value)) {
             const version: number = value.version;
             const isLatest = this.passwordService.isLatestVersion(version);
@@ -192,6 +196,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             const lastModified = new Date(value.datetime);
 
             const button = this.createButton('Password', lastModified);
+            button.classList.add('password');
             button.style.justifySelf = 'start';
             button.style.minWidth = '80px';
 
@@ -205,7 +210,14 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
 
             ui.setupFeedbackButton(button, async () => await this.runPassword(value), logFunc);
 
-            return button;
+            const editButton = document.createElement('button');
+            editButton.classList.add('edit-password');
+            editButton.innerText = '✏️';
+            editButton.title = 'Edit password generation details';
+
+            ui.setupFeedbackButton(editButton, () => this.editPassword(path, value), logFunc);
+
+            return [button, editButton];
         } else if (VaultTreeNodeCreationController.isCipherObject(value)) {
             const version: number = value.version;
             const isLatest = this.cipherService.isLatestVersion(version);
@@ -213,6 +225,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             const lastModified = new Date(value.datetime);
 
             const button = this.createButton(key, lastModified);
+            button.classList.add('cipher');
             button.style.justifySelf = 'start';
 
             if (isLatest === false) {
@@ -225,18 +238,18 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
 
             ui.setupFeedbackButton(button, async () => await this.runCipher(path, key, value), logFunc);
 
-            return button;
+            return [button];
         } else if (VaultTreeNodeCreationController.isHint(key, value)) {
             const label = document.createElement('span');
             label.style.justifySelf = 'start';
             label.innerText = `${key}: ${value}`;
 
-            return label;
+            return [label];
         }
 
         const div = document.createElement('div');
         div.innerText = key;
-        return div;
+        return [div];
     }
 }
 
