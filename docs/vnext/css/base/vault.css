@@ -54,10 +54,18 @@
     border: 1px solid lightgray;
 }
 
-#trvVaultTreeView button {
+#trvVaultTreeView button.password,
+#trvVaultTreeView button.edit-password,
+#trvVaultTreeView button.cipher {
     zoom: 1.25;
     position: relative;
     padding: 0px;
+}
+
+#trvVaultTreeView button.edit-password {
+    width: 25px;
+    height: 25px;
+    zoom: 1.0;
 }
 
 #trvVaultTreeView button > .content-container {
@@ -92,6 +100,10 @@
     margin-left: 5px;
     font-size: 0.75em;
     color: darkorange;
+}
+
+#trvVaultTreeView button.password.not-latest::after {
+    margin-left: 28px;
 }
 
 #trvVaultTreeView .treenode-title {
