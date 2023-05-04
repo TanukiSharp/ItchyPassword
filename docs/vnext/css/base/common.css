@@ -42,13 +42,13 @@ button {
 
 #divInfo {
     position: fixed;
-    right: 0;
-    bottom: 0;
+    right: 2px;
+    bottom: 2px;
     background-color: white;
+    border: 1px dashed lightgray;
     font-size: 9pt;
     text-align: right;
-    margin-bottom: 2px;
-    margin-right: 2px;
+    padding: 2px;
 }
 
 #txtPath {
