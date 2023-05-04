@@ -1,8 +1,11 @@
-body, input {
-    font-family: consolas;
+body {
     margin: 0;
     padding: 8px;
     box-sizing: border-box;
+}
+
+body, input {
+    font-family: consolas;
 }
 
 input, select {
