@@ -5,6 +5,8 @@ import * as arrayUtils from '../arrayUtils';
 import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
+import { IEncoding, findEncodingByName } from '../encoding';
+
 import { CipherV2 } from '../ciphers/v2';
 import { CipherV3 } from '../ciphers/v3';
 import { ITabInfo } from '../TabControl';
@@ -17,6 +19,8 @@ import { CipherService } from '../services/cipherService';
 
 import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyncUtils';
 import { PlainObject } from '../PlainObject';
+
+export const LEGACY_ENCODING_NAME = 'base62';
 
 const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
 const divTabCiphers = ui.getElementById('divTabCiphers');
@@ -132,9 +136,13 @@ function updateCipherParameters(): void {
         return;
     }
 
+    // TODO: Use the UI.
+    const encodingName = 'base58';
+
     const cipherParameters = {
         datetime: cipherTargetLastChange,
         version: ciphers[cboCipherVersion.selectedIndex].version,
+        encoding: encodingName,
         value: txtCipherTarget.value
     }
 
@@ -143,7 +151,7 @@ function updateCipherParameters(): void {
     storageOutputComponent.setParameters(cipherParameters, path);
 }
 
-export async function encryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function encryptString(value: string, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
 
     if (privatePart.length === 0) {
@@ -158,10 +166,10 @@ export async function encryptString(value: string, cancellationToken: Cancellati
 
     ensureNotCancelled(cancellationToken);
 
-    return arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
+    return encoding.encode(encrypted);
 }
 
-export async function decryptStringWithCipher(value: string, cipher: crypto.ICipher, cancellationToken: CancellationToken): Promise<string | null> {
+export async function decryptStringWithCipher(value: string, cipher: crypto.ICipher, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
 
     if (privatePart.length === 0) {
@@ -170,7 +178,7 @@ export async function decryptStringWithCipher(value: string, cipher: crypto.ICip
     }
 
     try {
-        const input: ArrayBuffer = arrayUtils.fromCustomBase(value, crypto.BASE62_ALPHABET);
+        const input: ArrayBuffer = encoding.decode(value);
         const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
         const decrypted: ArrayBuffer = await cipher.decrypt(input, password, cancellationToken);
@@ -188,14 +196,14 @@ export async function decryptStringWithCipher(value: string, cipher: crypto.ICip
     }
 }
 
-export async function decryptStringWithVersion(value: string, version: number, cancellationToken: CancellationToken): Promise<string | null> {
+export async function decryptStringWithVersion(value: string, version: number, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
     const cipher = findCipherByVersion(version);
 
     if (cipher === null) {
         throw new Error(`Failed to find cip[her for version ${version}.`);
     }
 
-    return decryptStringWithCipher(value, cipher, cancellationToken);
+    return decryptStringWithCipher(value, cipher, encoding, cancellationToken);
 }
 
 async function onEncryptButtonClick(): Promise<boolean> {
@@ -208,7 +216,14 @@ async function onEncryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const encryptedString: string | null = await encryptString(txtCipherSource.value, CancellationToken.none);
+    const encodingName = 'base58';
+    const encoding: IEncoding | null = findEncodingByName(encodingName);
+
+    if (encoding === null) {
+        throw new Error(`Failed to find encoding '${encodingName}'.`);
+    }
+
+    const encryptedString: string | null = await encryptString(txtCipherSource.value, encoding, CancellationToken.none);
 
     if (encryptedString === null) {
         return false;
@@ -230,9 +245,19 @@ async function onDecryptButtonClick(): Promise<boolean> {
         return false;
     }
 
+    // TODO: Use the UI.
+    const encodingName = 'base58';
+
+    const encoding: IEncoding | null = findEncodingByName(encodingName);
+
+    if (encoding === null) {
+        throw new Error(`Failed to find encoding '${encodingName}'.`);
+    }
+
     const decryptedString: string | null = await decryptStringWithCipher(
         txtCipherSource.value,
         ciphers[cboCipherVersion.selectedIndex],
+        encoding,
         CancellationToken.none
     );
 
@@ -296,9 +321,18 @@ export class CipherComponent implements IComponent, ITabInfo {
         storageOutputComponent.setPathUI('');
         storageOutputComponent.setCustomKeysUI('');
 
+        const encodingName: string = parameterKeys.encoding ?? LEGACY_ENCODING_NAME;
+
+        const encoding: IEncoding | null = findEncodingByName(encodingName);
+
+        if (encoding === null) {
+            throw new Error(`Failed to find encoding '${encodingName}'.`);
+        }
+
         const decrypted: string | null = await decryptStringWithVersion(
             parameterKeys.value,
             parameterKeys.version,
+            encoding,
             CancellationToken.none
         );
 
@@ -324,6 +358,8 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherName.value = cipherName;
         txtCipherSource.value = decrypted;
         cboCipherVersion.selectedIndex = findCipherDropdownIndexByVersion(parameterKeys.version);
+
+        // TODO: Set encoding dropdown.
 
         storageOutputComponent.setPathUI(storagePath);
         storageOutputComponent.setParameters(parameterKeys, `ciphers/${cipherName}`);

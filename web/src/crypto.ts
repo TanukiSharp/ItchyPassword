@@ -1,7 +1,7 @@
-import * as arrayUtils from './arrayUtils';
+import { Base58Encoding, IEncoding } from './encoding';
 import { CancellationToken, ensureNotCancelled } from './asyncUtils';
 
-export const BASE62_ALPHABET: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const encoding: IEncoding = new Base58Encoding();
 
 export interface IPasswordGenerator {
     readonly version: number;
@@ -63,7 +63,7 @@ export function generateRandomBytes(byteCount: number = 64): ArrayBuffer {
     return crypto.getRandomValues(array).buffer;
 }
 
-export function generateRandomString(byteCount: number = 64, alphabet: string = BASE62_ALPHABET): string {
+export function generateRandomString(byteCount: number = 64): string {
     const array: ArrayBuffer = generateRandomBytes(byteCount);
-    return arrayUtils.toCustomBaseOneWay(array, alphabet);
+    return encoding.encode(array);
 }
