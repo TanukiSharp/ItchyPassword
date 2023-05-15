@@ -5,7 +5,7 @@ import * as arrayUtils from '../arrayUtils';
 import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
-import { IEncoding, findEncodingByName } from '../encoding';
+import { IEncoding, availableEncodings, findEncodingByName } from '../encoding';
 
 import { CipherV2 } from '../ciphers/v2';
 import { CipherV3 } from '../ciphers/v3';
@@ -20,6 +20,7 @@ import { CipherService } from '../services/cipherService';
 import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyncUtils';
 import { PlainObject } from '../PlainObject';
 
+export const RECOMMENDED_ENCODING_NAME = 'base58';
 export const LEGACY_ENCODING_NAME = 'base62';
 
 const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
@@ -37,6 +38,7 @@ const txtCipherSource = ui.getElementById('txtCipherSource') as HTMLInputElement
 const txtCipherTarget = ui.getElementById('txtCipherTarget') as HTMLInputElement;
 
 const cboCipherVersion = ui.getElementById('cboCipherVersion') as HTMLSelectElement;
+const cboCipherEncoding = ui.getElementById('cboCipherEncoding') as HTMLSelectElement;
 const btnEncrypt = ui.getElementById('btnEncrypt') as HTMLButtonElement;
 const btnDecrypt = ui.getElementById('btnDecrypt') as HTMLButtonElement;
 
@@ -83,12 +85,26 @@ function findCipherDropdownIndexByVersion(version: number): number {
     return -1;
 }
 
+function findEncodingDropdownIndexByName(name: string): number {
+    for (let i = 0; i < availableEncodings.length; i++) {
+        if (availableEncodings[i].name === name) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
 }
 
 function clearTargetVisualCue(): void {
     txtCipherTarget.style.removeProperty('background-color');
+}
+
+function clearEncodingVisualCue(): void {
+    cboCipherEncoding.style.removeProperty('background-color');
 }
 
 function setSourceVisualCueError() {
@@ -99,9 +115,14 @@ function setTargetVisualCueError() {
     txtCipherTarget.style.setProperty('background-color', ui.ERROR_COLOR);
 }
 
+function setEncodingVisualCueError() {
+    cboCipherEncoding.style.setProperty('background-color', ui.ERROR_COLOR);
+}
+
 function clearAllVisualCues(): void {
     clearSourceVisualCue();
     clearTargetVisualCue();
+    clearEncodingVisualCue();
 }
 
 function clearCipherTargetLastUpdate(): void {
@@ -131,18 +152,19 @@ function onCipherTargetChanged(): void {
 }
 
 function updateCipherParameters(): void {
-    if (txtCipherTarget.value === '' || txtCipherName.value === '') {
+    const encodingIndex = cboCipherEncoding.selectedIndex;
+
+    const isValidEncodingIndex = encodingIndex >= 0 && encodingIndex < availableEncodings.length;
+
+    if (txtCipherTarget.value === '' || txtCipherName.value === '' || isValidEncodingIndex === false) {
         storageOutputComponent.clearOutputs();
         return;
     }
 
-    // TODO: Use the UI.
-    const encodingName = 'base58';
-
     const cipherParameters = {
         datetime: cipherTargetLastChange,
         version: ciphers[cboCipherVersion.selectedIndex].version,
-        encoding: encodingName,
+        encoding: availableEncodings[encodingIndex].name,
         value: txtCipherTarget.value
     }
 
@@ -216,11 +238,10 @@ async function onEncryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const encodingName = 'base58';
-    const encoding: IEncoding | null = findEncodingByName(encodingName);
+    const encoding: IEncoding | null = findEncodingByName(RECOMMENDED_ENCODING_NAME);
 
     if (encoding === null) {
-        throw new Error(`Failed to find encoding '${encodingName}'.`);
+        throw new Error(`Failed to find encoding '${RECOMMENDED_ENCODING_NAME}'.`);
     }
 
     const encryptedString: string | null = await encryptString(txtCipherSource.value, encoding, CancellationToken.none);
@@ -245,14 +266,12 @@ async function onDecryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    // TODO: Use the UI.
-    const encodingName = 'base58';
-
-    const encoding: IEncoding | null = findEncodingByName(encodingName);
-
-    if (encoding === null) {
-        throw new Error(`Failed to find encoding '${encodingName}'.`);
+    if (cboCipherEncoding.selectedIndex < 0 || cboCipherEncoding.selectedIndex >= availableEncodings.length) {
+        setEncodingVisualCueError();
+        return false;
     }
+
+    const encoding: IEncoding = availableEncodings[cboCipherEncoding.selectedIndex];
 
     const decryptedString: string | null = await decryptStringWithCipher(
         txtCipherSource.value,
@@ -279,6 +298,15 @@ function setupCipherVersionsDropdown() {
     }
 
     cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
+}
+
+function setupCipherEncodingDropdown() {
+    for (const encoding of availableEncodings) {
+        const option = document.createElement('option');
+        option.text = encoding.name;
+        option.title = encoding.description;
+        cboCipherEncoding.appendChild(option);
+    }
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
@@ -318,6 +346,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherSource.value = '';
         txtCipherTarget.value = '';
         cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
+        cboCipherEncoding.selectedIndex = findEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
         storageOutputComponent.setPathUI('');
         storageOutputComponent.setCustomKeysUI('');
 
@@ -358,8 +387,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherName.value = cipherName;
         txtCipherSource.value = decrypted;
         cboCipherVersion.selectedIndex = findCipherDropdownIndexByVersion(parameterKeys.version);
-
-        // TODO: Set encoding dropdown.
+        cboCipherEncoding.selectedIndex = findEncodingDropdownIndexByName(encodingName);
 
         storageOutputComponent.setPathUI(storagePath);
         storageOutputComponent.setParameters(parameterKeys, `ciphers/${cipherName}`);
@@ -416,6 +444,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         });
 
         setupCipherVersionsDropdown();
+        setupCipherEncodingDropdown();
 
         serviceManager.registerService('cipher', new CipherService(this));
     }
