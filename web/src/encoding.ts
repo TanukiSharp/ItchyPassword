@@ -19,11 +19,11 @@ export class Base58Encoding implements IEncoding {
     }
 
     encode(input: ArrayBuffer): string {
-        return arrayUtils.toCustomBase(input, BASE58_ALPHABET);
+        return arrayUtils.toCustomBaseFast(input, BASE58_ALPHABET);
     }
 
     decode(input: string): ArrayBuffer {
-        return arrayUtils.fromCustomBase(input, BASE58_ALPHABET);
+        return arrayUtils.fromCustomBaseFast(input, BASE58_ALPHABET);
     }
 }
 
