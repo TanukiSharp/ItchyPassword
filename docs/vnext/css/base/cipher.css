@@ -42,9 +42,15 @@
 
 #divCipherActions {
     display: grid;
-    align-self: start;
+    align-self: stretch;
+    justify-items: stretch;
+
     grid-column: 2;
     grid-row: 6;
+}
+
+#btnEncrypt, #btnDecrypt {
+    justify-self: stretch;
 }
 
 /******************************************/
