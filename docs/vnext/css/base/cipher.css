@@ -33,7 +33,11 @@
 }
 
 #divCipherSourceActions {
-    justify-self: end;
+    display: grid;
+    justify-self: stretch;
+    align-items: center;
+    grid-auto-flow: column;
+    grid-template-columns: 1fr auto auto;
     grid-column: 1;
     grid-row: 7;
 }
@@ -61,7 +65,11 @@
 }
 
 #divCipherTargetActions{
-    justify-self: end;
+    display: grid;
+    justify-self: stretch;
+    align-items: center;
+    grid-auto-flow: column;
+    grid-template-columns: 1fr auto auto;
     grid-column: 3;
     grid-row: 7;
 }
