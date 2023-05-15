@@ -238,11 +238,7 @@ async function onEncryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const encoding: IEncoding | null = findEncodingByName(RECOMMENDED_ENCODING_NAME);
-
-    if (encoding === null) {
-        throw new Error(`Failed to find encoding '${RECOMMENDED_ENCODING_NAME}'.`);
-    }
+    const encoding: IEncoding = availableEncodings[cboCipherEncoding.selectedIndex];
 
     const encryptedString: string | null = await encryptString(txtCipherSource.value, encoding, CancellationToken.none);
 
