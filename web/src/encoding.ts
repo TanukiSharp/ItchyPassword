@@ -15,7 +15,7 @@ export class Base58Encoding implements IEncoding {
     }
 
     get description(): string {
-        return `Alphabet in ASCII table order.`;
+        return `Base58 alphabet in ASCII table order.`;
     }
 
     encode(input: ArrayBuffer): string {
