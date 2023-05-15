@@ -42,8 +42,11 @@ const cboCipherEncoding = ui.getElementById('cboCipherEncoding') as HTMLSelectEl
 const btnEncrypt = ui.getElementById('btnEncrypt') as HTMLButtonElement;
 const btnDecrypt = ui.getElementById('btnDecrypt') as HTMLButtonElement;
 
+const spnCipherSourceLength = ui.getElementById('spnCipherSourceLength') as HTMLSpanElement;
 const btnCopyCipherSource = ui.getElementById('btnCopyCipherSource') as HTMLButtonElement;
 const btnClearCipherSource = ui.getElementById('btnClearCipherSource') as HTMLButtonElement;
+
+const spnCipherTargetLength = ui.getElementById('spnCipherTargetLength') as HTMLSpanElement;
 const btnCopyCipherTarget = ui.getElementById('btnCopyCipherTarget') as HTMLButtonElement;
 const btnClearCipherTarget = ui.getElementById('btnClearCipherTarget') as HTMLButtonElement;
 
@@ -133,10 +136,19 @@ function updateCipherTargetLastUpdate(): void {
     cipherTargetLastChange = new Date().toISOString();
 }
 
+function updateCipherSourceLength(): void {
+    spnCipherSourceLength.innerText = txtCipherSource.value.length.toString();
+}
+
+function updateCipherTargetLength(): void {
+    spnCipherTargetLength.innerText = txtCipherTarget.value.length.toString();
+}
+
 function setCipherTargetValue(value: string, isEncrypt: boolean): void {
     const needDateTimeUpdate = value.length > 0 && txtCipherTarget.value !== value;
 
     txtCipherTarget.value = value;
+    updateCipherTargetLength();
 
     if (needDateTimeUpdate && isEncrypt) {
         updateCipherTargetLastUpdate();
@@ -342,7 +354,9 @@ export class CipherComponent implements IComponent, ITabInfo {
     public async setParameters(cipherName: string, parameterKeys: PlainObject, storageFullPath: string): Promise<boolean> {
         txtCipherName.value = '';
         txtCipherSource.value = '';
+        updateCipherSourceLength();
         txtCipherTarget.value = '';
+        updateCipherTargetLength();
         cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
         cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
         storageOutputComponent.setPathUI('');
@@ -383,7 +397,10 @@ export class CipherComponent implements IComponent, ITabInfo {
         delete parameterKeys.customKeys;
 
         txtCipherName.value = cipherName;
+
         txtCipherSource.value = decrypted;
+        updateCipherSourceLength();
+
         cboCipherVersion.selectedIndex = findCipherVersionDropdownIndexByVersion(parameterKeys.version);
         cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(encodingName);
 
@@ -412,9 +429,14 @@ export class CipherComponent implements IComponent, ITabInfo {
         });
 
         txtCipherSource.addEventListener('input', () => {
+            updateCipherSourceLength();
             if (txtCipherSource.value.length > 0) {
                 clearSourceVisualCue();
             }
+        });
+
+        txtCipherTarget.addEventListener('input', () => {
+            updateCipherTargetLength();
         });
 
         cboCipherVersion.addEventListener('input', () => {
@@ -424,7 +446,9 @@ export class CipherComponent implements IComponent, ITabInfo {
         btnClearAllCipherInfo.addEventListener('click', () => {
             txtCipherName.value = '';
             txtCipherSource.value = '';
+            updateCipherSourceLength();
             txtCipherTarget.value = '';
+            updateCipherTargetLength();
             cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
             cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
             storageOutputComponent.clearMatchingPath();
