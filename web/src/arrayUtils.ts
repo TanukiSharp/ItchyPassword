@@ -62,8 +62,7 @@ function arrayBufferToUnsignedBigInt(arrayBuffer: ArrayBuffer): bigint {
 export function unsignedBigIntToArrayBuffer(number: bigint): ArrayBuffer {
     const result: Array<number> = [];
 
-    while (number > 0n)
-    {
+    while (number > 0n) {
         const remainder: bigint = number % 256n;
         number /= 256n;
 
@@ -95,8 +94,7 @@ export function toCustomBaseOneWay(bytes: ArrayBuffer, alphabet: string): string
     let result: string = '';
     let number: bigint = arrayBufferToUnsignedBigIntWithoutHeader(bytes);
 
-    while (number > 0n)
-    {
+    while (number > 0n) {
         const remainder: bigint = number % alphabetLength;
         number /= alphabetLength;
 
@@ -114,8 +112,7 @@ export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
     let result: string = '';
     let number: bigint = arrayBufferToUnsignedBigInt(bytes);
 
-    while (number > 0n)
-    {
+    while (number > 0n) {
         const remainder: bigint = number % alphabetLength;
         number /= alphabetLength;
 
@@ -146,6 +143,6 @@ export function fromCustomBase(input: string, alphabet: string): ArrayBuffer {
 export function toBase16(buffer: ArrayBuffer): string {
     return Array.prototype.map.call(
         new Uint8Array(buffer),
-        x => ('00' + x.toString(16)).slice(-2)
+        (x: number) => ('00' + x.toString(16)).slice(-2)
     ).join('');
 }
