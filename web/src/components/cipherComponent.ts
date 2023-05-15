@@ -303,6 +303,8 @@ function setupCipherEncodingDropdown() {
         option.title = encoding.description;
         cboCipherEncoding.appendChild(option);
     }
+
+    cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
@@ -424,6 +426,7 @@ export class CipherComponent implements IComponent, ITabInfo {
             txtCipherSource.value = '';
             txtCipherTarget.value = '';
             cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
+            cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
             storageOutputComponent.clearMatchingPath();
             clearCipherTargetLastUpdate();
             clearAllVisualCues();
