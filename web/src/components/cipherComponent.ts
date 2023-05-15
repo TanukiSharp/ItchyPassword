@@ -75,7 +75,7 @@ export function findLatestCipher(): crypto.ICipher {
     return bestCipher;
 }
 
-function findCipherDropdownIndexByVersion(version: number): number {
+function findCipherVersionDropdownIndexByVersion(version: number): number {
     for (let i = 0; i < ciphers.length; i++) {
         if (ciphers[i].version === version) {
             return i;
@@ -85,7 +85,7 @@ function findCipherDropdownIndexByVersion(version: number): number {
     return -1;
 }
 
-function findEncodingDropdownIndexByName(name: string): number {
+function findCipherEncodingDropdownIndexByName(name: string): number {
     for (let i = 0; i < availableEncodings.length; i++) {
         if (availableEncodings[i].name === name) {
             return i;
@@ -342,7 +342,7 @@ export class CipherComponent implements IComponent, ITabInfo {
         txtCipherSource.value = '';
         txtCipherTarget.value = '';
         cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
-        cboCipherEncoding.selectedIndex = findEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
+        cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
         storageOutputComponent.setPathUI('');
         storageOutputComponent.setCustomKeysUI('');
 
@@ -382,8 +382,8 @@ export class CipherComponent implements IComponent, ITabInfo {
 
         txtCipherName.value = cipherName;
         txtCipherSource.value = decrypted;
-        cboCipherVersion.selectedIndex = findCipherDropdownIndexByVersion(parameterKeys.version);
-        cboCipherEncoding.selectedIndex = findEncodingDropdownIndexByName(encodingName);
+        cboCipherVersion.selectedIndex = findCipherVersionDropdownIndexByVersion(parameterKeys.version);
+        cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(encodingName);
 
         storageOutputComponent.setPathUI(storagePath);
         storageOutputComponent.setParameters(parameterKeys, `ciphers/${cipherName}`);
