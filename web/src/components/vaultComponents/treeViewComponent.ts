@@ -9,8 +9,6 @@ import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchF
 import * as serviceManager from '../../services/serviceManger';
 import { PasswordService } from '../../services/passwordService';
 import { CipherService } from 'services/cipherService';
-import { LogicalTreeNode } from './logicalTreeNode';
-import { VisualTreeNode } from './visualTreeNode';
 
 const ONE_YEAR_IN_MILLISECONDS = 365 * 24 * 3600 * 1000;
 
@@ -267,30 +265,6 @@ export class VaultTreeViewComponent implements IComponent, ITabInfo, IVaultCompo
         trvVaultTreeView.appendChild(rootTreeNode.element);
 
         onSearchVaultInputChanged();
-
-        const root = new LogicalTreeNode();
-        root.Content = '<root>';
-        this.meh(root, vault);
-
-        const vtn = new VisualTreeNode(root);
-        const str = vtn.toString();
-
-        console.log(str);
-    }
-
-    private meh(node: LogicalTreeNode, obj: any) {
-        if (plainObject.isPlainObject(obj)) {
-            for (const [key, value] of Object.entries(obj)) {
-                const child = new LogicalTreeNode();
-                child.Content = key;
-                this.meh(child, value);
-                node.addChild(child);
-            }
-        } else {
-            const child = new LogicalTreeNode();
-            child.Content = obj;
-            node.addChild(child);
-        }
     }
 
     public getTabButton(): HTMLButtonElement {

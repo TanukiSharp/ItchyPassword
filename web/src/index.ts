@@ -9,3 +9,6 @@ const githubLink = '<a href="https://github.com/TanukiSharp/ItchyPassword" targe
 getElementById('divInfo').innerHTML = `${version}<br/>${githubLink}`;
 
 rootComponent.init();
+
+import { testTreeVirtualization } from './treeVirtualization';
+testTreeVirtualization();

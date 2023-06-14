@@ -1,7 +1,8 @@
-import { LogicalTreeNode } from './logicalTreeNode';
+﻿import { LogicalTreeNode } from './logicalTreeNode';
 
 export class VisualTreeNode {
-    private isVisible: boolean = false;
+    private isVisible: boolean = true;
+    private isExpanded: boolean = true;
     private depth: number = 0;
     private hierarchyDecorations!: string[];
     private parent: VisualTreeNode | null = null;
@@ -14,6 +15,17 @@ export class VisualTreeNode {
     }
     public set IsVisible(value: boolean) {
         this.isVisible = value;
+    }
+
+    public get IsExpanded(): boolean {
+        return this.isExpanded;
+    }
+    public set IsExpanded(value: boolean) {
+        this.isExpanded = value;
+    }
+
+    public get HierarchyDecorations(): string[] {
+        return this.hierarchyDecorations;
     }
 
     public get Depth(): number {
@@ -73,9 +85,9 @@ export class VisualTreeNode {
         if (this.parent != null)
         {
             if (this.isLastChild)
-                this.hierarchyDecorations[i--] = '└';
+                this.hierarchyDecorations[i--] = '\u2514'; // └
             else
-                this.hierarchyDecorations[i--] = '├';
+                this.hierarchyDecorations[i--] = '\u251c'; // ├
         }
 
         let parent: VisualTreeNode | null = this.parent;
@@ -84,10 +96,32 @@ export class VisualTreeNode {
             if (parent.isLastChild) {
                 this.hierarchyDecorations[i--] = ' ';
             } else {
-                this.hierarchyDecorations[i--] = '│';
+                this.hierarchyDecorations[i--] = '\u2502'; // │
             }
 
             parent = parent.Parent;
+        }
+    }
+
+    public toList(): VisualTreeNode[] {
+        const list: VisualTreeNode[] = [];
+
+        this.toListCore(list);
+
+        return list;
+    }
+
+    private toListCore(list: VisualTreeNode[]): void {
+        if (this.IsVisible === false) {
+            return;
+        }
+
+        list.push(this);
+
+        if (this.IsExpanded) {
+            for (const child of this.Children) {
+                child.toListCore(list);
+            }
         }
     }
 
@@ -126,22 +160,22 @@ export class VisualTreeNode {
                 case ' ':
                     result.value += ' '.repeat(width);
                     break;
-                case '├':
+                case '\u251c': // ├
                     result.value += hierarchyDecoration;
                     if (width > 1) {
-                        result.value += '─'.repeat(width - 1);
+                        result.value += '\u2500'.repeat(width - 1);
                     }
                     break;
-                case '│':
+                case '\u2502': // │
                     result.value += hierarchyDecoration;
                     if (width > 1) {
                         result.value += ' '.repeat(width - 1);
                     }
                     break;
-                case '└':
+                case '\u2514': // └
                     result.value += hierarchyDecoration;
                     if (width > 1) {
-                        result.value += '─'.repeat(width - 1);
+                        result.value += '\u2500'.repeat(width - 1);
                     }
                     break;
             }
