@@ -2,15 +2,6 @@ import { SecureLocalStorage } from './SecureLocalStorage';
 import { IVaultStorage } from './IVaultStorage';
 import { PlainObject } from '../PlainObject';
 
-interface IApp {
-    name: string;
-}
-
-interface IAuthorization {
-    id: number;
-    app: IApp;
-}
-
 interface IGitHubContent {
     sha: string;
     content: string;
@@ -31,8 +22,6 @@ abstract class GitHubVaultStorageBase implements IVaultStorage {
     private username: string | null = null;
     private repositoryName: string | null = null;
     private vaultFilename: string | null = null;
-
-
 
     protected getUsername(): string | null {
         return this.username;
