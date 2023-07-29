@@ -72,7 +72,7 @@
 
         <span id="lblAlphabetLength">Length:</span>
         <input id="numOutputSizeRange" aria-labelledby="lblAlphabetLength" type="range" min="0"></input>
-        <input id="numOutputSizeNum" aria-labelledby="lblAlphabetLength" type="number" style="width: 50px"></input>
+        <input id="numOutputSizeNum" aria-labelledby="lblAlphabetLength" type="number"></input>
 
         <span id="lblPasswordVersion">Version:</span>
         <select id="cboPasswordVersion" aria-labelledby="lblPasswordVersion"></select>
@@ -149,7 +149,7 @@
             <button id="btnClearErrorLogs">Clear logs</button>
         </div>
 
-        <textarea id="txtErrorLogs" class="readonlyText very-large-textarea" readonly></textarea>
+        <textarea id="txtErrorLogs" aria-label="Error logs" class="readonlyText very-large-textarea" readonly></textarea>
     </div>
 
     <div id="divTabVault" class="divTab">
