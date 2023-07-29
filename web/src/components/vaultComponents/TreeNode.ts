@@ -1,4 +1,5 @@
 import * as plainObject from '../../PlainObject';
+import * as stringUtils from '../../stringUtils';
 import { SearchMatchFunction, PositionMarker } from '../../searchMatchFunctions';
 
 export const DEEP_MODE_NONE = 0;
@@ -71,7 +72,8 @@ export class TreeNode {
 
     private createChildNodes(object: plainObject.PlainObject) {
         for (const [childKey, childValue] of Object.entries(object)) {
-            const child = new TreeNode(this, `${this.path}/${childKey}`, childKey, childValue, this.treeNodeCreationController);
+            const decodedChildKey = stringUtils.escapeAndDecodeUtfString(childKey);
+            const child = new TreeNode(this, `${this.path}/${decodedChildKey}`, decodedChildKey, childValue, this.treeNodeCreationController);
             this.addChild(child);
         }
     }
