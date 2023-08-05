@@ -50,7 +50,12 @@ export class SecureLocalStorage implements IAsyncStorage {
     }
 
     async setItem(key: string, value: string): Promise<void> {
-        const encrypted: string | null = await cipherComponent.encryptString(value, encoding, CancellationToken.none);
+        const encrypted: string | null = await cipherComponent.encryptString(
+            value,
+            cipherComponent.findLatestCipher(),
+            encoding,
+            CancellationToken.none
+        );
 
         if (encrypted === null) {
             console.error('Failed to encrypt value. (nothing stored)');

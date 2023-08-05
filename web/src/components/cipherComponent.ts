@@ -185,7 +185,7 @@ function updateCipherParameters(): void {
     storageOutputComponent.setParameters(cipherParameters, path);
 }
 
-export async function encryptString(value: string, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
+export async function encryptString(value: string, cipher: crypto.ICipher, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
 
     if (privatePart.length === 0) {
@@ -196,7 +196,7 @@ export async function encryptString(value: string, encoding: IEncoding, cancella
     const input: ArrayBuffer = stringUtils.stringToArray(value);
     const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
-    const encrypted: ArrayBuffer = await findLatestCipher().encrypt(input, password, cancellationToken);
+    const encrypted: ArrayBuffer = await cipher.encrypt(input, password, cancellationToken);
 
     ensureNotCancelled(cancellationToken);
 
@@ -252,7 +252,12 @@ async function onEncryptButtonClick(): Promise<boolean> {
 
     const encoding: IEncoding = availableEncodings[cboCipherEncoding.selectedIndex];
 
-    const encryptedString: string | null = await encryptString(txtCipherSource.value, encoding, CancellationToken.none);
+    const encryptedString: string | null = await encryptString(
+        txtCipherSource.value,
+        ciphers[cboCipherVersion.selectedIndex],
+        encoding,
+        CancellationToken.none
+    );
 
     if (encryptedString === null) {
         return false;
