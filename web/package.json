@@ -6,9 +6,9 @@
         "url": "https://github.com/TanukiSharp/ItchyPassword"
     },
     "scripts": {
-        "watch": "./node_modules/.bin/webpack --mode development --watch",
-        "build-dev": "./node_modules/.bin/webpack --mode development",
-        "build": "./node_modules/.bin/webpack --mode production"
+        "watch": "webpack --mode development --watch",
+        "build-dev": "webpack --mode development",
+        "build": "webpack --mode production"
     },
     "author": "Sebastien ROBERT",
     "license": "MIT",
