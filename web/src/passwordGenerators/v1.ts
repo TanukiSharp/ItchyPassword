@@ -20,7 +20,7 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
     }
 
     public async generatePassword(privatePart: ArrayBuffer, publicPart: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
-        const derivedKey: ArrayBuffer = await getDerivedBytes(privatePart, publicPart, 100000, cancellationToken);
+        const derivedKey: ArrayBuffer = await getDerivedBytes(privatePart, publicPart, 100_000, cancellationToken);
 
         ensureNotCancelled(cancellationToken);
 
