@@ -31,10 +31,10 @@
 
         <input id="txtPrivatePartConfirmation" aria-labelledby="masterKeyTitle" type="password" title="Just for your convenience to confirm the private part has been input correctly the first time."></input>
         <span id="spnPrivatePartSizeConfirmation">0</span>
-    </div>
 
-    <br/>
-    <br/>
+        <br/>
+        <br/>
+    </div>
 
     <div id="divTabButtonContainer">
         <button id="btnTabNothing">Nothing</button>
@@ -72,7 +72,10 @@
 
         <span id="lblAlphabetLength">Length:</span>
         <input id="numOutputSizeRange" aria-labelledby="lblAlphabetLength" type="range" min="0"></input>
-        <input id="numOutputSizeNum" aria-labelledby="lblAlphabetLength" type="number" style="width: 50px"></input>
+        <input id="numOutputSizeNum" aria-labelledby="lblAlphabetLength" type="number"></input>
+
+        <span id="lblPasswordVersion">Version:</span>
+        <select id="cboPasswordVersion" aria-labelledby="lblPasswordVersion"></select>
 
         <span id="lblPassword">Password:</span>
         <input id="txtResultPassword" aria-labelledby="lblPassword" type="password" class="readonlyText" readonly></input>
@@ -92,17 +95,25 @@
 
         <textarea id="txtCipherSource" aria-label="Cipher source"></textarea>
         <div id="divCipherSourceActions">
+            <span id="spnCipherSourceLength" title="Length of source text.">0</span>
             <button id="btnCopyCipherSource">Copy</button><!--
             --><button id="btnClearCipherSource">Clear</button>
         </div>
 
         <div id="divCipherActions">
+            <span id="lblCipherVersion">Version:</span>
+            <select id="cboCipherVersion" aria-labelledby="lblCipherVersion"></select>
+
+            <span id="lblCipherEncoding">Encoding:</span>
+            <select id="cboCipherEncoding" aria-labelledby="lblCipherEncoding"></select>
+
             <button id="btnEncrypt">Encrypt -></button><!--
             --><button id="btnDecrypt">Decrypt -></button>
         </div>
 
         <textarea id="txtCipherTarget" aria-label="Cipher result" class="readonlyText" readonly></textarea>
         <div id="divCipherTargetActions">
+            <span id="spnCipherTargetLength" title="Length of target text.">0</span>
             <button id="btnCopyCipherTarget">Copy</button><!--
             --><button id="btnClearCipherTarget">Clear</button>
         </div>
@@ -138,7 +149,7 @@
             <button id="btnClearErrorLogs">Clear logs</button>
         </div>
 
-        <textarea id="txtErrorLogs" class="readonlyText very-large-textarea" readonly></textarea>
+        <textarea id="txtErrorLogs" aria-label="Error logs" class="readonlyText very-large-textarea" readonly></textarea>
     </div>
 
     <div id="divTabVault" class="divTab">

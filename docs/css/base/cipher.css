@@ -33,7 +33,11 @@
 }
 
 #divCipherSourceActions {
-    justify-self: end;
+    display: grid;
+    justify-self: stretch;
+    align-items: center;
+    grid-auto-flow: column;
+    grid-template-columns: 1fr auto auto;
     grid-column: 1;
     grid-row: 7;
 }
@@ -42,9 +46,15 @@
 
 #divCipherActions {
     display: grid;
-    align-self: start;
+    align-self: stretch;
+    justify-items: stretch;
+
     grid-column: 2;
     grid-row: 6;
+}
+
+#btnEncrypt, #btnDecrypt {
+    justify-self: stretch;
 }
 
 /******************************************/
@@ -55,7 +65,11 @@
 }
 
 #divCipherTargetActions{
-    justify-self: end;
+    display: grid;
+    justify-self: stretch;
+    align-items: center;
+    grid-auto-flow: column;
+    grid-template-columns: 1fr auto auto;
     grid-column: 3;
     grid-row: 7;
 }

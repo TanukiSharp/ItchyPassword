@@ -1,9 +1,20 @@
+body {
+    min-height: 100vh;
+    margin: 0;
+    padding: 8px;
+    box-sizing: border-box;
+}
+
 body, input {
     font-family: consolas;
 }
 
-input {
+input, select {
     margin: 2px;
+}
+
+select {
+    padding: 1px;
 }
 
 button {
@@ -32,13 +43,13 @@ button {
 
 #divInfo {
     position: fixed;
-    right: 0;
-    bottom: 0;
+    right: 2px;
+    bottom: 2px;
     background-color: white;
+    border: 1px dashed lightgray;
     font-size: 9pt;
     text-align: right;
-    margin-bottom: 2px;
-    margin-right: 2px;
+    padding: 2px;
 }
 
 #txtPath {
@@ -80,16 +91,16 @@ button#btnPushToVault {
 }
 
 @keyframes kf_good_flash {
-    from { background-color: initial }
-    to { background-color: #80D080 }
+    from { background-color: initial; }
+    to { background-color: #80D080; }
 }
 
 @keyframes kf_bad_flash {
-    from { background-color: initial }
-    to { background-color: #D08080 }
+    from { background-color: initial; }
+    to { background-color: #D08080; }
 }
 
-.good-flash {
+.good-flash, .good-flash .text  {
     background-color: transparent;
     animation-name: kf_good_flash;
     animation-duration: 100ms;
@@ -98,7 +109,7 @@ button#btnPushToVault {
     animation-direction: alternate;
 }
 
-.bad-flash {
+.bad-flash, .bad-flash .text {
     background-color: transparent;
     animation-name: kf_bad_flash;
     animation-duration: 100ms;
