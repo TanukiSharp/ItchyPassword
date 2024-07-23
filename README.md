@@ -262,11 +262,11 @@ Fuzzy:
 Exact:
 ![](./Documentation/09_vault_04.png)
 
-Finally, in the `Tree view`, you should see buttons appear. A button is create for each password and cipher.
+Finally, in the `Tree view`, you should see buttons appear. A button is created for each password and cipher, alongside an edit cipher button.
 
-Clicking on a password button will automatically re-generate the password a copy it to the clipboard, for your convenience.
+Clicking on a password or cipher button will automatically re-generate the password or cipher and copy it to the clipboard, for your convenience.
 
-Clicking on a cipher button will open the `Ciphers` tab and copy the encrypted and decrypted content in the UI.
+Clicking on the edit cipher button will open the `Ciphers` tab and copy the encrypted and decrypted content in the UI.
 
 ### Generate a personal access token (on GitHub)
 
@@ -335,9 +335,13 @@ Input elements are:
 2. A public key (string converted to UTF-8 bytes)
 3. A purpose value (string converted to UTF-8 bytes)
 
-A derived key is computed using [PBKDF2] from `1`, using `2` as salt, [SHA-512] as hash algorithm with 100000 iterations.
+A derived key is computed using [PBKDF2] from `1`, using `2` as salt, [SHA-512] as hash algorithm with 100'000 iterations.
 Then, `3` is hashed using [HMAC] [SHA-512] algorithm with 256 bits from the derived key as the secret.
 The output of the hash is the final password to be used, which is then encoded using a custom alphabet.
+
+#### Version 2
+
+This is the same as version 1 but with 400'000 iterations.
 
 [HMAC]: https://en.wikipedia.org/wiki/HMAC
 [SHA-512]: https://en.wikipedia.org/wiki/SHA-2
