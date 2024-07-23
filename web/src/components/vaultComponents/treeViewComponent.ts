@@ -5,7 +5,7 @@ import { IVaultComponent } from '../vaultComponent';
 import { TreeNode, TreeNodeCreationController, DEEP_MODE_DOWN } from './TreeNode';
 import * as plainObject from '../../PlainObject';
 import * as ui from '../../ui';
-import { aggresiveSearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
+import { fuzzySearchMatchFunction, containsSearchMatchFunction, SearchMatchFunction } from '../../searchMatchFunctions';
 import * as serviceManager from '../../services/serviceManger';
 import { PasswordService } from '../../services/passwordService';
 import { CipherService } from 'services/cipherService';
@@ -27,8 +27,8 @@ interface SearchMatchFunctionDescription {
 }
 
 const searchMatchFunctionDescriptions: SearchMatchFunctionDescription[] = [
-    { text: 'Aggresive', function: aggresiveSearchMatchFunction },
-    { text: 'Regular', function: containsSearchMatchFunction },
+    { text: 'Fuzzy', function: fuzzySearchMatchFunction },
+    { text: 'Exact', function: containsSearchMatchFunction },
 ];
 
 function onSearchVaultInputChanged(): void {

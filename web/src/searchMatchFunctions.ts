@@ -5,7 +5,7 @@ export interface PositionMarker {
 
 export type SearchMatchFunction = (lhs: string, rhs: string, markers: PositionMarker[]) => boolean;
 
-function indexedAggresiveSearchMatchFunction(lhs: string, lhsIndex: number, rhs: string, markers: PositionMarker[]): boolean {
+function indexedFuzzySearchMatchFunction(lhs: string, lhsIndex: number, rhs: string, markers: PositionMarker[]): boolean {
     if (!rhs) {
         return true;
     }
@@ -23,15 +23,15 @@ function indexedAggresiveSearchMatchFunction(lhs: string, lhsIndex: number, rhs:
                 len: subWord.length
             });
 
-            return indexedAggresiveSearchMatchFunction(lhs, foundPos + subWord.length, rhs.substring(len), markers);
+            return indexedFuzzySearchMatchFunction(lhs, foundPos + subWord.length, rhs.substring(len), markers);
         }
     }
 
     return false;
 }
 
-export function aggresiveSearchMatchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {
-    return indexedAggresiveSearchMatchFunction(lhs, 0, rhs, markers);
+export function fuzzySearchMatchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {
+    return indexedFuzzySearchMatchFunction(lhs, 0, rhs, markers);
 }
 
 export function containsSearchMatchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {

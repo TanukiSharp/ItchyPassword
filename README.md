@@ -254,12 +254,12 @@ The `View settings` will just display what's in the local storage, except the pe
 
 This can be useful to confirm what you entered if something goes wrong.
 
-The `Search` box allows you to filter elements with specific text. The aggressive search mode will find more matches then the regular mode, as follow.
+The `Search` box allows you to filter elements with a specific text. The fuzzy search mode will find more matches then the exact mode, as follow.
 
-Aggressive:
+Fuzzy:
 ![](./Documentation/09_vault_03.png)
 
-Regular:
+Exact:
 ![](./Documentation/09_vault_04.png)
 
 Finally, in the `Tree view`, you should see buttons appear. A button is create for each password and cipher.
