@@ -6,6 +6,8 @@ import { IComponent } from './IComponent';
 const btnProtectTitleForProtect = 'Stores the string in memory and removes it from the UI component. Prevents a physical intruder from copy/pasting the value.';
 const btnProtectTitleForClear = 'Removes the string form memory and re-enables the UI component.';
 
+const divPrivatePartContainer = ui.getElementById('divMasterKey');
+
 const txtPrivatePart = ui.getElementById('txtPrivatePart') as HTMLInputElement;
 const txtPrivatePartConfirmation = ui.getElementById('txtPrivatePartConfirmation') as HTMLInputElement;
 const btnProtect = ui.getElementById('btnProtect') as HTMLButtonElement;
@@ -56,6 +58,11 @@ export function protectAndLockPrivatePart(): void {
     btnProtect.title = btnProtectTitleForClear;
 
     updatePrivatePartsMatching();
+}
+
+export function hidePrivatePartContainer() {
+    // This cannot be reveresed, the only way is to refresh the page, and that's fine.
+    divPrivatePartContainer.style.display = 'none';
 }
 
 function clearAndUnLockPrivatePart(): void {
