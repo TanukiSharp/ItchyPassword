@@ -1,15 +1,29 @@
 import { CancellationToken } from '../asyncUtils';
 import * as stringUtils from '../stringUtils';
 import * as ui from '../ui';
-import * as passwordComponent from '../components/passwordComponent';
+import { PasswordComponent, generatePasswordString } from '../components/passwordComponent';
+import { DEFAULT_ALPHABET, DEFAULT_LENGTH, CURRENT_PASSWORD_GENERATOR_VERSION } from '../components/passwordComponent';
 import * as serviceManager from './serviceManger';
+import { PlainObject } from 'PlainObject';
 
 export class PasswordService {
-    async generateAndCopyPasswordToClipboard(publicPart: string, alphabet?: string, length?: number): Promise<boolean> {
-        alphabet = alphabet !== undefined ? alphabet : passwordComponent.DEFAULT_ALPHABET;
-        length = length !== undefined ? length : passwordComponent.DEFAULT_LENGTH;
+    constructor(private readonly passwordComponent: PasswordComponent) {
+    }
 
-        const keyString: string | null = await passwordComponent.generatePasswordString(publicPart, alphabet, CancellationToken.none);
+    isLatestVersion(version: number): boolean {
+        return version === this.getLatestVersion();
+    }
+
+    getLatestVersion(): number {
+        return CURRENT_PASSWORD_GENERATOR_VERSION;
+    }
+
+    async generateAndCopyPasswordToClipboard(publicPart: string, alphabet?: string, length?: number, version?: number): Promise<boolean> {
+        alphabet = alphabet !== undefined ? alphabet : DEFAULT_ALPHABET;
+        length = length !== undefined ? length : DEFAULT_LENGTH;
+        version = version !== undefined ? version : CURRENT_PASSWORD_GENERATOR_VERSION;
+
+        const keyString: string | null = await generatePasswordString(publicPart, alphabet, version, CancellationToken.none);
 
         if (keyString === null) {
             return false;
@@ -21,5 +35,15 @@ export class PasswordService {
         const logFunc = errorLogsService.createLogErrorMessageFunction();
 
         return await ui.writeToClipboard(password, logFunc);
+    }
+
+    public activate(storageFullPath: string, parameterKeys: PlainObject): boolean {
+        if (this.passwordComponent.setParameters(parameterKeys, storageFullPath) === false) {
+            return false;
+        }
+
+        this.passwordComponent.getTabButton().click();
+
+        return true;
     }
 }

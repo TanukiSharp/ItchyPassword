@@ -2,12 +2,14 @@ import { ICipher, getDerivedBytes } from '../crypto';
 import { CancellationToken, ensureNotCancelled } from '../asyncUtils';
 
 export class CipherV2 implements ICipher {
+    private iterations: number = 100_000;
+
     public get version(): number {
         return 2;
     }
 
     public get description(): string {
-        return 'PBKDF2 + AES-GCM';
+        return 'PBKDF2 + AES-GCM (100k iterations)';
     }
 
     async encrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
@@ -23,12 +25,12 @@ export class CipherV2 implements ICipher {
 
         const aesKeyAlgorithm: AesKeyAlgorithm = {
             name: 'AES-GCM',
-            length: 256
+            length: 0, // Key length is ignored here.
         };
 
         const passwordKey: CryptoKey = await window.crypto.subtle.importKey(
             'raw',
-            await getDerivedBytes(password, passwordSalt, cancellationToken),
+            await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken),
             aesKeyAlgorithm,
             false,
             ['encrypt']
@@ -57,10 +59,10 @@ export class CipherV2 implements ICipher {
 
         const aesKeyAlgorithm: AesKeyAlgorithm = {
             name: 'AES-GCM',
-            length: 256
+            length: 0, // Key length is ignored here.
         };
 
-        const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt, cancellationToken);
+        const derivedKey: ArrayBuffer = await getDerivedBytes(password, passwordSalt, this.iterations, cancellationToken);
 
         ensureNotCancelled(cancellationToken);
 

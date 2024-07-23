@@ -46,23 +46,23 @@
 
 #lblReEncryptFrom {
     grid-column: 1;
-    grid-row: 2;
+    grid-row: 1;
 }
 
 #cboReEncryptFrom {
     grid-column: 1;
-    grid-row: 3;
+    grid-row: 2;
 }
 
 #lblReEncryptTo {
     margin-top: 12px;
     grid-column: 1;
-    grid-row: 4;
+    grid-row: 3;
 }
 
 #cboReEncryptTo {
     grid-column: 1;
-    grid-row: 5;
+    grid-row: 4;
 }
 
 #btnReEncrypt {

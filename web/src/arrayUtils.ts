@@ -62,8 +62,7 @@ function arrayBufferToUnsignedBigInt(arrayBuffer: ArrayBuffer): bigint {
 export function unsignedBigIntToArrayBuffer(number: bigint): ArrayBuffer {
     const result: Array<number> = [];
 
-    while (number > 0n)
-    {
+    while (number > 0n) {
         const remainder: bigint = number % 256n;
         number /= 256n;
 
@@ -95,8 +94,7 @@ export function toCustomBaseOneWay(bytes: ArrayBuffer, alphabet: string): string
     let result: string = '';
     let number: bigint = arrayBufferToUnsignedBigIntWithoutHeader(bytes);
 
-    while (number > 0n)
-    {
+    while (number > 0n) {
         const remainder: bigint = number % alphabetLength;
         number /= alphabetLength;
 
@@ -114,8 +112,7 @@ export function toCustomBase(bytes: ArrayBuffer, alphabet: string): string {
     let result: string = '';
     let number: bigint = arrayBufferToUnsignedBigInt(bytes);
 
-    while (number > 0n)
-    {
+    while (number > 0n) {
         const remainder: bigint = number % alphabetLength;
         number /= alphabetLength;
 
@@ -146,6 +143,104 @@ export function fromCustomBase(input: string, alphabet: string): ArrayBuffer {
 export function toBase16(buffer: ArrayBuffer): string {
     return Array.prototype.map.call(
         new Uint8Array(buffer),
-        x => ('00' + x.toString(16)).slice(-2)
+        (x: number) => ('00' + x.toString(16)).slice(-2)
     ).join('');
+}
+
+// Code in functions toCustomBaseFast and fromCustomBaseFast is taken from https://www.browserling.com/tools/base58-encode and adjusted.
+
+export function toCustomBaseFast(input: ArrayBuffer, alphabet: string): string {
+    if (alphabet.length < 2) {
+        throw new Error('Alphabet does not contain enough characters, at least 2 are required.');
+    }
+
+    if (input.byteLength === 0) {
+        return '';
+    }
+
+    const arrayView: DataView = new DataView(input, 0);
+
+    let carry: number = 0;
+    const digits: number[] = [0]
+
+    for (let i = 0; i < input.byteLength; i++) {
+        for (let j = 0; j < digits.length; j++) {
+            digits[j] <<= 8;
+        }
+
+        digits[0] += arrayView.getUint8(i);
+
+        carry = 0;
+
+        for (let j = 0; j < digits.length; j++) {
+            digits[j] += carry;
+            carry = (digits[j] / alphabet.length) | 0;
+            digits[j] %= alphabet.length;
+        }
+
+        while (carry > 0) {
+            digits.push(carry % alphabet.length);
+            carry = (carry / alphabet.length) | 0;
+        }
+    }
+
+    for (let i = 0; arrayView.getUint8(i) === 0 && i < input.byteLength - 1; i++) {
+        digits.push(0);
+    }
+
+    let result = '';
+
+    for (let i = digits.length - 1; i >= 0; i--) {
+        result += alphabet[digits[i]];
+    }
+
+    return result;
+}
+
+export function fromCustomBaseFast(input: string, alphabet: string): ArrayBuffer {
+    if (alphabet.length < 2) {
+        throw new Error('Alphabet does not contain enough characters, at least 2 are required.');
+    }
+
+    if (input.length === 0) {
+        return new ArrayBuffer(0);
+    }
+
+    for (let i = 0; i < input.length; i++) {
+        if (alphabet.includes(input[i]) === false) {
+            throw new Error(`Base${alphabet.length} alphabet '${alphabet}' does not contain character '${input[i]}'.`);
+        }
+    }
+
+    const bytes: number[] = [0];
+    let carry = 0;
+
+    for (let i = 0; i < input.length; i++) {
+        const c = input[i];
+
+        for (let j = 0; j < bytes.length; j++) {
+            bytes[j] *= alphabet.length;
+        }
+
+        bytes[0] += alphabet.indexOf(c);
+
+        carry = 0;
+
+        for (let j = 0; j < bytes.length; j++) {
+            bytes[j] += carry;
+            carry = bytes[j] >> 8;
+            bytes[j] &= 0xFF;
+        }
+
+        while (carry > 0) {
+            bytes.push(carry & 0xFF);
+            carry >>= 8;
+        }
+    }
+
+    for (let i = 0; input[i] === alphabet[0] && i < input.length - 1; i++) {
+        bytes.push(0);
+    }
+
+    return new Uint8Array(bytes.reverse()).buffer;
 }

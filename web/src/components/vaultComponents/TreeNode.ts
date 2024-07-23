@@ -1,4 +1,5 @@
 import * as plainObject from '../../PlainObject';
+import * as stringUtils from '../../stringUtils';
 import { SearchMatchFunction, PositionMarker } from '../../searchMatchFunctions';
 
 export const DEEP_MODE_NONE = 0;
@@ -13,7 +14,7 @@ const VERTICAL_BAR_OFFSET = 6;
 
 export interface TreeNodeCreationController {
     isLeaf(path: string, key: string, value: any): boolean;
-    createTreeNodeContentElement(path: string, key: string, value: any): HTMLElement;
+    createTreeNodeContentElements(path: string, key: string, value: any): HTMLElement[];
 }
 
 export class TreeNode {
@@ -21,7 +22,7 @@ export class TreeNode {
     protected readonly children: TreeNode[] = [];
 
     protected readonly rootElement: HTMLElement;
-    protected readonly titleElement: HTMLElement;
+    protected readonly contentContainerElement: HTMLElement;
     protected readonly childrenContainerElement: HTMLElement;
 
     protected readonly treeNodeCreationController: TreeNodeCreationController;
@@ -71,10 +72,11 @@ export class TreeNode {
 
     private createChildNodes(object: plainObject.PlainObject) {
         for (const [childKey, childValue] of Object.entries(object)) {
-            const child = new TreeNode(this, `${this.path}/${childKey}`, childKey, childValue, this.treeNodeCreationController);
+            const decodedChildKey = stringUtils.escapeAndDecodeUtfString(childKey);
+            const child = new TreeNode(this, `${this.path}/${decodedChildKey}`, decodedChildKey, childValue, this.treeNodeCreationController);
             this.addChild(child);
         }
-}
+    }
 
     constructor(parent: TreeNode | null, path: string, key: string, value: any, treeNodeCreationController: TreeNodeCreationController) {
         this.parent = parent;
@@ -87,12 +89,14 @@ export class TreeNode {
         this.setRootElementStyle();
 
         // Construct title DOM element.
-        this.titleElement = document.createElement('div');
+        this.contentContainerElement = document.createElement('div');
         this.setTitleElementStyle();
 
-        this.titleElement.appendChild(this.createTreeNodeContentElement());
+        for (const element of this.createTreeNodeContentElements()) {
+            this.contentContainerElement.appendChild(element);
+        }
 
-        this.rootElement.appendChild(this.titleElement);
+        this.rootElement.appendChild(this.contentContainerElement);
 
         // Construct children container DOM element.
         this.childrenContainerElement = document.createElement('div');
@@ -113,8 +117,8 @@ export class TreeNode {
         }
     }
 
-    private createTreeNodeContentElement(): HTMLElement {
-        return this.treeNodeCreationController.createTreeNodeContentElement(this.path, this.key, this.value);
+    private createTreeNodeContentElements(): HTMLElement[] {
+        return this.treeNodeCreationController.createTreeNodeContentElements(this.path, this.key, this.value);
     }
 
     private setRootElementStyle(): void {
@@ -187,15 +191,15 @@ export class TreeNode {
     }
 
     private setTitleElementStyle(): void {
-        if (!this.titleElement) {
+        if (!this.contentContainerElement) {
             return;
         }
 
-        this.titleElement.classList.add('treenode-title');
-        this.titleElement.style.gridColumn = '2 / span 2';
-        this.titleElement.style.gridRow = '1';
-        this.titleElement.style.marginLeft = '3px';
-        this.titleElement.style.alignSelf = 'center';
+        this.contentContainerElement.classList.add('treenode-title');
+        this.contentContainerElement.style.gridColumn = '2 / span 2';
+        this.contentContainerElement.style.gridRow = '1';
+        this.contentContainerElement.style.marginLeft = '3px';
+        this.contentContainerElement.style.alignSelf = 'center';
     }
 
     private setChildrenContainerElementStyle(): void {
@@ -205,9 +209,11 @@ export class TreeNode {
     }
 
     private resetTitle(deepMode: number): void {
-        if (this.titleElement) {
-            this.titleElement.innerHTML = '';
-            this.titleElement.appendChild(this.createTreeNodeContentElement());
+        if (this.contentContainerElement) {
+            this.contentContainerElement.innerHTML = '';
+            for (const element of this.createTreeNodeContentElements()) {
+                this.contentContainerElement.appendChild(element);
+            }
         }
 
         if (deepMode === DEEP_MODE_UP && this.parent) {
@@ -301,16 +307,21 @@ export class TreeNode {
             return;
         }
 
+        if (this.contentContainerElement.childNodes.length === 0) {
+            return;
+        }
+
         const markers: PositionMarker[] = [];
-        const isMatch = matchFunction(this.titleElement.innerText, searchText, markers);
+
+        const titleElement = TreeNode.findLeafElement(this.contentContainerElement) as HTMLElement;
+
+        const isMatch = matchFunction(titleElement.innerText, searchText, markers);
 
         if (isMatch) {
-            if (this.titleElement) {
-                const element = TreeNode.findLeafElement(this.titleElement);
-                element.innerHTML = '';
-                const title = this.createTreeNodeContentElement();
-                element.appendChild(TreeNode.createColoredSpan(title.innerText, markers));
-            }
+            const child = TreeNode.createColoredSpan(titleElement.innerText, markers);
+
+            titleElement.innerHTML = '';
+            titleElement.appendChild(child);
 
             this.show(DEEP_MODE_UP);
             this.show(DEEP_MODE_DOWN);

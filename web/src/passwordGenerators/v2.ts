@@ -2,7 +2,7 @@ import { stringToArray } from '../stringUtils';
 import { IPasswordGenerator, getDerivedBytes } from '../crypto';
 import { CancellationToken, ensureNotCancelled } from '../asyncUtils';
 
-export class PasswordGeneratorV1 implements IPasswordGenerator {
+export class PasswordGeneratorV2 implements IPasswordGenerator {
     private hkdfPurpose: ArrayBuffer;
     private _description: string;
 
@@ -12,7 +12,7 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
     }
 
     public get version(): number {
-        return 1;
+        return 2;
     }
 
     public get description(): string {
@@ -20,7 +20,7 @@ export class PasswordGeneratorV1 implements IPasswordGenerator {
     }
 
     public async generatePassword(privatePart: ArrayBuffer, publicPart: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
-        const derivedKey: ArrayBuffer = await getDerivedBytes(privatePart, publicPart, 100_000, cancellationToken);
+        const derivedKey: ArrayBuffer = await getDerivedBytes(privatePart, publicPart, 400_000, cancellationToken);
 
         ensureNotCancelled(cancellationToken);
 

@@ -5,7 +5,10 @@ import * as arrayUtils from '../arrayUtils';
 import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 
+import { IEncoding, availableEncodings, findEncodingByName } from '../encoding';
+
 import { CipherV2 } from '../ciphers/v2';
+import { CipherV3 } from '../ciphers/v3';
 import { ITabInfo } from '../TabControl';
 import { IComponent } from './IComponent';
 
@@ -17,10 +20,16 @@ import { CipherService } from '../services/cipherService';
 import { CancellationToken, ensureNotCancelled, rethrowCancelled } from '../asyncUtils';
 import { PlainObject } from '../PlainObject';
 
+export const RECOMMENDED_ENCODING_NAME = 'base58';
+export const LEGACY_ENCODING_NAME = 'base62';
+
 const btnTabCiphers = ui.getElementById('btnTabCiphers') as HTMLButtonElement;
 const divTabCiphers = ui.getElementById('divTabCiphers');
 
-const cipher: crypto.ICipher = new CipherV2();
+export const ciphers: crypto.ICipher[] = [
+    new CipherV2(),
+    new CipherV3(),
+];
 
 const btnClearAllCipherInfo = ui.getElementById('btnClearAllCipherInfo') as HTMLButtonElement;
 
@@ -28,15 +37,66 @@ const txtCipherName = ui.getElementById('txtCipherName') as HTMLInputElement;
 const txtCipherSource = ui.getElementById('txtCipherSource') as HTMLInputElement;
 const txtCipherTarget = ui.getElementById('txtCipherTarget') as HTMLInputElement;
 
+const cboCipherVersion = ui.getElementById('cboCipherVersion') as HTMLSelectElement;
+const cboCipherEncoding = ui.getElementById('cboCipherEncoding') as HTMLSelectElement;
 const btnEncrypt = ui.getElementById('btnEncrypt') as HTMLButtonElement;
 const btnDecrypt = ui.getElementById('btnDecrypt') as HTMLButtonElement;
 
+const spnCipherSourceLength = ui.getElementById('spnCipherSourceLength') as HTMLSpanElement;
 const btnCopyCipherSource = ui.getElementById('btnCopyCipherSource') as HTMLButtonElement;
 const btnClearCipherSource = ui.getElementById('btnClearCipherSource') as HTMLButtonElement;
+
+const spnCipherTargetLength = ui.getElementById('spnCipherTargetLength') as HTMLSpanElement;
 const btnCopyCipherTarget = ui.getElementById('btnCopyCipherTarget') as HTMLButtonElement;
 const btnClearCipherTarget = ui.getElementById('btnClearCipherTarget') as HTMLButtonElement;
 
 let cipherTargetLastChange: string | undefined;
+
+export function findCipherByVersion(version: number): crypto.ICipher | null {
+    for (const cipher of ciphers) {
+        if (cipher.version === version) {
+            return cipher;
+        }
+    }
+
+    return null;
+}
+
+export function findLatestCipher(): crypto.ICipher {
+    if (ciphers.length === 0) {
+        throw new Error('No ciphers registered.');
+    }
+
+    let bestCipher: crypto.ICipher = ciphers[0];
+
+    for (const cipher of ciphers) {
+        if (cipher.version > bestCipher.version) {
+            bestCipher = cipher;
+        }
+    }
+
+    return bestCipher;
+}
+
+function findCipherVersionDropdownIndexByVersion(version: number): number {
+    for (let i = 0; i < ciphers.length; i++) {
+        if (ciphers[i].version === version) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+function findCipherEncodingDropdownIndexByName(name: string): number {
+    for (let i = 0; i < availableEncodings.length; i++) {
+        if (availableEncodings[i].name === name) {
+            return i;
+        }
+    }
+
+    return -1;
+}
 
 function clearSourceVisualCue(): void {
     txtCipherSource.style.removeProperty('background-color');
@@ -44,6 +104,10 @@ function clearSourceVisualCue(): void {
 
 function clearTargetVisualCue(): void {
     txtCipherTarget.style.removeProperty('background-color');
+}
+
+function clearEncodingVisualCue(): void {
+    cboCipherEncoding.style.removeProperty('background-color');
 }
 
 function setSourceVisualCueError() {
@@ -54,9 +118,14 @@ function setTargetVisualCueError() {
     txtCipherTarget.style.setProperty('background-color', ui.ERROR_COLOR);
 }
 
+function setEncodingVisualCueError() {
+    cboCipherEncoding.style.setProperty('background-color', ui.ERROR_COLOR);
+}
+
 function clearAllVisualCues(): void {
     clearSourceVisualCue();
     clearTargetVisualCue();
+    clearEncodingVisualCue();
 }
 
 function clearCipherTargetLastUpdate(): void {
@@ -67,10 +136,19 @@ function updateCipherTargetLastUpdate(): void {
     cipherTargetLastChange = new Date().toISOString();
 }
 
+function updateCipherSourceLength(): void {
+    spnCipherSourceLength.innerText = txtCipherSource.value.length.toString();
+}
+
+function updateCipherTargetLength(): void {
+    spnCipherTargetLength.innerText = txtCipherTarget.value.length.toString();
+}
+
 function setCipherTargetValue(value: string, isEncrypt: boolean): void {
     const needDateTimeUpdate = value.length > 0 && txtCipherTarget.value !== value;
 
     txtCipherTarget.value = value;
+    updateCipherTargetLength();
 
     if (needDateTimeUpdate && isEncrypt) {
         updateCipherTargetLastUpdate();
@@ -86,14 +164,19 @@ function onCipherTargetChanged(): void {
 }
 
 function updateCipherParameters(): void {
-    if (txtCipherTarget.value === '' || txtCipherName.value === '') {
+    const encodingIndex = cboCipherEncoding.selectedIndex;
+
+    const isValidEncodingIndex = encodingIndex >= 0 && encodingIndex < availableEncodings.length;
+
+    if (txtCipherTarget.value === '' || txtCipherName.value === '' || isValidEncodingIndex === false) {
         storageOutputComponent.clearOutputs();
         return;
     }
 
     const cipherParameters = {
         datetime: cipherTargetLastChange,
-        version: cipher.version,
+        version: ciphers[cboCipherVersion.selectedIndex].version,
+        encoding: availableEncodings[encodingIndex].name,
         value: txtCipherTarget.value
     }
 
@@ -102,8 +185,9 @@ function updateCipherParameters(): void {
     storageOutputComponent.setParameters(cipherParameters, path);
 }
 
-export async function encryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function encryptString(value: string, cipher: crypto.ICipher, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
+
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
         return null;
@@ -116,18 +200,19 @@ export async function encryptString(value: string, cancellationToken: Cancellati
 
     ensureNotCancelled(cancellationToken);
 
-    return arrayUtils.toCustomBase(encrypted, crypto.BASE62_ALPHABET);
+    return encoding.encode(encrypted);
 }
 
-export async function decryptString(value: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function decryptStringWithCipher(value: string, cipher: crypto.ICipher, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
     const privatePart: string = getPrivatePart();
+
     if (privatePart.length === 0) {
         console.warn('Private part is empty');
         return null;
     }
 
     try {
-        const input: ArrayBuffer = arrayUtils.fromCustomBase(value, crypto.BASE62_ALPHABET);
+        const input: ArrayBuffer = encoding.decode(value);
         const password: ArrayBuffer = stringUtils.stringToArray(privatePart);
 
         const decrypted: ArrayBuffer = await cipher.decrypt(input, password, cancellationToken);
@@ -145,6 +230,16 @@ export async function decryptString(value: string, cancellationToken: Cancellati
     }
 }
 
+export async function decryptStringWithVersion(value: string, version: number, encoding: IEncoding, cancellationToken: CancellationToken): Promise<string | null> {
+    const cipher = findCipherByVersion(version);
+
+    if (cipher === null) {
+        throw new Error(`Failed to find cip[her for version ${version}.`);
+    }
+
+    return decryptStringWithCipher(value, cipher, encoding, cancellationToken);
+}
+
 async function onEncryptButtonClick(): Promise<boolean> {
     txtCipherSource.focus();
     setCipherTargetValue('', true);
@@ -155,7 +250,14 @@ async function onEncryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const encryptedString: string | null = await encryptString(txtCipherSource.value, CancellationToken.none);
+    const encoding: IEncoding = availableEncodings[cboCipherEncoding.selectedIndex];
+
+    const encryptedString: string | null = await encryptString(
+        txtCipherSource.value,
+        ciphers[cboCipherVersion.selectedIndex],
+        encoding,
+        CancellationToken.none
+    );
 
     if (encryptedString === null) {
         return false;
@@ -177,7 +279,19 @@ async function onDecryptButtonClick(): Promise<boolean> {
         return false;
     }
 
-    const decryptedString: string | null = await decryptString(txtCipherSource.value, CancellationToken.none);
+    if (cboCipherEncoding.selectedIndex < 0 || cboCipherEncoding.selectedIndex >= availableEncodings.length) {
+        setEncodingVisualCueError();
+        return false;
+    }
+
+    const encoding: IEncoding = availableEncodings[cboCipherEncoding.selectedIndex];
+
+    const decryptedString: string | null = await decryptStringWithCipher(
+        txtCipherSource.value,
+        ciphers[cboCipherVersion.selectedIndex],
+        encoding,
+        CancellationToken.none
+    );
 
     if (decryptedString === null) {
         setTargetVisualCueError();
@@ -187,6 +301,27 @@ async function onDecryptButtonClick(): Promise<boolean> {
     setCipherTargetValue(decryptedString, false);
 
     return true;
+}
+
+function setupCipherVersionsDropdown() {
+    for (const cipher of ciphers) {
+        const option = document.createElement('option');
+        option.text = `v${cipher.version}`;
+        cboCipherVersion.appendChild(option);
+    }
+
+    cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
+}
+
+function setupCipherEncodingDropdown() {
+    for (const encoding of availableEncodings) {
+        const option = document.createElement('option');
+        option.text = encoding.name;
+        option.title = encoding.description;
+        cboCipherEncoding.appendChild(option);
+    }
+
+    cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
 }
 
 export class CipherComponent implements IComponent, ITabInfo {
@@ -224,11 +359,28 @@ export class CipherComponent implements IComponent, ITabInfo {
     public async setParameters(cipherName: string, parameterKeys: PlainObject, storageFullPath: string): Promise<boolean> {
         txtCipherName.value = '';
         txtCipherSource.value = '';
+        updateCipherSourceLength();
         txtCipherTarget.value = '';
+        updateCipherTargetLength();
+        cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
+        cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
         storageOutputComponent.setPathUI('');
         storageOutputComponent.setCustomKeysUI('');
 
-        const decrypted: string | null = await decryptString(parameterKeys.value, CancellationToken.none);
+        const encodingName: string = parameterKeys.encoding ?? LEGACY_ENCODING_NAME;
+
+        const encoding: IEncoding | null = findEncodingByName(encodingName);
+
+        if (encoding === null) {
+            throw new Error(`Failed to find encoding '${encodingName}'.`);
+        }
+
+        const decrypted: string | null = await decryptStringWithVersion(
+            parameterKeys.value,
+            parameterKeys.version,
+            encoding,
+            CancellationToken.none
+        );
 
         if (decrypted === null) {
             alert(`Failed to decrypt cipher '${cipherName}'.`);
@@ -250,7 +402,12 @@ export class CipherComponent implements IComponent, ITabInfo {
         delete parameterKeys.customKeys;
 
         txtCipherName.value = cipherName;
+
         txtCipherSource.value = decrypted;
+        updateCipherSourceLength();
+
+        cboCipherVersion.selectedIndex = findCipherVersionDropdownIndexByVersion(parameterKeys.version);
+        cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(encodingName);
 
         storageOutputComponent.setPathUI(storagePath);
         storageOutputComponent.setParameters(parameterKeys, `ciphers/${cipherName}`);
@@ -277,15 +434,28 @@ export class CipherComponent implements IComponent, ITabInfo {
         });
 
         txtCipherSource.addEventListener('input', () => {
+            updateCipherSourceLength();
             if (txtCipherSource.value.length > 0) {
                 clearSourceVisualCue();
             }
         });
 
+        txtCipherTarget.addEventListener('input', () => {
+            updateCipherTargetLength();
+        });
+
+        cboCipherVersion.addEventListener('input', () => {
+            updateCipherParameters();
+        });
+
         btnClearAllCipherInfo.addEventListener('click', () => {
             txtCipherName.value = '';
             txtCipherSource.value = '';
+            updateCipherSourceLength();
             txtCipherTarget.value = '';
+            updateCipherTargetLength();
+            cboCipherVersion.selectedIndex = cboCipherVersion.options.length - 1;
+            cboCipherEncoding.selectedIndex = findCipherEncodingDropdownIndexByName(RECOMMENDED_ENCODING_NAME);
             storageOutputComponent.clearMatchingPath();
             clearCipherTargetLastUpdate();
             clearAllVisualCues();
@@ -300,6 +470,9 @@ export class CipherComponent implements IComponent, ITabInfo {
         btnClearCipherTarget.addEventListener('click', () => {
             setCipherTargetValue('', false);
         });
+
+        setupCipherVersionsDropdown();
+        setupCipherEncodingDropdown();
 
         serviceManager.registerService('cipher', new CipherService(this));
     }

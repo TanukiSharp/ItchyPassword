@@ -1,7 +1,7 @@
-import * as arrayUtils from './arrayUtils';
+import { Base58Encoding, IEncoding } from './encoding';
 import { CancellationToken, ensureNotCancelled } from './asyncUtils';
 
-export const BASE62_ALPHABET: string = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+const encoding: IEncoding = new Base58Encoding();
 
 export interface IPasswordGenerator {
     readonly version: number;
@@ -16,7 +16,7 @@ export interface ICipher {
     decrypt(input: ArrayBuffer, password: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer>;
 }
 
-export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
+export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, iterations: number, cancellationToken: CancellationToken): Promise<ArrayBuffer> {
     const baseKey: CryptoKey = await window.crypto.subtle.importKey(
         'raw',
         password,
@@ -30,12 +30,14 @@ export async function getDerivedBytes(password: ArrayBuffer, salt: ArrayBuffer, 
     const algorithm: Pbkdf2Params = {
         name: 'PBKDF2',
         hash: 'SHA-512',
-        iterations: 100000,
+        iterations: iterations,
         salt
     };
 
     const derivedKeyType: AesDerivedKeyParams = {
-        name: 'AES-GCM', // Using AES-CBC or AES-GCM here produces the same result.
+        // Algorithm name must be a recognized one,
+        // but any AES-* produces the same result...
+        name: 'AES-GCM',
         length: 256
     };
 
@@ -61,7 +63,7 @@ export function generateRandomBytes(byteCount: number = 64): ArrayBuffer {
     return crypto.getRandomValues(array).buffer;
 }
 
-export function generateRandomString(byteCount: number = 64, alphabet: string = BASE62_ALPHABET): string {
+export function generateRandomString(byteCount: number = 64): string {
     const array: ArrayBuffer = generateRandomBytes(byteCount);
-    return arrayUtils.toCustomBaseOneWay(array, alphabet);
+    return encoding.encode(array);
 }

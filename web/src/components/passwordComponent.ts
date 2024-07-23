@@ -7,6 +7,7 @@ import * as arrayUtils from '../arrayUtils';
 
 import { PlainObject } from '../PlainObject';
 import { PasswordGeneratorV1 } from '../passwordGenerators/v1';
+import { PasswordGeneratorV2 } from '../passwordGenerators/v2';
 import { ITabInfo } from '../TabControl';
 import { IComponent } from './IComponent';
 
@@ -20,7 +21,12 @@ import { PasswordService } from '../services/passwordService';
 const btnTabPasswords = ui.getElementById('btnTabPasswords') as HTMLButtonElement;
 const divTabPasswords = ui.getElementById('divTabPasswords');
 
-const passwordGenerator: crypto.IPasswordGenerator = new PasswordGeneratorV1('Password');
+const passwordGenerators: crypto.IPasswordGenerator[] = [
+    new PasswordGeneratorV1('Password'),
+    new PasswordGeneratorV2('Password'),
+];
+
+export const CURRENT_PASSWORD_GENERATOR_VERSION = 2;
 
 const btnClearAllPasswordInfo = ui.getElementById('btnClearAllPasswordInfo') as HTMLButtonElement;
 
@@ -41,6 +47,9 @@ const spnAlphabetSize = ui.getElementById('spnAlphabetSize');
 const divPasswordAlphabetActions = ui.getElementById('divPasswordAlphabetActions');
 const btnResetAlphabet = ui.getElementById('btnResetAlphabet') as HTMLButtonElement;
 
+const lblPasswordVersion = ui.getElementById('lblPasswordVersion');
+const cboPasswordVersion = ui.getElementById('cboPasswordVersion') as HTMLSelectElement;
+
 const txtResultPassword = ui.getElementById('txtResultPassword') as HTMLInputElement;
 const spnResultPasswordLength = ui.getElementById('spnResultPasswordLength');
 const btnViewResultPassword = ui.getElementById('btnViewResultPassword') as HTMLButtonElement;
@@ -52,6 +61,36 @@ export const DEFAULT_ALPHABET: string = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEF
 
 let passwordPublicPartLastChange: string | undefined;
 let copyPasswordFunction: () => void;
+
+function findPasswordGeneratorByVersion(version: number): crypto.IPasswordGenerator {
+    for (const passwordGenerator of passwordGenerators) {
+        if (passwordGenerator?.version === version) {
+            return passwordGenerator;
+        }
+    }
+
+    throw new Error(`Failed to find password generator version ${version}`);
+}
+
+function findPasswordGeneratorFromUserInterface(): crypto.IPasswordGenerator {
+    const passwordGenerator = passwordGenerators[cboPasswordVersion.selectedIndex];
+
+    if (!passwordGenerator) {
+        throw new Error(`Failed to find password generator version from index ${cboPasswordVersion.selectedIndex}`);
+    }
+
+    return passwordGenerator;
+}
+
+function findPasswordDropdownIndexByVersion(version: number): number {
+    for (let i = 0; i < passwordGenerators.length; i++) {
+        if (passwordGenerators[i].version === version) {
+            return i;
+        }
+    }
+
+    return -1;
+}
 
 function onClearPublicPartButtonClick(): boolean {
     if (txtPublicPart.value.length > 0) {
@@ -117,6 +156,12 @@ function updatePasswordGenerationParameters(): void {
     if (canRun() === false) {
         clearOutputs();
         return;
+    }
+
+    const passwordGenerator = passwordGenerators[cboPasswordVersion.selectedIndex];
+
+    if (!passwordGenerator) {
+        throw new Error('Invalid selected password generator version.');
     }
 
     const passwordParamters: PlainObject = {
@@ -198,6 +243,16 @@ async function onResetAlphabetButtonClick(): Promise<boolean> {
     return true;
 }
 
+async function onPasswordVersionChanged(): Promise<void> {
+    const passwordGenerator = passwordGenerators[cboPasswordVersion.selectedIndex];
+
+    if (!passwordGenerator) {
+        return;
+    }
+
+    await run();
+}
+
 function clearOutputs(): void {
     ui.clearText(txtResultPassword);
     storageOutputComponent.clearOutputs();
@@ -220,10 +275,12 @@ function canRun(publicPart?: string): boolean {
     return true;
 }
 
-export async function generatePasswordString(publicPart: string, alphabet: string, cancellationToken: CancellationToken): Promise<string | null> {
+export async function generatePasswordString(publicPart: string, alphabet: string, version: number, cancellationToken: CancellationToken): Promise<string | null> {
     if (canRun(publicPart) === false) {
         return null;
     }
+
+    const passwordGenerator = findPasswordGeneratorByVersion(version);
 
     const privatePartString: string = privatePartComponent.getPrivatePart();
     const privatePrivateBytes: ArrayBuffer = stringUtils.stringToArray(privatePartString);
@@ -251,7 +308,9 @@ export async function run(): Promise<void> {
 }
 
 async function runCore(cancellationToken: CancellationToken): Promise<void> {
-    const keyString: string | null = await generatePasswordString(txtPublicPart.value, txtAlphabet.value, cancellationToken);
+    const passwordGenerator = findPasswordGeneratorFromUserInterface();
+
+    const keyString: string | null = await generatePasswordString(txtPublicPart.value, txtAlphabet.value, passwordGenerator.version, cancellationToken);
     if (keyString === null) {
         return;
     }
@@ -281,6 +340,51 @@ async function onPublicPartTextInput(): Promise<void> {
     await run();
 }
 
+function setupPasswordGeneratorsDropdown(): void {
+    for (const passwordGenerator of passwordGenerators) {
+        const option = document.createElement('option');
+
+        option.text = `v${passwordGenerator.version}`;
+
+        cboPasswordVersion.appendChild(option);
+    }
+
+    cboPasswordVersion.selectedIndex = cboPasswordVersion.options.length - 1;
+}
+
+function clearAll(): boolean {
+    if (onClearPublicPartButtonClick() === false) {
+        return false;
+    }
+
+    ui.clearText(txtResultPassword, true);
+    updateResultPasswordLength();
+    resetAlphabet();
+    numOutputSizeRange.value = DEFAULT_LENGTH.toString();
+    updateOutputSizeRangeToNum();
+    cboPasswordVersion.selectedIndex = cboPasswordVersion.options.length - 1;
+
+    storageOutputComponent.clearMatchingPath();
+    storageOutputComponent.clearUI();
+
+    return true;
+}
+
+function fullPathToStoragePath(fullPath: string): string | null {
+    const prefix = '<root>/';
+    const suffix = '/password';
+
+    if (fullPath.startsWith(prefix) === false) {
+        return null;
+    }
+
+    if (fullPath.endsWith(suffix) === false) {
+        return null;
+    }
+
+    return fullPath.substring(prefix.length, fullPath.length - suffix.length);
+}
+
 export class PasswordComponent implements IComponent, ITabInfo {
     public readonly name: string = 'Password';
 
@@ -300,6 +404,53 @@ export class PasswordComponent implements IComponent, ITabInfo {
 
     public getVaultHint(): string {
         return this.name.toLowerCase();
+    }
+
+    public setParameters(parameterKeys: PlainObject, storageFullPath: string): boolean {
+        if (clearAll() === false) {
+            return false;
+        }
+
+        const storagePath: string | null = fullPathToStoragePath(storageFullPath);
+
+        if (storagePath === null) {
+            console.error(`Failed to retrieve storage path from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve storage path from full path.');
+            return false;
+        }
+
+        if (parameterKeys.customKeys) {
+            storageOutputComponent.setCustomKeysUI(JSON.stringify(parameterKeys.customKeys, null, 4));
+        }
+
+        delete parameterKeys.customKeys;
+
+        txtPublicPart.value = parameterKeys.public;
+        updatePublicPartSize();
+
+        txtAlphabet.value = parameterKeys.alphabet;
+        updateAlphabetValidityDisplay(isAlphabetValid(txtAlphabet.value));
+        updateAlphabetSize();
+
+        numOutputSizeNum.value = parameterKeys.length;
+        if (updateOutputSizeNumToRange() === false) {
+            console.error(`Failed to retrieve length from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve length from full path.');
+            return false;
+        }
+
+        const dropdownIndex = findPasswordDropdownIndexByVersion(parameterKeys.version);
+        if (dropdownIndex < 0) {
+            console.error(`Failed to retrieve version from full path '${storageFullPath}'.`);
+            alert('Failed to retrieve version from full path.');
+            return false;
+        }
+        cboPasswordVersion.selectedIndex = dropdownIndex;
+
+        storageOutputComponent.setPathUI(storagePath);
+        storageOutputComponent.setParameters(parameterKeys, 'password');
+
+        return true;
     }
 
     public init(): void {
@@ -326,6 +477,8 @@ export class PasswordComponent implements IComponent, ITabInfo {
         txtAlphabet.addEventListener('input', onAlphabetTextInput);
         ui.setupFeedbackButton(btnResetAlphabet, onResetAlphabetButtonClick, logFunc);
 
+        cboPasswordVersion.addEventListener('input', onPasswordVersionChanged);
+
         txtPublicPart.addEventListener('input', onPublicPartTextInput);
 
         ui.showHide(lblGeneratingPassword, false);
@@ -337,25 +490,19 @@ export class PasswordComponent implements IComponent, ITabInfo {
             divPasswordAlphabetActions,
             lblAlphabetLength,
             numOutputSizeRange,
-            numOutputSizeNum
+            numOutputSizeNum,
+            lblPasswordVersion,
+            cboPasswordVersion,
         ]);
 
         updatePublicPartSize();
         updateOutputSizeRangeToNum();
         resetAlphabet();
 
-        btnClearAllPasswordInfo.addEventListener('click', () => {
-            if (onClearPublicPartButtonClick() === false) {
-                return;
-            }
+        setupPasswordGeneratorsDropdown();
 
-            txtResultPassword.value = '';
-            updateResultPasswordLength();
+        btnClearAllPasswordInfo.addEventListener('click', clearAll);
 
-            storageOutputComponent.clearMatchingPath();
-            storageOutputComponent.clearUI();
-        });
-
-        serviceManager.registerService('password', new PasswordService());
+        serviceManager.registerService('password', new PasswordService(this));
     }
 };

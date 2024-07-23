@@ -1,5 +1,8 @@
 import * as cipherComponent from '../components/cipherComponent';
 import { CancellationToken } from '../asyncUtils';
+import { Base58Encoding, IEncoding } from '../encoding';
+
+const encoding: IEncoding = new Base58Encoding();
 
 export interface IAsyncStorage {
     readonly length: number;
@@ -34,11 +37,25 @@ export class SecureLocalStorage implements IAsyncStorage {
             return null;
         }
 
-        return await cipherComponent.decryptString(encryptedItem, CancellationToken.none);
+        const sortedCiphers = cipherComponent.ciphers.map(x => x).sort((a, b) => b.version - a.version);
+
+        for (const cipher of sortedCiphers) {
+            const result: string | null = await cipherComponent.decryptStringWithCipher(encryptedItem, cipher, encoding, CancellationToken.none);
+            if (result !== null) {
+                return result;
+            }
+        }
+
+        return null;
     }
 
     async setItem(key: string, value: string): Promise<void> {
-        const encrypted: string | null = await cipherComponent.encryptString(value, CancellationToken.none);
+        const encrypted: string | null = await cipherComponent.encryptString(
+            value,
+            cipherComponent.findLatestCipher(),
+            encoding,
+            CancellationToken.none
+        );
 
         if (encrypted === null) {
             console.error('Failed to encrypt value. (nothing stored)');

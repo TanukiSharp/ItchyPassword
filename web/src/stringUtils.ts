@@ -52,3 +52,7 @@ export function fromBase16(str: string): ArrayBuffer {
 
     return result.buffer;
 }
+
+export function escapeAndDecodeUtfString(utfString: string): string {
+    return decodeURIComponent(escape(utfString));
+}

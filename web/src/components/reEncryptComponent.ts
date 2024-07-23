@@ -6,18 +6,12 @@ import * as ui from '../ui';
 import { getPrivatePart } from './privatePartComponent';
 import * as serviceManager from '../services/serviceManger';
 
-import { CipherV1 } from '../ciphers/v1';
-import { CipherV2 } from '../ciphers/v2';
 import { IComponent } from './IComponent';
 
 import * as storageOutputComponent from './storageOutputComponent';
+import { ciphers } from './cipherComponent';
 
 import { CancellationToken } from '../asyncUtils';
-
-const ciphers: ICipher[] = [
-    new CipherV1(),
-    new CipherV2()
-];
 
 const btnTabReEncrypt: HTMLButtonElement = ui.getElementById('btnTabReEncrypt') as HTMLButtonElement;
 const divTabReEncrypt: HTMLElement = ui.getElementById('divTabReEncrypt');
