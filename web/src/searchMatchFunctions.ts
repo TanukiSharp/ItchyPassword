@@ -5,13 +5,17 @@ export interface PositionMarker {
 
 export type SearchMatchFunction = (lhs: string, rhs: string, markers: PositionMarker[]) => boolean;
 
+function toLowerCaseDeaccented(str: string): string {
+    return str.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+}
+
 function indexedFuzzySearchMatchFunction(lhs: string, lhsIndex: number, rhs: string, markers: PositionMarker[]): boolean {
     if (!rhs) {
         return true;
     }
 
-    lhs = lhs.toLowerCase();
-    rhs = rhs.toLowerCase();
+    lhs = toLowerCaseDeaccented(lhs);
+    rhs = toLowerCaseDeaccented(rhs);
 
     for (let len = rhs.length; len >= 1; len -= 1) {
         const subWord = rhs.substring(0, len);
@@ -35,7 +39,7 @@ export function fuzzySearchMatchFunction(lhs: string, rhs: string, markers: Posi
 }
 
 export function containsSearchMatchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {
-    const index = lhs.toLowerCase().indexOf(rhs.toLowerCase());
+    const index = toLowerCaseDeaccented(lhs).indexOf(toLowerCaseDeaccented(rhs));
 
     if (index < 0) {
         return false;
@@ -47,4 +51,16 @@ export function containsSearchMatchFunction(lhs: string, rhs: string, markers: P
     });
 
     return true;
+}
+
+export function exactSearchMatchFunction(lhs: string, rhs: string, markers: PositionMarker[]): boolean {
+    if (toLowerCaseDeaccented(lhs) === toLowerCaseDeaccented(rhs)) {
+        markers.push({
+            pos: 0,
+            len: rhs.length
+        });
+        return true;
+    }
+
+    return false;
 }
