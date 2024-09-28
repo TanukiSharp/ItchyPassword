@@ -1,7 +1,7 @@
 import { CancellationToken } from '../asyncUtils';
 import * as stringUtils from '../stringUtils';
 import * as ui from '../ui';
-import { PasswordComponent, generatePasswordString } from '../components/passwordComponent';
+import { PasswordComponent, generatePasswordString, run } from '../components/passwordComponent';
 import { DEFAULT_ALPHABET, DEFAULT_LENGTH, CURRENT_PASSWORD_GENERATOR_VERSION } from '../components/passwordComponent';
 import * as serviceManager from './serviceManger';
 import { PlainObject } from 'PlainObject';
@@ -37,10 +37,12 @@ export class PasswordService {
         return await ui.writeToClipboard(password, logFunc);
     }
 
-    public activate(storageFullPath: string, parameterKeys: PlainObject): boolean {
+    public async activate(storageFullPath: string, parameterKeys: PlainObject): Promise<boolean> {
         if (this.passwordComponent.setParameters(parameterKeys, storageFullPath) === false) {
             return false;
         }
+
+        await run();
 
         this.passwordComponent.getTabButton().click();
 

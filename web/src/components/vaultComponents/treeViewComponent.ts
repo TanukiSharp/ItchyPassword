@@ -77,8 +77,8 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
         );
     }
 
-    private editPassword(path: string, value: any): boolean {
-        return this.passwordService.activate(path, value);
+    private async editPassword(path: string, value: any): Promise<boolean> {
+        return await this.passwordService.activate(path, value);
     }
 
     private async runCipher(path: string, key: string, value: any): Promise<boolean> {
@@ -216,7 +216,7 @@ class VaultTreeNodeCreationController implements TreeNodeCreationController {
             editButton.innerText = '✏️';
             editButton.title = 'Edit password generation details';
 
-            ui.setupFeedbackButton(editButton, () => this.editPassword(path, value), logFunc);
+            ui.setupFeedbackButton(editButton, async () => await this.editPassword(path, value), logFunc);
 
             return [button, editButton];
         } else if (VaultTreeNodeCreationController.isCipherObject(value)) {
