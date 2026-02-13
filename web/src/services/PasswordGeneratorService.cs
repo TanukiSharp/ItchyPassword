@@ -34,7 +34,12 @@ public class PasswordGeneratorService : IPasswordGeneratorService
             return ""; // Minimum public part length.
         }
 
-        int iterations = version == 1 ? 100_000 : 400_000;
+        int iterations = version switch
+        {
+            1 => 100_000,
+            2 => 400_000,
+            _ => throw new ArgumentOutOfRangeException(nameof(version), version, "Unsupported version")
+        };
         string purpose = "Password";
 
         byte[] privateBytes = Encoding.UTF8.GetBytes(masterKey);

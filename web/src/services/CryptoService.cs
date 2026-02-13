@@ -24,8 +24,8 @@ public class CryptoService : ICryptoService
              throw new ArgumentException("Public key must be at least 8 bytes", nameof(publicKey));
          }
 
-         using var algorithm = new Rfc2898DeriveBytes(privateKey, publicKey, iterations, HashAlgorithmName.SHA512);
-         using var hkdfAlgorithm = new HMACSHA512(algorithm.GetBytes(32));
+         using Rfc2898DeriveBytes algorithm = new Rfc2898DeriveBytes(privateKey, publicKey, iterations, HashAlgorithmName.SHA512);
+         using HMACSHA512 hkdfAlgorithm = new HMACSHA512(algorithm.GetBytes(32));
          return hkdfAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(purpose));
     }
 
@@ -41,10 +41,10 @@ public class CryptoService : ICryptoService
         Span<byte> salt = outputSpan.Slice(NonceLength, SaltLength);
         RandomNumberGenerator.Fill(salt);
         
-        using var pbkdf2 = new Rfc2898DeriveBytes(key, salt.ToArray(), iterations, HashAlgorithmName.SHA512);
+        using Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(key, salt.ToArray(), iterations, HashAlgorithmName.SHA512);
         byte[] derivedKey = pbkdf2.GetBytes(32);
         
-        using var aes = new AesGcm(derivedKey);
+        using AesGcm aes = new AesGcm(derivedKey);
         
         Span<byte> nonce = outputSpan.Slice(0, NonceLength);
         RandomNumberGenerator.Fill(nonce);
@@ -65,10 +65,10 @@ public class CryptoService : ICryptoService
         ReadOnlySpan<byte> inputSpan = data;
         ReadOnlySpan<byte> salt = inputSpan.Slice(NonceLength, SaltLength);
         
-        using var pbkdf2 = new Rfc2898DeriveBytes(key, salt.ToArray(), iterations, HashAlgorithmName.SHA512);
+        using Rfc2898DeriveBytes pbkdf2 = new Rfc2898DeriveBytes(key, salt.ToArray(), iterations, HashAlgorithmName.SHA512);
         byte[] derivedKey = pbkdf2.GetBytes(32);
         
-        using var aes = new AesGcm(derivedKey);
+        using AesGcm aes = new AesGcm(derivedKey);
         
         ReadOnlySpan<byte> nonce = inputSpan.Slice(0, NonceLength);
         ReadOnlySpan<byte> tag = inputSpan.Slice(data.Length - TagLength, TagLength);
