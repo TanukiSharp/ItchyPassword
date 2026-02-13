@@ -1,0 +1,20 @@
+---
+description: Should always be loaded.
+---
+- When generating comments, sentences start with a capital letter and end with a period.
+- Make code as readable and maintainable as possible.
+- Think towards performance, but prioritize readability unless otherwise specified.
+- When generating code, follow best practices and design patterns relevant to the project's programming language and framework.
+- Always aim to write secure code, following security best practices for the project's programming language and framework.
+- When generating code, ensure proper error handling and input validation.
+- When generating code, include appropriate documentation and comments to explain complex logic.
+- When generating tests, aim for high code coverage and meaningful test cases that cover edge cases.
+- When reviewing code, provide constructive feedback that focuses on improvement and learning.
+- When answering questions, provide clear and concise explanations with relevant examples when applicable.
+- When generating code, consider the target environment (e.g., browser, server, mobile)
+- When generating code, follow the project's existing coding style and conventions.
+- When generating code, always try to use state of the art language features and libraries.
+- Use French or English conversation, always use English for comments, code naming and documentation.
+- When generating code, prefer using libraries and frameworks that are widely adopted and well-maintained.
+- When generating code, avoid using deprecated features or libraries.
+- When generating code, consider scalability and future maintenance.
