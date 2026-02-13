@@ -14,8 +14,15 @@ public class CryptoService : ICryptoService
 {
     public byte[] GeneratePassword(byte[] privateKey, byte[] publicKey, string purpose, int iterations)
     {
-         if (privateKey == null || privateKey.Length == 0) throw new ArgumentNullException(nameof(privateKey));
-         if (publicKey == null || publicKey.Length < 8) throw new ArgumentException("Public key must be at least 8 bytes", nameof(publicKey));
+         if (privateKey is null || privateKey.Length == 0)
+         {
+             throw new ArgumentNullException(nameof(privateKey));
+         }
+
+         if (publicKey is null || publicKey.Length < 8)
+         {
+             throw new ArgumentException("Public key must be at least 8 bytes", nameof(publicKey));
+         }
 
          using var algorithm = new Rfc2898DeriveBytes(privateKey, publicKey, iterations, HashAlgorithmName.SHA512);
          using var hkdfAlgorithm = new HMACSHA512(algorithm.GetBytes(32));

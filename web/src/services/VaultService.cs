@@ -19,19 +19,25 @@ public class VaultService : IVaultService
     }
 
     public string? MasterKey { get; set; }
-    
-    public bool IsUnlocked => !string.IsNullOrEmpty(MasterKey);
+
+    public bool IsUnlocked
+    {
+        get
+        {
+            return string.IsNullOrEmpty(MasterKey) == false;
+        }
+    }
 
     public async Task<string> LoadVault(string owner, string repo, string path, string token)
     {
-        var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{owner}/{repo}/contents/{path}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{owner}/{repo}/contents/{path}");
         request.Headers.Add("Authorization", $"Bearer {token}");
         request.Headers.Add("User-Agent", "ItchyPassword");
         request.Headers.Add("Accept", "application/vnd.github.v3.raw");
 
-        var response = await _httpClient.SendAsync(request);
+        using var response = await _httpClient.SendAsync(request);
         response.EnsureSuccessStatusCode();
-        
+
         return await response.Content.ReadAsStringAsync();
     }
 }

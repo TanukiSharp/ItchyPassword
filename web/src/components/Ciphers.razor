@@ -8,7 +8,7 @@
 
 <h1>Ciphers</h1>
 
-@if (!VaultService.IsUnlocked)
+@if (VaultService.IsUnlocked == false)
 {
     <div class="alert alert-warning">
         Please unlock with Master Key first. <a href="">Go to Master Key</a>.

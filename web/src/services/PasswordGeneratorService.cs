@@ -19,9 +19,20 @@ public class PasswordGeneratorService : IPasswordGeneratorService
 
     public string Generate(string masterKey, string publicPart, string alphabet, int length, int version)
     {
-        if (string.IsNullOrEmpty(masterKey)) return "";
-        if (string.IsNullOrEmpty(publicPart)) return "";
-        if (publicPart.Length < 8) return ""; // Minimum public part length
+        if (string.IsNullOrEmpty(masterKey))
+        {
+            return "";
+        }
+
+        if (string.IsNullOrEmpty(publicPart))
+        {
+            return "";
+        }
+
+        if (publicPart.Length < 8)
+        {
+            return ""; // Minimum public part length.
+        }
 
         int iterations = version == 1 ? 100_000 : 400_000;
         string purpose = "Password";
@@ -37,6 +48,7 @@ public class PasswordGeneratorService : IPasswordGeneratorService
         {
             return rawPassword.Substring(0, length);
         }
+
         return rawPassword;
     }
 
