@@ -52,7 +52,7 @@ else
     private string SourceText { get; set; } = "";
     private string TargetText { get; set; } = "";
 
-    private void Encrypt()
+    private async Task Encrypt()
     {
         if (string.IsNullOrEmpty(SourceText) || string.IsNullOrEmpty(VaultService.MasterKey))
         {
@@ -63,11 +63,11 @@ else
         byte[] keyBytes = Encoding.UTF8.GetBytes(VaultService.MasterKey);
 
         // Use default iterations (400k for V2/V3)
-        byte[] encrypted = CryptoService.Encrypt(inputBytes, keyBytes, 400_000);
+        byte[] encrypted = await CryptoService.EncryptAsync(inputBytes, keyBytes, 400_000);
         TargetText = Convert.ToBase64String(encrypted);
     }
 
-    private void Decrypt()
+    private async Task Decrypt()
     {
         if (string.IsNullOrEmpty(SourceText) || string.IsNullOrEmpty(VaultService.MasterKey))
         {
@@ -79,7 +79,7 @@ else
             byte[] inputBytes = Convert.FromBase64String(SourceText);
             byte[] keyBytes = Encoding.UTF8.GetBytes(VaultService.MasterKey);
 
-            byte[] decrypted = CryptoService.Decrypt(inputBytes, keyBytes, 400_000);
+            byte[] decrypted = await CryptoService.DecryptAsync(inputBytes, keyBytes, 400_000);
             TargetText = Encoding.UTF8.GetString(decrypted);
         }
         catch (Exception ex)

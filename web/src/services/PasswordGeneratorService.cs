@@ -5,7 +5,7 @@ namespace ItchyPassword.App.Services;
 
 public interface IPasswordGeneratorService
 {
-    string Generate(string masterKey, string publicPart, string alphabet, int length, int version);
+    Task<string> Generate(string masterKey, string publicPart, string alphabet, int length, int version);
 }
 
 public class PasswordGeneratorService : IPasswordGeneratorService
@@ -17,7 +17,7 @@ public class PasswordGeneratorService : IPasswordGeneratorService
         _cryptoService = cryptoService;
     }
 
-    public string Generate(string masterKey, string publicPart, string alphabet, int length, int version)
+    public async Task<string> Generate(string masterKey, string publicPart, string alphabet, int length, int version)
     {
         if (string.IsNullOrEmpty(masterKey))
         {
@@ -45,7 +45,7 @@ public class PasswordGeneratorService : IPasswordGeneratorService
         byte[] privateBytes = Encoding.UTF8.GetBytes(masterKey);
         byte[] publicBytes = Encoding.UTF8.GetBytes(publicPart);
 
-        byte[] hash = _cryptoService.GeneratePassword(privateBytes, publicBytes, purpose, iterations);
+        byte[] hash = await _cryptoService.GeneratePasswordAsync(privateBytes, publicBytes, purpose, iterations);
 
         string rawPassword = ToCustomBaseOneWay(hash, alphabet);
 
