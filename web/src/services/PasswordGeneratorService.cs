@@ -60,9 +60,9 @@ public class PasswordGeneratorService : IPasswordGeneratorService
     private string ToCustomBaseOneWay(byte[] bytes, string alphabet)
     {
         // Treat bytes as unsigned little-endian number
-        BigInteger number = new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
+        var number = new BigInteger(bytes, isUnsigned: true, isBigEndian: false);
         BigInteger alphabetLength = alphabet.Length;
-        StringBuilder result = new StringBuilder();
+        var result = new StringBuilder();
 
         while (number > 0)
         {
