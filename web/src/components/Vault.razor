@@ -1,7 +1,6 @@
-@page "/vault"
-@namespace ItchyPassword.App.Pages
-@inject IVaultService VaultService
-@inject IJSRuntime JS
+@using System.Text.Json
+@using ItchyPassword.App.Models
+@using ItchyPassword.App.Services
 
 <PageTitle>Vault</PageTitle>
 
@@ -16,7 +15,7 @@
 else
 {
     <div class="row">
-        <div class="col-md-6">
+        <div class="col-md-4">
             <h3>Settings</h3>
             <div class="mb-3">
                 <label for="githubOwner" class="form-label">GitHub Username</label>
@@ -37,8 +36,8 @@ else
             <button class="btn btn-primary" @onclick="LoadVault">Load Vault</button>
         </div>
 
-        <div class="col-md-6">
-            <h3>Content</h3>
+        <div class="col-md-4">
+            <h3>Tree View</h3>
             @if (IsLoading)
             {
                 <div class="spinner-border" role="status">
@@ -49,15 +48,58 @@ else
             {
                 <div class="alert alert-danger">@ErrorMessage</div>
             }
-            else
+            else if (RootNode != null)
             {
-                <textarea class="form-control" rows="15" readonly value="@VaultContent"></textarea>
+                <ul class="list-group">
+                    @foreach (var node in RootNode.Children)
+                    {
+                        <RenderNode Node="node" OnSelect="SelectNode" />
+                    }
+                </ul>
+            }
+        </div>
+        
+        <div class="col-md-4">
+            <h3>Details</h3>
+            @if (SelectedNode != null && SelectedNode.Entry != null)
+            {
+                <div class="card">
+                    <div class="card-header">
+                        @SelectedNode.Name
+                    </div>
+                    <div class="card-body">
+                        <p><strong>Path:</strong> @SelectedNode.FullPath</p>
+                        @if (SelectedNode.Entry.Length.HasValue)
+                        {
+                            <p><strong>Length:</strong> @SelectedNode.Entry.Length</p>
+                        }
+                        @if (!string.IsNullOrEmpty(SelectedNode.Entry.Alphabet))
+                        {
+                            <p><strong>Alphabet:</strong> @SelectedNode.Entry.Alphabet</p>
+                        }
+                         @if (SelectedNode.Entry.CustomKeys != null)
+                        {
+                            <h5>Custom Data</h5>
+                            <ul>
+                            @foreach (var kvp in SelectedNode.Entry.CustomKeys)
+                            {
+                                <li>@kvp.Key: @kvp.Value</li>
+                            }
+                            </ul>
+                        }
+                    </div>
+                </div>
+            }
+            else if (SelectedNode != null)
+            {
+                 <p>Folder selected: @SelectedNode.Name</p>
             }
         </div>
     </div>
 }
 
 @code {
+    // ... existing properties ...
     private string Owner { get; set; } = "";
     private string Repo { get; set; } = "ItchyPasswordVault";
     private string Path { get; set; } = "vault.json";
@@ -66,6 +108,15 @@ else
     private string VaultContent { get; set; } = "";
     private bool IsLoading { get; set; } = false;
     private string ErrorMessage { get; set; } = "";
+    
+    private VaultNode? RootNode { get; set; }
+    private VaultNode? SelectedNode { get; set; }
+
+    
+    private void SelectNode(VaultNode node)
+    {
+        SelectedNode = node;
+    }
 
     private async Task LoadVault()
     {
@@ -73,16 +124,72 @@ else
         ErrorMessage = "";
         try
         {
-            VaultContent = await VaultService.LoadVault(Owner, Repo, Path, Token);
-            // TODO: Decrypt content if it's encrypted
+            var content = await VaultService.LoadVault(Owner, Repo, Path, Token);
+            
+            byte[] keyBytes = System.Text.Encoding.UTF8.GetBytes(VaultService.MasterKey!);
+            byte[] encryptedBytes = Convert.FromBase64String(content);
+            byte[] decryptedBytes;
+
+            try 
+            {
+                 decryptedBytes = await CryptoService.DecryptAsync(encryptedBytes, keyBytes, 400000);
+            }
+            catch
+            {
+                 decryptedBytes = await CryptoService.DecryptAsync(encryptedBytes, keyBytes, 100000);
+            }
+
+            var jsonString = System.Text.Encoding.UTF8.GetString(decryptedBytes);
+            var vaultData = JsonSerializer.Deserialize<Dictionary<string, VaultEntry>>(jsonString);
+            
+            BuildTree(vaultData);
         }
         catch (Exception ex)
         {
-            ErrorMessage = $"Failed to load vault: {ex.Message}";
+            ErrorMessage = $"Failed to load/decrypt: {ex.Message}";
         }
         finally
         {
             IsLoading = false;
+        }
+    }
+
+    private void BuildTree(Dictionary<string, VaultEntry>? data)
+    {
+        if (data == null) return;
+        
+        RootNode = new VaultNode { Name = "Root", IsFolder = true };
+        
+        foreach (var kvp in data)
+        {
+            var parts = kvp.Key.Split('/');
+            var current = RootNode;
+            
+            for (int i = 0; i < parts.Length; i++)
+            {
+                var part = parts[i];
+                var isLast = i == parts.Length - 1;
+                
+                var existing = current.Children.FirstOrDefault(c => c.Name == part);
+                if (existing == null)
+                {
+                    existing = new VaultNode 
+                    { 
+                        Name = part, 
+                        FullPath = string.Join("/", parts.Take(i + 1)),
+                        IsFolder = !isLast
+                    };
+                    current.Children.Add(existing);
+                }
+                
+                if (isLast)
+                {
+                    existing.Entry = kvp.Value;
+                    existing.IsFolder = false; // Could be both folder and item? Assume item if leaf.
+                }
+                
+                current = existing;
+            }
         }
     }
 }

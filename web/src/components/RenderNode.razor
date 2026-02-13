@@ -1,0 +1,21 @@
+@using ItchyPassword.App.Models
+
+<li>
+    <span @onclick="() => OnSelect.InvokeAsync(Node)" style="cursor: pointer; font-weight: @(Node.IsFolder ? "bold" : "normal")">
+        @Node.Name
+    </span>
+    @if (Node.Children.Any())
+    {
+        <ul>
+            @foreach (var child in Node.Children)
+            {
+                <RenderNode Node="child" OnSelect="OnSelect" />
+            }
+        </ul>
+    }
+</li>
+
+@code {
+    [Parameter] public VaultNode Node { get; set; }
+    [Parameter] public EventCallback<VaultNode> OnSelect { get; set; }
+}
