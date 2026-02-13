@@ -1,25 +1,29 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Itchy Password</title>
-    <link rel="shortcut icon" href="favicon.png">
-    <link rel="stylesheet" type="text/css" href="css/base/common.css" />
-    <link rel="stylesheet" type="text/css" href="css/base/masterKey.css" />
-    <link rel="stylesheet" type="text/css" href="css/base/password.css" />
-    <link rel="stylesheet" type="text/css" href="css/base/cipher.css" />
-    <link rel="stylesheet" type="text/css" href="css/base/reEncrypt.css" />
-    <link rel="stylesheet" type="text/css" href="css/base/errorLogs.css" />
-    <link rel="stylesheet" type="text/css" href="css/base/vault.css" />
-    <link rel="stylesheet" type="text/css" href="css/mobile/common.css" media="screen and (max-width: 40.5em)" />
-    <link rel="stylesheet" type="text/css" href="css/mobile/masterKey.css" media="screen and (max-width: 40.5em)" />
-    <link rel="stylesheet" type="text/css" href="css/mobile/password.css" media="screen and (max-width: 40.5em)" />
-    <link rel="stylesheet" type="text/css" href="css/mobile/cipher.css" media="screen and (max-width: 40.5em)" />
-    <link rel="stylesheet" type="text/css" href="css/mobile/reEncrypt.css" media="screen and (max-width: 40.5em)" />
-    <link rel="stylesheet" type="text/css" href="css/mobile/vault.css" media="screen and (max-width: 40.5em)" />
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ItchyPassword</title>
+    <base href="/" />
+    <link rel="stylesheet" href="src/css/base/common.css" />
+    <link href="ItchyPassword.App.styles.css" rel="stylesheet" />
 </head>
 <body>
+    <div id="app">
+        <svg class="loading-progress">
+            <circle r="40%" cx="50%" cy="50%" />
+            <circle r="40%" cx="50%" cy="50%" />
+        </svg>
+        <div class="loading-progress-text">Loading...</div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="" class="reload">Reload</a>
+        <a class="dismiss">🗙</a>
+    </div>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <div style="display:none">
     <div id="divInfo"></div>
 
     <div id="divMasterKey">
@@ -198,5 +202,6 @@
     </div>
 
     <script type="text/javascript" src="bundle.js"></script>
+    </div>
 </body>
 </html>

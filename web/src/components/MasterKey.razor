@@ -1,0 +1,27 @@
+@page "/"
+@inject NavigationManager Navigation
+@inject ItchyPassword.App.src.services.VaultService VaultService
+
+<PageTitle>Master Key</PageTitle>
+
+<h1>Master Key</h1>
+
+<div class="mb-3">
+    <label for="masterKey" class="form-label">Master Key</label>
+    <input type="password" class="form-control" id="masterKey" @bind="Key" />
+</div>
+
+<button class="btn btn-primary" @onclick="Unlock">Unlock</button>
+
+@code {
+    private string? Key { get; set; }
+
+    private void Unlock()
+    {
+        if (!string.IsNullOrEmpty(Key))
+        {
+            VaultService.MasterKey = Key;
+            Navigation.NavigateTo("password");
+        }
+    }
+}
