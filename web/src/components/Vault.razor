@@ -1,0 +1,88 @@
+@page "/vault"
+@namespace ItchyPassword.App.Pages
+@inject IVaultService VaultService
+@inject IJSRuntime JS
+
+<PageTitle>Vault</PageTitle>
+
+<h1>Vault</h1>
+
+@if (!VaultService.IsUnlocked)
+{
+    <div class="alert alert-warning">
+        Please unlock with Master Key first. <a href="">Go to Master Key</a>.
+    </div>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Settings</h3>
+            <div class="mb-3">
+                <label for="githubOwner" class="form-label">GitHub Username</label>
+                <input type="text" class="form-control" id="githubOwner" @bind="Owner" />
+            </div>
+            <div class="mb-3">
+                <label for="githubRepo" class="form-label">Repository</label>
+                <input type="text" class="form-control" id="githubRepo" @bind="Repo" />
+            </div>
+            <div class="mb-3">
+                <label for="githubPath" class="form-label">File Path</label>
+                <input type="text" class="form-control" id="githubPath" @bind="Path" />
+            </div>
+            <div class="mb-3">
+                <label for="githubToken" class="form-label">Personal Access Token</label>
+                <input type="password" class="form-control" id="githubToken" @bind="Token" />
+            </div>
+            <button class="btn btn-primary" @onclick="LoadVault">Load Vault</button>
+        </div>
+
+        <div class="col-md-6">
+            <h3>Content</h3>
+            @if (IsLoading)
+            {
+                <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+            }
+            else if (!string.IsNullOrEmpty(ErrorMessage))
+            {
+                <div class="alert alert-danger">@ErrorMessage</div>
+            }
+            else
+            {
+                <textarea class="form-control" rows="15" readonly value="@VaultContent"></textarea>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private string Owner { get; set; } = "";
+    private string Repo { get; set; } = "ItchyPasswordVault";
+    private string Path { get; set; } = "vault.json";
+    private string Token { get; set; } = "";
+
+    private string VaultContent { get; set; } = "";
+    private bool IsLoading { get; set; } = false;
+    private string ErrorMessage { get; set; } = "";
+
+    private async Task LoadVault()
+    {
+        IsLoading = true;
+        ErrorMessage = "";
+        try
+        {
+            VaultContent = await VaultService.LoadVault(Owner, Repo, Path, Token);
+            // TODO: Decrypt content if it's encrypted
+        }
+        catch (Exception ex)
+        {
+            ErrorMessage = $"Failed to load vault: {ex.Message}";
+        }
+        finally
+        {
+            IsLoading = false;
+        }
+    }
+}

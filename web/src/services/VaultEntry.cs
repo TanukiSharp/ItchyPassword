@@ -1,4 +1,4 @@
-namespace ItchyPassword.App.src.services;
+namespace ItchyPassword.App.Models;
 
 public class VaultEntry
 {

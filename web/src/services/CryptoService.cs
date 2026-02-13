@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 
-namespace ItchyPassword.App.src.services;
+namespace ItchyPassword.App.Services;
 
 public interface ICryptoService
 {

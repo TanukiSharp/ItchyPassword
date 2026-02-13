@@ -1,9 +1,14 @@
 using System.Numerics;
 using System.Text;
 
-namespace ItchyPassword.App.src.services;
+namespace ItchyPassword.App.Services;
 
-public class PasswordGeneratorService
+public interface IPasswordGeneratorService
+{
+    string Generate(string masterKey, string publicPart, string alphabet, int length, int version);
+}
+
+public class PasswordGeneratorService : IPasswordGeneratorService
 {
     private readonly ICryptoService _cryptoService;
 

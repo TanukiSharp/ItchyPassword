@@ -1,0 +1,91 @@
+@page "/ciphers"
+@namespace ItchyPassword.App.Pages
+@inject IVaultService VaultService
+@inject ICryptoService CryptoService
+@inject IJSRuntime JS
+
+<PageTitle>Ciphers</PageTitle>
+
+<h1>Ciphers</h1>
+
+@if (!VaultService.IsUnlocked)
+{
+    <div class="alert alert-warning">
+        Please unlock with Master Key first. <a href="">Go to Master Key</a>.
+    </div>
+}
+else
+{
+    <div class="mb-3">
+        <label for="cipherName" class="form-label">Cipher Name</label>
+        <input type="text" class="form-control" id="cipherName" @bind="CipherName" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <h3>Source</h3>
+            <textarea class="form-control mb-2" rows="5" @bind="SourceText"></textarea>
+            <div class="d-flex gap-2">
+                <button class="btn btn-secondary" @onclick="ClearSource">Clear</button>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h3>Target</h3>
+            <textarea class="form-control mb-2" rows="5" readonly value="@TargetText"></textarea>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-secondary" @onclick="CopyTarget">Copy</button>
+                <button class="btn btn-secondary" @onclick="ClearTarget">Clear</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="my-3 d-flex gap-2 justify-content-center">
+        <button class="btn btn-primary" @onclick="Encrypt">Encrypt -></button>
+        <button class="btn btn-primary" @onclick="Decrypt">&lt;- Decrypt</button>
+    </div>
+}
+
+@code {
+    private string CipherName { get; set; } = "";
+    private string SourceText { get; set; } = "";
+    private string TargetText { get; set; } = "";
+
+    private void Encrypt()
+    {
+        if (string.IsNullOrEmpty(SourceText) || string.IsNullOrEmpty(VaultService.MasterKey)) return;
+
+        var inputBytes = System.Text.Encoding.UTF8.GetBytes(SourceText);
+        var keyBytes = System.Text.Encoding.UTF8.GetBytes(VaultService.MasterKey);
+
+        // Use default iterations (400k for V2/V3)
+        var encrypted = CryptoService.Encrypt(inputBytes, keyBytes, 400_000);
+        TargetText = Convert.ToBase64String(encrypted);
+    }
+
+    private void Decrypt()
+    {
+        if (string.IsNullOrEmpty(SourceText) || string.IsNullOrEmpty(VaultService.MasterKey)) return;
+
+        try
+        {
+            var inputBytes = Convert.FromBase64String(SourceText);
+            var keyBytes = System.Text.Encoding.UTF8.GetBytes(VaultService.MasterKey);
+
+            var decrypted = CryptoService.Decrypt(inputBytes, keyBytes, 400_000);
+            TargetText = System.Text.Encoding.UTF8.GetString(decrypted);
+        }
+        catch (Exception ex)
+        {
+            TargetText = $"Error: {ex.Message}";
+        }
+    }
+
+    private void ClearSource() => SourceText = "";
+    private void ClearTarget() => TargetText = "";
+
+    private async Task CopyTarget()
+    {
+        await JS.InvokeVoidAsync("navigator.clipboard.writeText", TargetText);
+    }
+}
