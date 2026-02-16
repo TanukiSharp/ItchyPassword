@@ -1,0 +1,84 @@
+@page "/vault"
+@using ItchyPassword.Client.Components
+@using ItchyPassword.Client.Services
+@using System.Web
+@inject ClientVaultState State
+@inject VaultUnlockService UnlockService
+@inject NavigationManager Nav
+
+@if (isLoading)
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+        <div class="loading-spinner"></div>
+        <p style="margin-top: 1rem; color: var(--text-muted);">@loadingMessage</p>
+    </div>
+}
+else if (!string.IsNullOrEmpty(error))
+{
+    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 2rem; text-align: center;">
+        <h3 style="color: var(--danger-color);">Failed to Unlock</h3>
+        <p style="margin: 1rem 0;">@error</p>
+        <button class="button" @onclick="GoHome">Back to Login</button>
+    </div>
+}
+else if (State.IsUnlocked)
+{
+    <VaultView />
+}
+
+@code {
+    private bool isLoading = false;
+    private string error = "";
+    private string loadingMessage = "Unlocking vault...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (State.IsUnlocked)
+        {
+            return;
+        }
+
+        if (State.HasMasterKey)
+        {
+            // Try to unlock using the known key
+            isLoading = true;
+            StateHasChanged();
+
+            var (success, msg) = await UnlockService.UnlockAsync(status =>
+            {
+                InvokeAsync(() =>
+                {
+                    loadingMessage = status;
+                    StateHasChanged();
+                });
+            });
+
+            isLoading = false;
+
+            if (success)
+            {
+               // State.Vault is populated, UI updates automatically
+            }
+            else
+            {
+                if (msg == "Connector not configured.")
+                {
+                    Nav.NavigateTo($"/settings?message={HttpUtility.UrlEncode("Please configure the selected vault connector reader before unlocking.")}");
+                }
+                else
+                {
+                    error = msg;
+                }
+            }
+        }
+        else
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private void GoHome()
+    {
+        Nav.NavigateTo("/");
+    }
+}

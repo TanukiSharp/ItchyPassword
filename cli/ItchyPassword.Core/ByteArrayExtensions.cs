@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Linq;
-using System.Numerics;
 using System.Text;
+using ItchyPassword.Core.Helpers;
 
 namespace ItchyPassword.Core
 {
@@ -18,28 +17,7 @@ namespace ItchyPassword.Core
         /// <returns>Returns the large number converted to string.</returns>
         public static string ToCustomBase(this byte[] largeNumber, string alphabet)
         {
-            if (largeNumber == null)
-                throw new ArgumentNullException(nameof(largeNumber));
-            if (alphabet == null)
-                throw new ArgumentNullException(nameof(alphabet));
-
-            if (alphabet.Length < 2)
-                throw new ArgumentOutOfRangeException(nameof(alphabet), alphabet, $"Argument '{nameof(alphabet)}' must be greater than or equal to 2.");
-
-            var number = new BigInteger(largeNumber, true);
-            var alphabetLength = new BigInteger(alphabet.Length);
-
-            var result = new StringBuilder();
-
-            while (number > BigInteger.Zero)
-            {
-                number = BigInteger.DivRem(number, alphabetLength, out BigInteger remainder);
-                int index = int.Parse(remainder.ToString());
-
-                result.Append(alphabet[index]);
-            }
-
-            return result.ToString();
+            return BaseN.Encode(largeNumber, alphabet);
         }
 
         /// <summary>

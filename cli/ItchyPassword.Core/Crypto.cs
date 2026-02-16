@@ -29,9 +29,9 @@ namespace ItchyPassword.Core
             if (publicKey.Length < 8)
                 throw new ArgumentException($"Argument '{nameof(publicKey)}' is invalid. It must be at least 8 bytes long.", nameof(publicKey));
 
-            using var algorithm = new Rfc2898DeriveBytes(privateKey, publicKey, 100_000, HashAlgorithmName.SHA512);
+            byte[] derivedKey = Rfc2898DeriveBytes.Pbkdf2(privateKey, publicKey, 100_000, HashAlgorithmName.SHA512, 32);
 
-            using var hkdfAlgorithm = new HMACSHA512(algorithm.GetBytes(32));
+            using var hkdfAlgorithm = new HMACSHA512(derivedKey);
             byte[] key = hkdfAlgorithm.ComputeHash(Encoding.UTF8.GetBytes(hkdfPurpose));
 
             return key;
@@ -72,9 +72,9 @@ namespace ItchyPassword.Core
             random.GetBytes(passwordSalt);
 
             // The reason to derive key again is to ensure 32 bytes length.
-            var keyDerivedBytes = new Rfc2898DeriveBytes(password.ToArray(), passwordSalt.ToArray(), 100_000, HashAlgorithmName.SHA512);
+            byte[] derivedKey = Rfc2898DeriveBytes.Pbkdf2(password, passwordSalt, 100_000, HashAlgorithmName.SHA512, 32);
 
-            using var aes = new AesGcm(keyDerivedBytes.GetBytes(32));
+            using var aes = new AesGcm(derivedKey, AuthenticatedTagLength);
 
             Span<byte> nonce = output.Slice(0, NonceLength);
             random.GetBytes(nonce);
@@ -119,9 +119,9 @@ namespace ItchyPassword.Core
             ReadOnlySpan<byte> passwordSalt = input.Slice(NonceLength, PasswordHashSaltLength);
 
             // The reason to derive key again is to ensure 32 bytes length.
-            var keyDerivedBytes = new Rfc2898DeriveBytes(password.ToArray(), passwordSalt.ToArray(), 100_000, HashAlgorithmName.SHA512);
+            byte[] derivedKey = Rfc2898DeriveBytes.Pbkdf2(password, passwordSalt, 100_000, HashAlgorithmName.SHA512, 32);
 
-            using var aes = new AesGcm(keyDerivedBytes.GetBytes(32));
+            using var aes = new AesGcm(derivedKey, AuthenticatedTagLength);
 
             aes.Decrypt(
                 input.Slice(0, NonceLength),

@@ -1,0 +1,90 @@
+@using ItchyPassword.Client.Services
+@inject ClientVaultState State
+@inject VaultDataService VaultDataService
+@inject ICryptoService Crypto
+@inject NavigationManager Nav
+
+<div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+        <h3 style="margin: 0;">Vault Items</h3>
+        <div style="display: flex; gap: 0.5rem;">
+            <button class="button secondary" @onclick="LockVault">Lock Workspace</button>
+            <button class="button primary" @onclick="CreateNew">New Item</button>
+        </div>
+    </div>
+
+    <div style="margin-bottom: 1rem;">
+        <input class="input" type="text" placeholder="Search items..." @bind="searchQuery" @bind:event="oninput" />
+    </div>
+
+    <div style="overflow-x: auto;">
+        <table class="table" style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Name</th>
+                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Modified</th>
+                    <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid var(--border-color);">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in FilteredItems)
+                {
+                    <tr style="border-bottom: 1px solid var(--border-color);">
+                        <td style="padding: 0.75rem;">@item.Name</td>
+                        <td style="padding: 0.75rem;">@item.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                        <td style="padding: 0.75rem; text-align: right;">
+                            <button class="button secondary" @onclick="() => EditItem(item)">Edit</button>
+                        </td>
+                    </tr>
+                }
+                @if (!FilteredItems.Any())
+                {
+                    <tr>
+                        <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                            No items found.
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private string searchQuery = "";
+
+    private void CreateNew()
+    {
+        Nav.NavigateTo("item/new");
+    }
+
+    private void LockVault()
+    {
+        State.MasterKey = "";
+        Nav.NavigateTo("/");
+    }
+
+    private IEnumerable<VaultItem> FilteredItems
+    {
+        get
+        {
+            if (State.Vault == null) return Enumerable.Empty<VaultItem>();
+            if (string.IsNullOrWhiteSpace(searchQuery)) return State.Vault.Items;
+
+            // Basic search (Fuzzy later)
+            return State.Vault.Items.Where(i =>
+                i.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                i.Metadata?.Any(m =>
+                    m.Key.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    m.Value.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+                ) == true
+            );
+        }
+    }
+
+    private void EditItem(VaultItem item)
+    {
+        // Navigate or Open Modal
+        Nav.NavigateTo($"edit/{item.Id:N}");
+    }
+}

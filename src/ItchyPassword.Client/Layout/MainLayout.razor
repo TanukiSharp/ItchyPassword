@@ -1,0 +1,75 @@
+﻿@inherits LayoutComponentBase
+@implements IDisposable
+@using ItchyPassword.Client.Services
+@inject NavigationManager Nav
+@inject ClientVaultState State
+
+<div class="app-layout">
+    @if (State.HasMasterKey)
+    {
+        <div class="mobile-toggle-bar">
+            <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
+            <span style="font-weight: bold; margin-left: 1rem;">ItchyPassword</span>
+        </div>
+
+        <aside class="sidebar @(sidebarOpen ? "open" : "")">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <h2 style="margin-top: 5px;">ItchyPassword</h2>
+                <button class="close-sidebar-btn" @onclick="ToggleSidebar">✕</button>
+            </div>
+            <nav>
+                <ul>
+                    @if (State.IsUnlocked)
+                    {
+                        <li><NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔓 Vault</NavLink></li>
+                    }
+                    else
+                    {
+                        <li><span style="cursor: default;">🔒 Vault</span></li>
+                    }
+                    <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static Key</NavLink></li>
+                    <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
+                </ul>
+            </nav>
+        </aside>
+
+        @if (sidebarOpen)
+        {
+            <div class="sidebar-overlay" @onclick="CloseSidebar"></div>
+        }
+    }
+
+    <main class="main-content">
+        @Body
+    </main>
+</div>
+
+
+@code {
+    private bool sidebarOpen = false;
+
+    protected override void OnInitialized()
+    {
+        State.PropertyChanged += OnStateChanged;
+    }
+
+    private void OnStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    {
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        State.PropertyChanged -= OnStateChanged;
+    }
+
+    private void ToggleSidebar()
+    {
+        sidebarOpen = !sidebarOpen;
+    }
+
+    private void CloseSidebar()
+    {
+        sidebarOpen = false;
+    }
+}

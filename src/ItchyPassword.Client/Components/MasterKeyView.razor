@@ -1,0 +1,48 @@
+@using ItchyPassword.Client.Services
+@inject ClientVaultState State
+@inject NavigationManager Nav
+
+<div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+    <div style="width: 100%; max-width: 400px; text-align: center;">
+        <h2 style="margin-bottom: 2rem;">ItchyPassword</h2>
+
+        <EditForm Model="this" OnValidSubmit="Submit">
+            <div class="form-group" style="text-align: left;">
+                <label for="masterKey">Master Key</label>
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <input class="input" style="margin-bottom: 0; flex: 1;" type="password" id="masterKey" @bind-value="masterKey" @bind-value:event="oninput" placeholder="Enter your master key" required autofocus />
+                    <span title="Character count" style="color: var(--text-muted); font-size: 0.9em; min-width: 1.5em; text-align: right;">@masterKey.Length</span>
+                </div>
+            </div>
+
+            <button class="button primary" style="width: 100%; margin-top: 1rem;" type="submit">
+                <span>Unlock</span>
+            </button>
+        </EditForm>
+    </div>
+</div>
+
+@code {
+    private string masterKey = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load the saved active reader preference from storage.
+        await State.InitializeAsync();
+    }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender && State.HasMasterKey)
+        {
+            // Master key already in state (e.g. navigated back), go straight to vault.
+            Nav.NavigateTo("/vault");
+        }
+    }
+
+    private void Submit()
+    {
+        State.MasterKey = masterKey;
+        Nav.NavigateTo("/vault");
+    }
+}

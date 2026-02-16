@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>GitHub Device Flow (Zero Backend)</title>
+    <style>
+        body { font-family: system-ui, sans-serif; max-width: 600px; margin: 2rem auto; line-height: 1.5; }
+        .step { margin-bottom: 2rem; padding: 1rem; border: 1px solid #ccc; border-radius: 8px; }
+        .hidden { display: none; }
+        code { background: #eee; padding: 0.2rem 0.4rem; border-radius: 4px; font-weight: bold; }
+        button { cursor: pointer; padding: 0.5rem 1rem; }
+    </style>
+</head>
+<body>
+    <h1>GitHub Device Flow (No Backend)</h1>
+
+    <!-- Step 1: Start -->
+    <div id="step1" class="step">
+        <p>1. Enter your GitHub App Client ID to start.</p>
+        <input type="text" id="clientId" placeholder="Client ID" style="width: 300px;">
+        <button onclick="startAuth()">Start Login</button>
+        <p><small>Ensure "Device Flow" is enabled in your GitHub App settings.</small></p>
+    </div>
+
+    <!-- Step 2: Show Code -->
+    <div id="step2" class="step hidden">
+        <p>2. Copy this code:</p>
+        <h2 id="userCode">...</h2>
+        <p>And paste it at: <a id="verificationUri" href="#" target="_blank">...</a></p>
+        <p><i>Waiting for you to authorize... (Polling every 5s)</i></p>
+        <div id="pollStatus">Status: Pending...</div>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div id="step3" class="step hidden">
+        <h3 style="color: green;">Success!</h3>
+        <p>Access Token obtained:</p>
+        <textarea id="accessToken" rows="3" style="width: 100%;" readonly></textarea>
+        <p>You can now use this token to call the GitHub API.</p>
+    </div>
+
+    <script>
+        let pollInterval;
+
+        async function startAuth() {
+            const clientId = document.getElementById('clientId').value.trim();
+            if (!clientId) return alert("Please enter a Client ID");
+
+            // 1. Request Device Code
+            // Note: We use a CORS proxy or need the GitHub App to allow CORS (GitHub APIs support CORS)
+            const response = await fetch('https://github.com/login/device/code', {
+                method: 'POST',
+                headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                body: JSON.stringify({ client_id: clientId, scope: 'repo' })
+            });
+
+            const data = await response.json();
+
+            if (data.error) return alert("Error: " + data.error_description);
+
+            // Update UI
+            document.getElementById('step1').classList.add('hidden');
+            document.getElementById('step2').classList.remove('hidden');
+
+            document.getElementById('userCode').textContent = data.user_code;
+            document.getElementById('verificationUri').href = data.verification_uri;
+            document.getElementById('verificationUri').textContent = data.verification_uri;
+
+            // Start Polling
+            pollForToken(clientId, data.device_code, data.interval);
+        }
+
+        function pollForToken(clientId, deviceCode, interval) {
+            const poll = async () => {
+                const response = await fetch('https://github.com/login/oauth/access_token', {
+                    method: 'POST',
+                    headers: { 'Accept': 'application/json', 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_id: clientId,
+                        device_code: deviceCode,
+                        grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.access_token) {
+                    clearInterval(pollInterval);
+                    document.getElementById('step2').classList.add('hidden');
+                    document.getElementById('step3').classList.remove('hidden');
+                    document.getElementById('accessToken').value = data.access_token;
+                } else if (data.error === 'authorization_pending') {
+                    document.getElementById('pollStatus').textContent = "Status: Creating authorization... (Check your other tab)";
+                } else if (data.error === 'slow_down') {
+                    clearInterval(pollInterval);
+                    pollInterval = setInterval(poll, (interval + 5) * 1000);
+                } else {
+                    document.getElementById('pollStatus').textContent = "Error: " + data.error;
+                }
+            };
+
+            // GitHub recommends waiting `interval` seconds (default 5)
+            pollInterval = setInterval(poll, (interval + 1) * 1000);
+        }
+    </script>
+</body>
+</html>

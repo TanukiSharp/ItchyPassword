@@ -1,0 +1,145 @@
+@page "/edit/{ItemId}"
+@using ItchyPassword.Client.Services
+@using ItchyPassword.Client.Services.VaultConnectors
+@using ItchyPassword.Client.Components.Editors
+@inject ClientVaultState State
+@inject VaultDataService VaultDataService
+@inject ICryptoService Crypto
+@inject NavigationManager Nav
+
+@if (Item == null)
+{
+    <p>Item not found.</p>
+}
+else
+{
+    <div class="card" style="max-width: 800px; margin: 0 auto;">
+        <div class="card-header">
+            <h3 style="margin: 0;">Edit @Item.Name</h3>
+        </div>
+
+        <div style="padding: 1rem;">
+            <EditForm Model="Item" OnValidSubmit="SaveAsync">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input class="input" @bind="Item.Name" required />
+                </div>
+
+                <div class="form-group">
+                    <label>Type: <strong>@Item.Type</strong></label>
+                </div>
+
+                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+
+                @if (Item.Type == VaultItemType.Password)
+                {
+                    <PasswordEditor Item="@Item" MasterKey="@State.MasterKey" />
+                }
+                else
+                {
+                    <CipherEditor Item="@Item" MasterKey="@State.MasterKey" />
+                }
+
+                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                    <button class="button primary" type="submit" disabled="@isSaving">
+                        @if (isSaving) { <span>Saving...</span> } else { <span>Save & Push</span> }
+                    </button>
+                    <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
+                </div>
+            </EditForm>
+
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div class="alert danger" style="margin-top: 1rem;">@error</div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public required string ItemId { get; set; }
+
+    private VaultItem? Item;
+    private bool isSaving = false;
+    private string error = "";
+
+    protected override void OnInitialized()
+    {
+        if (State.Vault is null)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        if (Guid.TryParse(ItemId, out Guid parsedId) == false)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        Item = State.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
+    }
+
+    private async Task SaveAsync()
+    {
+        if (State.Vault is null || Item is null)
+        {
+            return;
+        }
+
+        isSaving = true;
+        error = string.Empty;
+
+        try
+        {
+            // Update Timestamp
+            Item.LastModified = DateTime.UtcNow;
+
+            // 1. Serialize entire vault
+            var json = VaultDataService.SerializeVault(State.Vault);
+
+            // 2. Parallel save to all Write Connectors
+            var tasks = State.WriteConnectors.Select(async c =>
+            {
+                try
+                {
+                    // Use connector's internal version tracking
+                    await c.SaveVaultAsync(json);
+                    return (Connector: c, Success: true, Error: "");
+                }
+                catch (Exception ex)
+                {
+                    return (Connector: c, Success: false, Error: ex.Message);
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+
+            var failures = results.Where(r => !r.Success).ToList();
+            if (failures.Any())
+            {
+               error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
+               // If ALL failed, don't navigate
+               if (results.All(r => !r.Success)) return;
+            }
+
+            // If at least one succeeded, we consider it saved locally/remotely enough to proceed
+            // Ideally we'd rollback but that's complex.
+            Nav.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            error = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/");
+    }
+}

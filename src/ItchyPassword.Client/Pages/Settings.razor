@@ -1,0 +1,184 @@
+@page "/settings"
+@using ItchyPassword.Client.Services
+@using ItchyPassword.Client.Services.VaultConnectors
+@using ItchyPassword.Client.Components
+@using Microsoft.AspNetCore.Components.Routing
+@inject ClientVaultState State
+@inject NavigationManager Nav
+@inject VaultDataService VaultDataService
+
+<PageTitle>Settings</PageTitle>
+
+<h1>Settings</h1>
+
+@if (!string.IsNullOrEmpty(redirectMessage))
+{
+    <div class="alert danger" style="max-width: 800px; margin: 0 auto 1rem auto;">@redirectMessage</div>
+}
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div class="card-header">
+        <h2>Vault Connectors</h2>
+        <p class="text-muted">Configure where your vault is stored. You can write to multiple locations for backup.</p>
+    </div>
+
+    <div class="card-body">
+        @foreach (var connector in State.Connectors)
+        {
+            <div class="connector-card">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <h3 style="margin: 0;">@connector.Name</h3>
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <label title="Read from this source" style="display: flex; align-items: center; gap: 0.3rem;">
+                            <input type="radio" name="readSource" checked="@(State.ActiveReaderId == connector.Id)" @onchange="@(() => SetReader(connector))" /> Read
+                        </label>
+                        <label title="Write to this source" style="display: flex; align-items: center; gap: 0.3rem;">
+                            <input type="checkbox" checked="@State.IsWriter(connector.Id)" disabled="@(State.IsWriter(connector.Id) && State.WriteConnectors.Count() == 1)" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
+                        </label>
+                    </div>
+                </div>
+                <p class="text-muted" style="margin-top: 0;">@connector.Description</p>
+
+                <hr style="border: 0; border-top: 1px dashed var(--border-color); margin: 0.5rem 0 1rem 0;" />
+
+                <details>
+                    <summary style="cursor: pointer; user-select: none; color: var(--text-muted); font-size: 0.9em; margin-bottom: 0.5rem;">Configuration</summary>
+
+                    <VaultConnectorSettings Connector="connector" />
+
+                    <div style="margin-top: 1rem;">
+                        <button class="button secondary small" @onclick="@(() => TestConnection(connector))">Test Connection</button>
+                        @if (testResults.TryGetValue(connector, out (bool? Success, string Message) result))
+                        {
+                            <span class="@(result.Success is null ? "" : result.Success.Value ? "text-success" : "text-danger")" style="margin-left: 1rem;">
+                                @result.Message
+                            </span>
+                        }
+                    </div>
+                </details>
+            </div>
+        }
+
+        <div class="actions" style="margin-top: 1.5rem; display: flex; gap: 1rem; align-items: center;">
+            @if (CanUnlock)
+            {
+                <button class="button primary" disabled="@isUnlocking" @onclick="UnlockAndGo">
+                    @if (isUnlocking)
+                    {
+                        <span>Unlocking...</span>
+                    }
+                    else
+                    {
+                        <span>Unlock & Go to Vault</span>
+                    }
+                </button>
+            }
+
+            @if (!string.IsNullOrEmpty(actionMessage))
+            {
+                <span class="@(isActionError ? "text-danger" : "text-success")">@actionMessage</span>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private Dictionary<IVaultConnector, (bool? Success, string Message)> testResults = new();
+    private string redirectMessage = "";
+    private string actionMessage = "";
+    private bool isActionError = false;
+
+    private bool isUnlocking = false;
+
+    private bool CanUnlock => !string.IsNullOrEmpty(State.MasterKey);
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Check for a redirect message in the query string.
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        string? message = query["message"];
+
+        if (!string.IsNullOrWhiteSpace(message))
+        {
+            redirectMessage = message;
+        }
+
+        foreach (IVaultConnector connector in State.Connectors)
+        {
+            await connector.LoadConfigurationAsync();
+        }
+    }
+
+    private async Task SetReader(IVaultConnector connector)
+    {
+        State.ActiveReaderId = connector.Id;
+        await State.SaveActiveReaderAsync();
+    }
+
+    private async Task SetWriter(IVaultConnector connector, bool enabled)
+    {
+        State.SetWriter(connector.Id, enabled);
+        await State.SaveWritersAsync();
+    }
+
+    private async Task TestConnection(IVaultConnector connector)
+    {
+        testResults[connector] = (null, "Testing...");
+        StateHasChanged();
+
+        bool success = await connector.ConnectAsync();
+        testResults[connector] = (success, success ? "Connected successfully." : "Connection failed.");
+        StateHasChanged();
+    }
+
+    private async Task UnlockAndGo()
+    {
+        if (State.ReadConnector == null || !State.ReadConnector.IsConfigured)
+        {
+            actionMessage = "Please configure the selected vault connector reader first.";
+            isActionError = true;
+            return;
+        }
+
+        isUnlocking = true;
+        actionMessage = "Connecting to unlock...";
+        isActionError = false;
+        redirectMessage = "";
+        StateHasChanged();
+
+        try
+        {
+            bool isConnected = await State.ReadConnector.ConnectAsync();
+
+            if (isConnected == false)
+            {
+                actionMessage = $"Failed to connect to {State.ReadConnector.Name}.";
+                isActionError = true;
+                return;
+            }
+
+            string content = await State.ReadConnector.LoadVaultAsync();
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                State.Vault = new ItchyPassword.Core.Models.Vault() { Version = 2, Items = [] };
+            }
+            else
+            {
+                State.Vault = VaultDataService.LoadVault(content);
+            }
+
+            Nav.NavigateTo("/vault");
+        }
+        catch (Exception ex)
+        {
+            actionMessage = "Error unlocking: " + ex.Message;
+            isActionError = true;
+        }
+        finally
+        {
+            isUnlocking = false;
+        }
+    }
+}

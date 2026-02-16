@@ -1,0 +1,405 @@
+:root {
+    /* Colors - Dark Mode Default */
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --secondary-bg: #2d2d2d;
+    --text-color: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --primary-color: #3b82f6; /* Blue */
+    --primary-hover: #2563eb;
+    --danger-color: #ef4444; /* Red */
+    --border-color: #333333;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+
+    /* Layout */
+    --sidebar-width: 250px;
+    --border-radius: 4px;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-color: #f3f4f6;
+        --card-bg: #ffffff;
+        --secondary-bg: #e5e7eb;
+        --text-color: #1f2937;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+    }
+}
+
+/* App loading indicator - shown while Blazor WASM initializes. */
+.app-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 1rem;
+}
+
+.app-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color, #333);
+    border-top-color: var(--primary-color, #3b82f6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.app-loading-text {
+    color: var(--text-muted, #a0a0a0);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Reset & Base */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* Grid & Layout System */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
+
+.grid {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+/* App Layout */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--card-bg);
+    border-right: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    transition: transform 0.3s ease-in-out;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: var(--spacing-md);
+    width: 100%;
+}
+
+/* Navigation */
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.sidebar nav li { margin-bottom: var(--spacing-sm); }
+.sidebar nav a {
+    display: block;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+}
+.sidebar nav span {
+    display: block;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    opacity: 0.5;
+}
+.sidebar nav a:hover, .sidebar nav a.active {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Forms */
+input[type="radio"],
+input[type="checkbox"] {
+    vertical-align: middle;
+    margin: 0;
+}
+
+input, select, textarea {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--card-bg);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* Buttons */
+button, .button, input[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+button:hover, .button:hover { background-color: var(--primary-hover); }
+button:active, .button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* Secondary Variant */
+button.secondary, .button.secondary {
+    background-color: var(--secondary-bg);
+    border-color: #555;
+    color: var(--text-color);
+}
+button.secondary:hover { background-color: #3a3a3a; }
+
+/* Danger Variant */
+button.danger, .button.danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* Alerts */
+.alert {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+}
+.alert.danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+.alert.warn {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+}
+
+/* Text utilities */
+.text-danger {
+    color: var(--danger-color);
+}
+.text-success {
+    color: #22c55e;
+}
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+th, td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+th { font-weight: 600; color: var(--text-muted); background-color: rgba(255,255,255,0.02); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background-color: rgba(255,255,255,0.05); }
+
+/* Cards */
+.card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+.card-header {
+    background-color: rgba(255,255,255,0.02);
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Mobile Toggle Bar */
+.mobile-toggle-bar {
+    display: none;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.close-sidebar-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 900;
+    display: none;
+}
+
+.connector-card {
+    border: 1px solid #3a3a3a;
+    background-color: #252525;
+    padding: 1rem;
+    margin: 1rem;
+    margin-top: 1.3rem;
+    border-radius: 8px;
+}
+
+.connector-settings {
+    margin-top: 1rem;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .mobile-toggle-bar {
+        display: flex;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+        width: 85%;
+        max-width: 300px;
+        border-right: 1px solid var(--border-color);
+    }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+    .main-content {
+        padding-top: var(--spacing-md);
+        width: 100%;
+        margin-top: 0;
+    }
+
+    .close-sidebar-btn {
+        display: block;
+    }
+
+    .sidebar-overlay.active { /* Use .active if needed, but simple block does it */
+        display: block;
+    }
+}
+
+
+/* Loading Spinner */
+.loading-spinner {
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Blazor error UI - hidden by default, shown by the framework on unhandled exceptions. */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    color: #333;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}
