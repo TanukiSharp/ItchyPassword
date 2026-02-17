@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace ItchyPassword.Core.Helpers;
 
 public static class Base62
@@ -8,8 +6,14 @@ public static class Base62
 
     public static string Encode(byte[] input)
     {
-        if (input == null || input.Length == 0) return "";
-        if (input.Length > 0xFFFF) throw new ArgumentException("Buffer too large");
+        if (input is null || input.Length == 0)
+        {
+            return string.Empty;
+        }
+        if (input.Length > 0xFFFF)
+        {
+            throw new ArgumentException("Buffer too large.");
+        }
 
         // 1. Create Headered Buffer (2 bytes LE length + data)
         var headeredBuffer = new byte[2 + input.Length];

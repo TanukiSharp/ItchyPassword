@@ -2,16 +2,15 @@
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components
-@using Microsoft.AspNetCore.Components.Routing
+@using System.Web
 @inject ClientVaultState State
 @inject NavigationManager Nav
-@inject VaultDataService VaultDataService
 
 <PageTitle>Settings</PageTitle>
 
 <h1>Settings</h1>
 
-@if (!string.IsNullOrEmpty(redirectMessage))
+@if (string.IsNullOrWhiteSpace(redirectMessage) == false)
 {
     <div class="alert danger" style="max-width: 800px; margin: 0 auto 1rem auto;">@redirectMessage</div>
 }
@@ -23,7 +22,7 @@
     </div>
 
     <div class="card-body">
-        @foreach (var connector in State.Connectors)
+        @foreach (IVaultConnector connector in State.Connectors)
         {
             <div class="connector-card">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
@@ -74,7 +73,7 @@
                 </button>
             }
 
-            @if (!string.IsNullOrEmpty(actionMessage))
+            @if (string.IsNullOrWhiteSpace(actionMessage) == false)
             {
                 <span class="@(isActionError ? "text-danger" : "text-success")">@actionMessage</span>
             }
@@ -84,22 +83,22 @@
 
 @code {
     private Dictionary<IVaultConnector, (bool? Success, string Message)> testResults = new();
-    private string redirectMessage = "";
-    private string actionMessage = "";
+    private string redirectMessage = string.Empty;
+    private string actionMessage = string.Empty;
     private bool isActionError = false;
 
     private bool isUnlocking = false;
 
-    private bool CanUnlock => !string.IsNullOrEmpty(State.MasterKey);
+    private bool CanUnlock => string.IsNullOrWhiteSpace(State.MasterKey) == false;
 
     protected override async Task OnInitializedAsync()
     {
         // Check for a redirect message in the query string.
         var uri = new Uri(Nav.Uri);
-        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var query = HttpUtility.ParseQueryString(uri.Query);
         string? message = query["message"];
 
-        if (!string.IsNullOrWhiteSpace(message))
+        if (string.IsNullOrWhiteSpace(message) == false)
         {
             redirectMessage = message;
         }
@@ -134,7 +133,7 @@
 
     private async Task UnlockAndGo()
     {
-        if (State.ReadConnector == null || !State.ReadConnector.IsConfigured)
+        if (State.ReadConnector is null || State.ReadConnector.IsConfigured == false)
         {
             actionMessage = "Please configure the selected vault connector reader first.";
             isActionError = true;
@@ -144,7 +143,7 @@
         isUnlocking = true;
         actionMessage = "Connecting to unlock...";
         isActionError = false;
-        redirectMessage = "";
+        redirectMessage = string.Empty;
         StateHasChanged();
 
         try
@@ -166,14 +165,14 @@
             }
             else
             {
-                State.Vault = VaultDataService.LoadVault(content);
+                State.Vault = VaultDataService.DeserializeVault(content);
             }
 
             Nav.NavigateTo("/vault");
         }
         catch (Exception ex)
         {
-            actionMessage = "Error unlocking: " + ex.Message;
+            actionMessage = $"Error unlocking: {ex.Message}";
             isActionError = true;
         }
         finally

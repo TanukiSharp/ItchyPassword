@@ -39,7 +39,7 @@ public class ClientVaultState : INotifyPropertyChanged
         }
     }
 
-    private string _masterKey = "";
+    private string _masterKey = string.Empty;
 
     /// <summary>
     /// Gets or sets the master key used to decrypt the vault.
@@ -141,7 +141,7 @@ public class ClientVaultState : INotifyPropertyChanged
 
         string? savedWriters = await _storage.GetItemAsync(WriterIdsStorageKey);
 
-        if (!string.IsNullOrWhiteSpace(savedWriters))
+        if (string.IsNullOrWhiteSpace(savedWriters) == false)
         {
             _writerIds.Clear();
 

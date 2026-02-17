@@ -6,18 +6,18 @@
 @inject VaultUnlockService UnlockService
 @inject NavigationManager Nav
 
-@if (isLoading)
+@if (_isLoading)
 {
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
         <div class="loading-spinner"></div>
-        <p style="margin-top: 1rem; color: var(--text-muted);">@loadingMessage</p>
+        <p style="margin-top: 1rem; color: var(--text-muted);">@_loadingMessage</p>
     </div>
 }
-else if (!string.IsNullOrEmpty(error))
+else if (string.IsNullOrWhiteSpace(_error) == false)
 {
     <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 2rem; text-align: center;">
         <h3 style="color: var(--danger-color);">Failed to Unlock</h3>
-        <p style="margin: 1rem 0;">@error</p>
+        <p style="margin: 1rem 0;">@_error</p>
         <button class="button" @onclick="GoHome">Back to Login</button>
     </div>
 }
@@ -27,9 +27,9 @@ else if (State.IsUnlocked)
 }
 
 @code {
-    private bool isLoading = false;
-    private string error = "";
-    private string loadingMessage = "Unlocking vault...";
+    private bool _isLoading = false;
+    private string _error = string.Empty;
+    private string _loadingMessage = "Unlocking vault...";
 
     protected override async Task OnInitializedAsync()
     {
@@ -41,19 +41,19 @@ else if (State.IsUnlocked)
         if (State.HasMasterKey)
         {
             // Try to unlock using the known key
-            isLoading = true;
+            _isLoading = true;
             StateHasChanged();
 
-            var (success, msg) = await UnlockService.UnlockAsync(status =>
+            (bool success, string? msg) = await UnlockService.UnlockAsync(status =>
             {
                 InvokeAsync(() =>
                 {
-                    loadingMessage = status;
+                    _loadingMessage = status;
                     StateHasChanged();
                 });
             });
 
-            isLoading = false;
+            _isLoading = false;
 
             if (success)
             {
@@ -67,7 +67,7 @@ else if (State.IsUnlocked)
                 }
                 else
                 {
-                    error = msg;
+                    _error = msg;
                 }
             }
         }

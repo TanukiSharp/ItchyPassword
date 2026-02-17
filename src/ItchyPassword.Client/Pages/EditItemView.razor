@@ -3,11 +3,10 @@
 @using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components.Editors
 @inject ClientVaultState State
-@inject VaultDataService VaultDataService
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 
-@if (Item == null)
+@if (_item is null)
 {
     <p>Item not found.</p>
 }
@@ -15,42 +14,42 @@ else
 {
     <div class="card" style="max-width: 800px; margin: 0 auto;">
         <div class="card-header">
-            <h3 style="margin: 0;">Edit @Item.Name</h3>
+            <h3 style="margin: 0;">Edit @_item.Name</h3>
         </div>
 
         <div style="padding: 1rem;">
-            <EditForm Model="Item" OnValidSubmit="SaveAsync">
+            <EditForm Model="_item" OnValidSubmit="SaveAsync">
                 <div class="form-group">
                     <label>Name</label>
-                    <input class="input" @bind="Item.Name" required />
+                    <input class="input" @bind="_item.Name" required />
                 </div>
 
                 <div class="form-group">
-                    <label>Type: <strong>@Item.Type</strong></label>
+                    <label>Type: <strong>@_item.Type</strong></label>
                 </div>
 
                 <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
 
-                @if (Item.Type == VaultItemType.Password)
+                @if (_item.Type == VaultItemType.Password)
                 {
-                    <PasswordEditor Item="@Item" MasterKey="@State.MasterKey" />
+                    <PasswordEditor Item="@_item" MasterKey="@State.MasterKey" />
                 }
                 else
                 {
-                    <CipherEditor Item="@Item" MasterKey="@State.MasterKey" />
+                    <CipherEditor Item="@_item" MasterKey="@State.MasterKey" />
                 }
 
                 <div style="margin-top: 2rem; display: flex; gap: 1rem;">
-                    <button class="button primary" type="submit" disabled="@isSaving">
-                        @if (isSaving) { <span>Saving...</span> } else { <span>Save & Push</span> }
+                    <button class="button primary" type="submit" disabled="@_isSaving">
+                        @if (_isSaving) { <span>Saving...</span> } else { <span>Save & Push</span> }
                     </button>
                     <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
                 </div>
             </EditForm>
 
-            @if (!string.IsNullOrEmpty(error))
+            @if (string.IsNullOrWhiteSpace(_error) == false)
             {
-                <div class="alert danger" style="margin-top: 1rem;">@error</div>
+                <div class="alert danger" style="margin-top: 1rem;">@_error</div>
             }
         </div>
     </div>
@@ -60,44 +59,38 @@ else
     [Parameter]
     public required string ItemId { get; set; }
 
-    private VaultItem? Item;
-    private bool isSaving = false;
-    private string error = "";
+    private VaultItem? _item;
+    private bool _isSaving = false;
+    private string _error = string.Empty;
 
     protected override void OnInitialized()
     {
-        if (State.Vault is null)
+        if (State.Vault is null || Guid.TryParse(ItemId, out Guid parsedId) == false)
         {
             Nav.NavigateTo("/");
             return;
         }
 
-        if (Guid.TryParse(ItemId, out Guid parsedId) == false)
-        {
-            Nav.NavigateTo("/");
-            return;
-        }
-
-        Item = State.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
+        _item = State.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
     }
 
     private async Task SaveAsync()
     {
-        if (State.Vault is null || Item is null)
+        if (State.Vault is null || _item is null)
         {
             return;
         }
 
-        isSaving = true;
-        error = string.Empty;
+        _isSaving = true;
+        _error = string.Empty;
 
         try
         {
             // Update Timestamp
-            Item.LastModified = DateTime.UtcNow;
+            _item.LastModified = DateTime.UtcNow;
 
             // 1. Serialize entire vault
-            var json = VaultDataService.SerializeVault(State.Vault);
+            string json = VaultDataService.SerializeVault(State.Vault);
 
             // 2. Parallel save to all Write Connectors
             var tasks = State.WriteConnectors.Select(async c =>
@@ -117,11 +110,15 @@ else
             var results = await Task.WhenAll(tasks);
 
             var failures = results.Where(r => !r.Success).ToList();
+
             if (failures.Any())
             {
-               error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
-               // If ALL failed, don't navigate
-               if (results.All(r => !r.Success)) return;
+                _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
+                // If ALL failed, don't navigate
+                if (results.All(r => !r.Success))
+                {
+                    return;
+                }
             }
 
             // If at least one succeeded, we consider it saved locally/remotely enough to proceed
@@ -130,11 +127,11 @@ else
         }
         catch (Exception ex)
         {
-            error = $"Save failed: {ex.Message}";
+            _error = $"Save failed: {ex.Message}";
         }
         finally
         {
-            isSaving = false;
+            _isSaving = false;
         }
     }
 

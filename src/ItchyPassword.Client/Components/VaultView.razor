@@ -1,6 +1,5 @@
 @using ItchyPassword.Client.Services
 @inject ClientVaultState State
-@inject VaultDataService VaultDataService
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 
@@ -14,7 +13,7 @@
     </div>
 
     <div style="margin-bottom: 1rem;">
-        <input class="input" type="text" placeholder="Search items..." @bind="searchQuery" @bind:event="oninput" />
+        <input class="input" type="text" placeholder="Search items..." @bind="_searchQuery" @bind:event="oninput" />
     </div>
 
     <div style="overflow-x: auto;">
@@ -27,7 +26,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (var item in FilteredItems)
+                @foreach (VaultItem item in FilteredItems)
                 {
                     <tr style="border-bottom: 1px solid var(--border-color);">
                         <td style="padding: 0.75rem;">@item.Name</td>
@@ -37,7 +36,7 @@
                         </td>
                     </tr>
                 }
-                @if (!FilteredItems.Any())
+                @if (FilteredItems.Any() == false)
                 {
                     <tr>
                         <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
@@ -51,7 +50,7 @@
 </div>
 
 @code {
-    private string searchQuery = "";
+    private string _searchQuery = "";
 
     private void CreateNew()
     {
@@ -68,15 +67,21 @@
     {
         get
         {
-            if (State.Vault == null) return Enumerable.Empty<VaultItem>();
-            if (string.IsNullOrWhiteSpace(searchQuery)) return State.Vault.Items;
+            if (State.Vault is null)
+            {
+                return Enumerable.Empty<VaultItem>();
+            }
+            if (string.IsNullOrWhiteSpace(_searchQuery))
+            {
+                return State.Vault.Items;
+            }
 
             // Basic search (Fuzzy later)
             return State.Vault.Items.Where(i =>
-                i.Name.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                i.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
                 i.Metadata?.Any(m =>
-                    m.Key.Contains(searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    m.Value.Contains(searchQuery, StringComparison.OrdinalIgnoreCase)
+                    m.Key.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    m.Value.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
                 ) == true
             );
         }

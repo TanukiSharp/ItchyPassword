@@ -1,6 +1,5 @@
-using System.Text.Json;
-using System.Text.Json.Nodes;
 using ItchyPassword.Core.Models;
+using System.Text.Json;
 
 namespace ItchyPassword.Core.Services;
 
@@ -17,14 +16,14 @@ public class VaultDataService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public Vault? LoadVault(string jsonContent)
+    public static Vault? DeserializeVault(string jsonContent)
     {
         try
         {
-            var vault = JsonSerializer.Deserialize<Vault>(jsonContent, _loadOptions);
+            Vault? vault = JsonSerializer.Deserialize<Vault>(jsonContent, _loadOptions);
 
             // V2 or newer detected
-            if (vault != null && vault.Version >= 2)
+            if (vault is not null && vault.Version >= 2)
             {
                 return vault;
             }
@@ -37,7 +36,7 @@ public class VaultDataService
         return null;
     }
 
-    public string SerializeVault(Vault vault)
+    public static string SerializeVault(Vault vault)
     {
         // TODO: Implement sorting logic here using JsonDocument/Node manipulation if standard serializer doesn't support property sorting.
         // Or implement custom Converter.

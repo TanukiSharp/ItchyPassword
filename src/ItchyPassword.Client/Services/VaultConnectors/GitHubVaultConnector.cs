@@ -58,10 +58,10 @@ namespace ItchyPassword.Client.Services.VaultConnectors
         {
             get
             {
-                bool hasOwner = string.IsNullOrEmpty(Configuration[VaultRepositoryOwnerKey.Config]) == false;
-                bool hasRepository = string.IsNullOrEmpty(Configuration[VaultRepositoryNameKey.Config]) == false;
-                bool hasFile = string.IsNullOrEmpty(Configuration[VaultFilePathKey.Config]) == false;
-                bool hasToken = string.IsNullOrEmpty(Configuration[PersonalAccessTokenKey.Config]) == false;
+                bool hasOwner = string.IsNullOrWhiteSpace(Configuration[VaultRepositoryOwnerKey.Config]) == false;
+                bool hasRepository = string.IsNullOrWhiteSpace(Configuration[VaultRepositoryNameKey.Config]) == false;
+                bool hasFile = string.IsNullOrWhiteSpace(Configuration[VaultFilePathKey.Config]) == false;
+                bool hasToken = string.IsNullOrWhiteSpace(Configuration[PersonalAccessTokenKey.Config]) == false;
                 return hasOwner && hasRepository && hasFile && hasToken;
             }
         }
@@ -108,7 +108,7 @@ namespace ItchyPassword.Client.Services.VaultConnectors
             {
                 using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
                 request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", Configuration[PersonalAccessTokenKey.Config]);
-                using var response = await http.SendAsync(request);
+                using HttpResponseMessage response = await http.SendAsync(request);
                 return response.IsSuccessStatusCode;
             }
             catch

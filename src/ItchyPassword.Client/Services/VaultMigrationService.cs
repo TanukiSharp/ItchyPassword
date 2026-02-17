@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using ItchyPassword.Core.Services;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Helpers;
+using ItchyPassword.Core.Extensions;
 
 namespace ItchyPassword.Client.Services;
 
@@ -24,7 +25,8 @@ public class VaultMigrationService(ICryptoService crypto)
             // Simple heuristic to avoid full parsing: V1 is an object but NOT a Vault object (no "version" property at root)
             // But V2 has "version": 2.
             // V1 is just key-value pairs of services.
-            var root = JsonNode.Parse(jsonContent);
+            JsonNode? root = JsonNode.Parse(jsonContent);
+
             if (root is JsonObject obj)
             {
                 // If it has "version" and "items", it's likely V2+
@@ -45,10 +47,10 @@ public class VaultMigrationService(ICryptoService crypto)
     /// <summary>
     /// Migrates a V1 vault string to a V2 Vault object, including password-to-cipher conversion.
     /// </summary>
-    public async Task<Vault> MigrateAsync(string jsonContent, string masterKey, IProgress<double>? progress = null)
+    public static async Task<Vault> MigrateAsync(string jsonContent, string masterKey, IProgress<double>? progress = null)
     {
         // 1. Structural Migration (JSON -> Vault Items)
-        var vault = PerformStructuralMigration(jsonContent);
+        Vault vault = PerformStructuralMigration(jsonContent);
 
         // 2. Content Migration (Password Recipes -> Encrypted Ciphers)
         await MigrateLegacyPasswordRecipesToCiphersAsync(vault, masterKey, progress);
@@ -62,14 +64,15 @@ public class VaultMigrationService(ICryptoService crypto)
 
         try
         {
-            var root = JsonNode.Parse(jsonContent);
+            JsonNode? root = JsonNode.Parse(jsonContent);
+
             if (root is JsonObject rootObj)
             {
-                foreach (var kvp in rootObj)
+                foreach (KeyValuePair<string, JsonNode?> kvp in rootObj)
                 {
                     if (kvp.Value is JsonObject childObj)
                     {
-                        TraverseV1Node(childObj, kvp.Key, "", vault.Items);
+                        TraverseV1Node(childObj, kvp.Key, string.Empty, vault.Items);
                     }
                 }
             }
@@ -88,39 +91,44 @@ public class VaultMigrationService(ICryptoService crypto)
         bool processedCiphers = false;
 
         // 1. Check for "password" -> This node is a Password Item
-        if (node.TryGetPropertyValue("password", out var passNode) && passNode is JsonObject passObj)
+        if (node.TryGetPropertyValue("password", out JsonNode? passNode) && passNode is JsonObject passObj)
         {
             // Strict check: Is this really a password object?
-            if (passObj.TryGetPropertyValue("public", out var pubPartNode) &&
+            if (passObj.TryGetPropertyValue("public", out JsonNode? pubPartNode) &&
                 pubPartNode?.GetValueKind() == JsonValueKind.String &&
                 pubPartNode.ToString().Length >= 4)
             {
                 var item = new VaultItem
                 {
                     Id = Guid.NewGuid(),
-                    Name = $"{parentPath} / {name}",
+                    Name = string.IsNullOrWhiteSpace(parentPath) ? name : $"{parentPath} / {name}",
                     Type = VaultItemType.Password,
                     LastModified = DateTime.UtcNow
                 };
 
                 item.Parameters["public"] = pubPartNode.ToString();
 
-                if (passObj.TryGetPropertyValue("version", out var ver))
-                    item.Parameters["version"] = ver?.ToString() ?? "2";
-
-                if (passObj.TryGetPropertyValue("length", out var len))
-                    item.Parameters["length"] = len?.ToString() ?? "64";
-
-                if (passObj.TryGetPropertyValue("alphabet", out var alpha))
-                    item.Parameters["alphabet"] = alpha?.ToString() ?? "";
-
-                if (passObj.TryGetPropertyValue("datetime", out var dt) && DateTime.TryParse(dt?.ToString(), out var date))
-                    item.LastModified = date;
-
-                // Handle customKeys inside password object
-                if (passObj.TryGetPropertyValue("customKeys", out var ck) && ck is JsonObject ckObj)
+                if (passObj.TryGetPropertyValue("version", out JsonNode? ver))
                 {
-                    foreach(var k in ckObj)
+                    item.Parameters["version"] = ver?.GetValue<int?>() ?? 2;
+                }
+                if (passObj.TryGetPropertyValue("length", out JsonNode? len))
+                {
+                    item.Parameters["length"] = len?.GetValue<int?>() ?? 64;
+                }
+                if (passObj.TryGetPropertyValue("alphabet", out JsonNode? alpha))
+                {
+                    item.Parameters["alphabet"] = alpha?.ToString() ?? string.Empty;
+                }
+                if (passObj.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
+                {
+                    item.LastModified = date;
+                }
+
+                // Handle customKeys inside password object.
+                if (passObj.TryGetPropertyValue("customKeys", out JsonNode? ck) && ck is JsonObject ckObj)
+                {
+                    foreach (KeyValuePair<string, JsonNode?> k in ckObj)
                     {
                         item.Metadata ??= [];
                         item.Metadata[k.Key] = k.Value?.ToString() ?? string.Empty;
@@ -133,15 +141,17 @@ public class VaultMigrationService(ICryptoService crypto)
         }
 
         // 2. Check for "ciphers" -> This node might generate multiple Cipher Items
-        if (node.TryGetPropertyValue("ciphers", out var ciphersNode) && ciphersNode is JsonObject ciphersObj)
+        if (node.TryGetPropertyValue("ciphers", out JsonNode? ciphersNode) && ciphersNode is JsonObject ciphersObj)
         {
             // Check if this is a valid ciphers container
             bool looksLikeCiphers = false;
-            foreach (var child in ciphersObj)
+
+            foreach (KeyValuePair<string, JsonNode?> child in ciphersObj)
             {
                 if (child.Value is JsonObject co &&
                     co.ContainsKey("value") &&
-                    co.ContainsKey("version"))
+                    co.ContainsKey("version")
+                )
                 {
                     looksLikeCiphers = true;
                     break;
@@ -150,56 +160,68 @@ public class VaultMigrationService(ICryptoService crypto)
 
             if (looksLikeCiphers)
             {
-                foreach (var cipherKvp in ciphersObj)
+                foreach (KeyValuePair<string, JsonNode?> cipherKvp in ciphersObj)
                 {
                     if (cipherKvp.Value is JsonObject cipherDetail)
                     {
-                        if (!cipherDetail.ContainsKey("value")) continue;
+                        if (cipherDetail.ContainsKey("value") == false)
+                        {
+                            continue;
+                        }
 
-                        var itemName = string.IsNullOrWhiteSpace(cipherKvp.Key) ? name : $"{name} - {cipherKvp.Key}";
+                        string itemName = string.IsNullOrWhiteSpace(cipherKvp.Key) ? name : $"{name} / {cipherKvp.Key}";
 
                         var item = new VaultItem
                         {
                             Id = Guid.NewGuid(),
-                            Name = $"{parentPath} / {itemName}",
+                            Name = string.IsNullOrWhiteSpace(parentPath) ? itemName : $"{parentPath} / {itemName}",
                             Type = VaultItemType.Cipher,
                             LastModified = DateTime.UtcNow
                         };
 
-                        if (cipherDetail.TryGetPropertyValue("value", out var val))
-                            item.Content = val?.ToString() ?? string.Empty;
-
-                        if (cipherDetail.TryGetPropertyValue("version", out var ver))
-                            item.Parameters["version"] = ver?.GetValue<int?>() ?? 3;
-
-                        if (cipherDetail.TryGetPropertyValue("encoding", out var enc))
-                            item.Parameters["encoding"] = enc?.ToString() ?? "base62";
-
-                        if (cipherDetail.TryGetPropertyValue("datetime", out var dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
-                            item.LastModified = date;
-
-                        if (cipherDetail.TryGetPropertyValue("customKeys", out var ck) && ck is JsonObject ckObj)
+                        if (cipherDetail.TryGetPropertyValue("value", out JsonNode? val))
                         {
-                            foreach(var k in ckObj)
+                            item.Content = val?.ToString() ?? string.Empty;
+                        }
+                        if (cipherDetail.TryGetPropertyValue("version", out JsonNode? ver))
+                        {
+                            item.Parameters["version"] = ver?.GetValue<int?>() ?? 3;
+                        }
+                        if (cipherDetail.TryGetPropertyValue("encoding", out JsonNode? enc))
+                        {
+                            item.Parameters["encoding"] = enc?.ToString() ?? "base62";
+                        }
+                        if (cipherDetail.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
+                        {
+                            item.LastModified = date;
+                        }
+                        if (cipherDetail.TryGetPropertyValue("customKeys", out JsonNode? ck) && ck is JsonObject ckObj)
+                        {
+                            foreach(KeyValuePair<string, JsonNode?> k in ckObj)
                             {
-                                item.Parameters[$"custom:{k.Key}"] = k.Value?.ToString() ?? "";
+                                item.Metadata ??= [];
+                                item.Metadata[k.Key] = k.Value?.ToString() ?? string.Empty;
                             }
                         }
 
                         items.Add(item);
                     }
                 }
+
                 processedCiphers = true;
             }
         }
 
         string newPath = string.IsNullOrWhiteSpace(parentPath) ? name : $"{parentPath} / {name}";
 
-        foreach (var kvp in node)
+        foreach (KeyValuePair<string, JsonNode?> kvp in node)
         {
-            if (kvp.Key == "password" && processedPassword) continue;
-            if (kvp.Key == "ciphers" && processedCiphers) continue;
-            if (kvp.Key == "customKeys") continue;
+            if (kvp.Key == "password" && processedPassword ||
+                kvp.Key == "ciphers" && processedCiphers ||
+                kvp.Key == "customKeys")
+            {
+                continue;
+            }
 
             if (kvp.Value is JsonObject childNode)
             {
@@ -210,35 +232,34 @@ public class VaultMigrationService(ICryptoService crypto)
 
     private async Task MigrateLegacyPasswordRecipesToCiphersAsync(Vault vault, string masterKey, IProgress<double>? progress = null)
     {
-        var masterKeyBytes = Encoding.UTF8.GetBytes(masterKey);
+        byte[] masterKeyBytes = Encoding.UTF8.GetBytes(masterKey);
 
-        // Pre-filter items that need migration to avoid repeated checks in loop
+        // Pre-filter items that need migration to avoid repeated checks in loop.
         List<VaultItem> itemsToMigrate = vault.Items.Where(item =>
             item.Type == VaultItemType.Password &&
-            item.Parameters.TryGetValue("public", out object? publicPart) &&
-            publicPart is string publicPartStr &&
-            string.IsNullOrWhiteSpace(publicPartStr) == false &&
-            publicPartStr.Length > 20 &&
-            publicPartStr.All(c => Base62Chars.Contains(c))
+            item.Parameters.TryGetStringValue("public", out string? publicPart) &&
+            string.IsNullOrWhiteSpace(publicPart) == false &&
+            publicPart.Length > 20 &&
+            publicPart.All(c => Base62Chars.Contains(c))
         ).ToList();
 
         int total = itemsToMigrate.Count;
         int completed = 0;
 
-        foreach (var item in itemsToMigrate)
+        foreach (VaultItem item in itemsToMigrate)
         {
             try
             {
-                string? publicPart = item.Parameters["public"] as string;
-                int version = item.Parameters.TryGetValue("version", out object? v) && v is int vInt ? vInt : 2;
+                string? publicPart = item.Parameters.GetStringValueOrDefault("public");
+                int version = item.Parameters.GetIntegerValueOrDefault("version") ?? 2;
 
                 if (publicPart is null || (version != 1 && version != 2))
                 {
                     continue;
                 }
 
-                string alphabet = item.Parameters.TryGetValue("alphabet", out object? alpha) && alpha is string alphaStr ? alphaStr : DefaultAlphabet;
-                int length = (item.Parameters.TryGetValue("length", out object? len) && len is int lenInt) ? lenInt : DefaultLength;
+                string alphabet = item.Parameters.GetStringValueOrDefault("alphabet") ?? DefaultAlphabet;
+                int length = item.Parameters.GetIntegerValueOrDefault("length") ?? DefaultLength;
 
                 byte[] publicBytes = Encoding.UTF8.GetBytes(publicPart);
                 byte[] derivedBytes;

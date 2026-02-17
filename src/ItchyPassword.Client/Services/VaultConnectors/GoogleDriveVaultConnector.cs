@@ -53,7 +53,7 @@ namespace ItchyPassword.Client.Services.VaultConnectors
         {
             get
             {
-                return string.IsNullOrEmpty(Configuration.GetValueOrDefault("Token")) == false;
+                return string.IsNullOrWhiteSpace(Configuration.GetValueOrDefault("Token")) == false;
             }
         }
 
@@ -63,13 +63,13 @@ namespace ItchyPassword.Client.Services.VaultConnectors
             string? token = await storage.GetItemAsync("itchy_gd_token");
             string? folderId = await storage.GetItemAsync("itchy_gd_folder");
 
-            if (string.IsNullOrEmpty(token) == false)
+            if (string.IsNullOrWhiteSpace(token) == false)
             {
                 Configuration["Token"] = state.HasMasterKey
                     ? await VaultConnectorHelper.DecryptIfNeededAsync(token, state.MasterKey, crypto)
                     : token;
             }
-            if (string.IsNullOrEmpty(folderId) == false)
+            if (string.IsNullOrWhiteSpace(folderId) == false)
             {
                 Configuration["FolderId"] = folderId;
             }

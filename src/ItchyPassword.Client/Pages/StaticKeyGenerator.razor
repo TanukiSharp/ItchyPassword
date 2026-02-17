@@ -13,7 +13,7 @@
         <p style="margin: 0; color: var(--text-muted);">Generate passwords deterministically using only your <strong>master key</strong> and a public part.</p>
     </div>
 
-    @if (!State.HasMasterKey)
+    @if (State.HasMasterKey == false)
     {
         <div class="alert warning">
             You must enter your Master Key first.
@@ -44,7 +44,7 @@
             </details>
         </div>
 
-        @if (!string.IsNullOrEmpty(result))
+        @if (string.IsNullOrWhiteSpace(result) == false)
         {
             <div class="form-group" style="margin-top: 2rem;">
                 <label>Result</label>
@@ -69,7 +69,7 @@
             </div>
         }
 
-        @if (!string.IsNullOrEmpty(error))
+        @if (string.IsNullOrWhiteSpace(error) == false)
         {
              <div class="alert danger" style="margin-top: 1rem;">@error</div>
         }
@@ -121,7 +121,7 @@
 
     private async Task GenerateAsync()
     {
-        if (!State.HasMasterKey)
+        if (State.HasMasterKey == false)
         {
             error = "Master Key is missing. Please go back to login.";
             return;
@@ -137,12 +137,12 @@
 
         try
         {
-            var mkBytes = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
-            var partBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
+            byte[] mkBytes = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
+            byte[] partBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
 
-            var rawHashBytes = await Crypto.GeneratePasswordV2Async(mkBytes, partBytes);
+            byte[] rawHashBytes = await Crypto.GeneratePasswordV2Async(mkBytes, partBytes);
 
-            var encoded = BaseN.EncodeOneWay(rawHashBytes, alphabet);
+            string encoded = BaseN.EncodeOneWay(rawHashBytes, alphabet);
 
             if (encoded.Length > length)
             {
@@ -161,7 +161,7 @@
 
     private async Task CopyToClipboard()
     {
-        if (!string.IsNullOrEmpty(result))
+        if (string.IsNullOrWhiteSpace(result) == false)
         {
             try
             {

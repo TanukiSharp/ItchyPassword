@@ -10,7 +10,6 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<ICryptoService, CryptoService>();
-builder.Services.AddScoped<VaultDataService>();
 builder.Services.AddScoped<LocalStorageService>();
 builder.Services.AddScoped<ClientVaultState>();
 builder.Services.AddScoped<ClipboardService>();

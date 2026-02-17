@@ -3,11 +3,7 @@ using ItchyPassword.Core.Services;
 
 namespace ItchyPassword.Client.Services;
 
-public class VaultUnlockService(
-    ClientVaultState state,
-    VaultDataService vaultDataService,
-    VaultMigrationService vaultMigrationService
-)
+public class VaultUnlockService(ClientVaultState state)
 {
     /// <summary>
     /// Attempts to unlock the vault using the master key stored in state.
@@ -15,12 +11,12 @@ public class VaultUnlockService(
     /// </summary>
     public async Task<(bool Success, string Error)> UnlockAsync(Action<string>? onStatusChanged = null)
     {
-        if (!state.HasMasterKey)
+        if (state.HasMasterKey == false)
         {
              return (false, "Master key not provided.");
         }
 
-        if (state.ReadConnector == null)
+        if (state.ReadConnector is null)
         {
              return (false, "No active vault connector selected.");
         }
@@ -28,7 +24,7 @@ public class VaultUnlockService(
         // Ensure current connector config is loaded (secrets are decrypted automatically via state).
         await state.ReadConnector.LoadConfigurationAsync();
 
-        if (!state.ReadConnector.IsConfigured)
+        if (state.ReadConnector.IsConfigured == false)
         {
             return (false, "Connector not configured.");
         }
@@ -51,7 +47,7 @@ public class VaultUnlockService(
             else
             {
                 // Try Load V2
-                var vault = vaultDataService.LoadVault(content);
+                Vault? vault = VaultDataService.DeserializeVault(content);
 
                 if (vault is null)
                 {
@@ -61,7 +57,7 @@ public class VaultUnlockService(
                         onStatusChanged?.Invoke("Migrating vault...");
                         var migrationProgress = new Progress<double>(percent =>
                             onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
-                        vault = await vaultMigrationService.MigrateAsync(content, state.MasterKey, migrationProgress);
+                        vault = await VaultMigrationService.MigrateAsync(content, state.MasterKey, migrationProgress);
                     }
                     else
                     {
