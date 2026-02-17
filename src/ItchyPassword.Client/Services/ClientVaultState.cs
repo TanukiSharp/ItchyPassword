@@ -1,8 +1,8 @@
+using ItchyPassword.Client.Services.VaultConnectors;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using ItchyPassword.Client.Services.VaultConnectors;
 
 namespace ItchyPassword.Client.Services;
 

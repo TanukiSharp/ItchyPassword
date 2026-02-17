@@ -1,5 +1,3 @@
-using System.Threading.Tasks;
-
 namespace ItchyPassword.Client.Services.VaultConnectors;
 
 public record struct ConfigStorageKey(string Config, string Storage);

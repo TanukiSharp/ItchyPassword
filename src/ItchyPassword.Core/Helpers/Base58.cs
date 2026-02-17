@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace ItchyPassword.Core.Helpers;
 
 public static class Base58

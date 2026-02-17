@@ -1,10 +1,10 @@
+using ItchyPassword.Core.Extensions;
+using ItchyPassword.Core.Helpers;
+using ItchyPassword.Core.Models;
+using ItchyPassword.Core.Services;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using ItchyPassword.Core.Services;
-using ItchyPassword.Core.Models;
-using ItchyPassword.Core.Helpers;
-using ItchyPassword.Core.Extensions;
 
 namespace ItchyPassword.Client.Services;
 

@@ -1,6 +1,6 @@
-using System.Text;
 using ItchyPassword.Core.Helpers;
 using ItchyPassword.Core.Services;
+using System.Text;
 
 namespace ItchyPassword.Client.Services.VaultConnectors;
 

@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace ItchyPassword.Core.Models;
 
 public enum VaultItemType
