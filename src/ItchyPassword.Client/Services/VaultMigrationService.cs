@@ -1,4 +1,3 @@
-using ItchyPassword.Core.Extensions;
 using ItchyPassword.Core.Helpers;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
@@ -10,9 +9,9 @@ namespace ItchyPassword.Client.Services;
 
 public class VaultMigrationService(ICryptoService crypto)
 {
-    // Static readonly for reuse across all calls.
+    public const string DefaultAlphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
     private static readonly HashSet<char> Base62Chars = new("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-    private const string DefaultAlphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
     private const int DefaultLength = 64;
 
     /// <summary>
@@ -102,23 +101,25 @@ public class VaultMigrationService(ICryptoService crypto)
                 {
                     Id = Guid.NewGuid(),
                     Name = string.IsNullOrWhiteSpace(parentPath) ? name : $"{parentPath} / {name}",
-                    Type = VaultItemType.Password,
-                    LastModified = DateTime.UtcNow
+                    Type = VaultItemType.StaticKey,
+                    LastModified = DateTime.UtcNow,
+                    StaticKeyParameters = new StaticKeyParameters
+                    {
+                        PublicPart = pubPartNode.ToString()
+                    }
                 };
-
-                item.Parameters["public"] = pubPartNode.ToString();
 
                 if (passObj.TryGetPropertyValue("version", out JsonNode? ver))
                 {
-                    item.Parameters["version"] = ver?.GetValue<int?>() ?? 2;
+                    item.StaticKeyParameters.Version = ver?.GetValue<int?>() ?? 2;
                 }
                 if (passObj.TryGetPropertyValue("length", out JsonNode? len))
                 {
-                    item.Parameters["length"] = len?.GetValue<int?>() ?? 64;
+                    item.StaticKeyParameters.Length = len?.GetValue<int?>() ?? 64;
                 }
                 if (passObj.TryGetPropertyValue("alphabet", out JsonNode? alpha))
                 {
-                    item.Parameters["alphabet"] = alpha?.ToString() ?? string.Empty;
+                    item.StaticKeyParameters.Alphabet = alpha?.ToString() ?? string.Empty;
                 }
                 if (passObj.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
                 {
@@ -175,8 +176,9 @@ public class VaultMigrationService(ICryptoService crypto)
                         {
                             Id = Guid.NewGuid(),
                             Name = string.IsNullOrWhiteSpace(parentPath) ? itemName : $"{parentPath} / {itemName}",
-                            Type = VaultItemType.Cipher,
-                            LastModified = DateTime.UtcNow
+                            Type = VaultItemType.Secret,
+                            LastModified = DateTime.UtcNow,
+                            SecretParameters = new SecretParameters()
                         };
 
                         if (cipherDetail.TryGetPropertyValue("value", out JsonNode? val))
@@ -185,11 +187,11 @@ public class VaultMigrationService(ICryptoService crypto)
                         }
                         if (cipherDetail.TryGetPropertyValue("version", out JsonNode? ver))
                         {
-                            item.Parameters["version"] = ver?.GetValue<int?>() ?? 3;
+                            item.SecretParameters.CipherVersion = ver?.GetValue<int?>() ?? 3;
                         }
                         if (cipherDetail.TryGetPropertyValue("encoding", out JsonNode? enc))
                         {
-                            item.Parameters["encoding"] = enc?.ToString() ?? "base62";
+                            item.SecretParameters.Encoding = enc?.ToString() ?? "base62";
                         }
                         if (cipherDetail.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
                         {
@@ -236,11 +238,11 @@ public class VaultMigrationService(ICryptoService crypto)
 
         // Pre-filter items that need migration to avoid repeated checks in loop.
         List<VaultItem> itemsToMigrate = vault.Items.Where(item =>
-            item.Type == VaultItemType.Password &&
-            item.Parameters.TryGetStringValue("public", out string? publicPart) &&
-            string.IsNullOrWhiteSpace(publicPart) == false &&
-            publicPart.Length > 20 &&
-            publicPart.All(c => Base62Chars.Contains(c))
+            item.Type == VaultItemType.StaticKey &&
+            item.StaticKeyParameters is not null &&
+            string.IsNullOrWhiteSpace(item.StaticKeyParameters.PublicPart) == false &&
+            item.StaticKeyParameters.PublicPart.Length > 20 &&
+            item.StaticKeyParameters.PublicPart.All(c => Base62Chars.Contains(c))
         ).ToList();
 
         int total = itemsToMigrate.Count;
@@ -250,21 +252,22 @@ public class VaultMigrationService(ICryptoService crypto)
         {
             try
             {
-                string? publicPart = item.Parameters.GetStringValueOrDefault("public");
-                int version = item.Parameters.GetIntegerValueOrDefault("version") ?? 2;
+                StaticKeyParameters skParams = item.StaticKeyParameters!;
+                string publicPart = skParams.PublicPart;
+                int cipherVersion = skParams.Version;
 
-                if (publicPart is null || (version != 1 && version != 2))
+                if (cipherVersion != 1 && cipherVersion != 2)
                 {
                     continue;
                 }
 
-                string alphabet = item.Parameters.GetStringValueOrDefault("alphabet") ?? DefaultAlphabet;
-                int length = item.Parameters.GetIntegerValueOrDefault("length") ?? DefaultLength;
+                string alphabet = string.IsNullOrWhiteSpace(skParams.Alphabet) ? DefaultAlphabet : skParams.Alphabet;
+                int length = skParams.Length > 0 ? skParams.Length : DefaultLength;
 
                 byte[] publicBytes = Encoding.UTF8.GetBytes(publicPart);
                 byte[] derivedBytes;
 
-                if (version == 1)
+                if (cipherVersion == 1)
                 {
                     derivedBytes = await crypto.GeneratePasswordV1Async(masterKeyBytes, publicBytes);
                 }
@@ -283,14 +286,14 @@ public class VaultMigrationService(ICryptoService crypto)
                 byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
                 byte[] encryptedBlob = await crypto.EncryptV3Async(passwordBytes, masterKeyBytes);
 
-                item.Type = VaultItemType.Cipher;
-                item.Content = Convert.ToBase64String(encryptedBlob);
-
-                item.Parameters.Remove("public");
-                item.Parameters.Remove("alphabet");
-                item.Parameters.Remove("length");
-
-                item.Parameters["version"] = 3;
+                item.Type = VaultItemType.Secret;
+                item.Content = Base58.Encode(encryptedBlob);
+                item.StaticKeyParameters = null;
+                item.SecretParameters = new SecretParameters
+                {
+                    CipherVersion = 3,
+                    Encoding = "base58"
+                };
             }
             catch (Exception ex)
             {

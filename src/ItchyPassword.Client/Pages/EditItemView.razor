@@ -30,18 +30,18 @@ else
 
                 <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
 
-                @if (_item.Type == VaultItemType.Password)
+                @if (_item.Type == VaultItemType.StaticKey)
                 {
-                    <PasswordEditor Item="@_item" MasterKey="@State.MasterKey" />
+                    <StaticKeyEditor Item="@_item" />
                 }
                 else
                 {
-                    <CipherEditor Item="@_item" MasterKey="@State.MasterKey" />
+                    <SecretEditor @ref="_secretEditor" Item="@_item" />
                 }
 
                 <div style="margin-top: 2rem; display: flex; gap: 1rem;">
                     <button class="button primary" type="submit" disabled="@_isSaving">
-                        @if (_isSaving) { <span>Saving...</span> } else { <span>Save & Push</span> }
+                        @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
                     </button>
                     <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
                 </div>
@@ -62,6 +62,9 @@ else
     private VaultItem? _item;
     private bool _isSaving = false;
     private string _error = string.Empty;
+
+    // Component reference for calling encrypt at save time.
+    private SecretEditor? _secretEditor;
 
     protected override void OnInitialized()
     {
@@ -86,6 +89,18 @@ else
 
         try
         {
+            // For Secret items, encrypt the plaintext before saving.
+            if (_item.Type == VaultItemType.Secret && _secretEditor is not null)
+            {
+                bool encrypted = await _secretEditor.EncryptAndStoreAsync();
+
+                if (encrypted == false)
+                {
+                    _isSaving = false;
+                    return;
+                }
+            }
+
             // Update Timestamp
             _item.LastModified = DateTime.UtcNow;
 
@@ -109,21 +124,19 @@ else
 
             var results = await Task.WhenAll(tasks);
 
-            var failures = results.Where(r => !r.Success).ToList();
+            var failures = results.Where(r => r.Success == false).ToList();
 
-            if (failures.Any())
+            if (failures.Count > 0)
             {
                 _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
                 // If ALL failed, don't navigate
-                if (results.All(r => !r.Success))
+                if (results.All(r => r.Success == false))
                 {
                     return;
                 }
             }
 
-            // If at least one succeeded, we consider it saved locally/remotely enough to proceed
-            // Ideally we'd rollback but that's complex.
-            Nav.NavigateTo("/");
+            Nav.NavigateTo("/vault");
         }
         catch (Exception ex)
         {
@@ -137,6 +150,6 @@ else
 
     private void Cancel()
     {
-        Nav.NavigateTo("/");
+        Nav.NavigateTo("/vault");
     }
 }

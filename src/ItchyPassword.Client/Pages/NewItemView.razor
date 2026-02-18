@@ -1,0 +1,186 @@
+@page "/item/new"
+@using ItchyPassword.Client.Services
+@using ItchyPassword.Client.Services.VaultConnectors
+@using ItchyPassword.Client.Components.Editors
+@inject ClientVaultState State
+@inject ICryptoService Crypto
+@inject NavigationManager Nav
+
+<div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div class="card-header">
+        <h3 style="margin: 0;">New Item</h3>
+    </div>
+
+    <div style="padding: 1rem;">
+        <EditForm Model="_item" OnValidSubmit="SaveAsync">
+            <div class="form-group">
+                <label>Name</label>
+                <input class="input" @bind="_name" required placeholder="e.g. My Service" />
+            </div>
+
+            <div class="form-group">
+                <label>Type</label>
+                <select class="input" value="@_selectedType" @onchange="OnTypeChanged">
+                    <option value="Secret">Secret</option>
+                    <option value="StaticKey">Static Key</option>
+                </select>
+            </div>
+
+            <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+
+            @if (_selectedType == "StaticKey")
+            {
+                <StaticKeyEditor @ref="_staticKeyEditor" Item="@_item" />
+            }
+            else
+            {
+                <SecretEditor @ref="_secretEditor" Item="@_item" />
+            }
+
+            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                <button class="button primary" type="submit" disabled="@(_isSaving || string.IsNullOrWhiteSpace(_name))">
+                    @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
+                </button>
+                <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
+            </div>
+        </EditForm>
+
+        @if (string.IsNullOrWhiteSpace(_error) == false)
+        {
+            <div class="alert danger" style="margin-top: 1rem;">@_error</div>
+        }
+    </div>
+</div>
+
+@code {
+    private string _name = string.Empty;
+    private string _selectedType = "Secret";
+    private bool _isSaving = false;
+    private string _error = string.Empty;
+
+    // Stable Id generated once so re-saves update the same entry.
+    private readonly Guid _itemId = Guid.NewGuid();
+
+    // Component references for calling encrypt at save time.
+    private SecretEditor? _secretEditor;
+    private StaticKeyEditor? _staticKeyEditor;
+
+    // Create a temporary VaultItem that the embedded editors can work with.
+    private VaultItem _item = null!;
+
+    protected override void OnInitialized()
+    {
+        if (State.Vault is null || State.HasMasterKey == false)
+        {
+            Nav.NavigateTo("/");
+            return;
+        }
+
+        _item = CreateDefaultItem(VaultItemType.Secret);
+    }
+
+    private void OnTypeChanged(ChangeEventArgs e)
+    {
+        _selectedType = e.Value?.ToString() ?? "Secret";
+
+        VaultItemType newType = _selectedType == "StaticKey"
+            ? VaultItemType.StaticKey
+            : VaultItemType.Secret;
+
+        // Recreate the item to reset parameters for the new type, keeping the same Id.
+        _item = CreateDefaultItem(newType);
+
+        // Reset editor references since the component will be re-created.
+        _secretEditor = null;
+        _staticKeyEditor = null;
+    }
+
+    private VaultItem CreateDefaultItem(VaultItemType type)
+    {
+        var item = new VaultItem
+        {
+            Id = _itemId,
+            Name = string.Empty,
+            Type = type,
+            LastModified = DateTimeOffset.UtcNow
+        };
+
+        if (type == VaultItemType.Secret)
+        {
+            item.SecretParameters = new SecretParameters();
+        }
+        else
+        {
+            item.StaticKeyParameters = new StaticKeyParameters();
+        }
+
+        return item;
+    }
+
+    private async Task SaveAsync()
+    {
+        if (State.Vault is null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(_name))
+        {
+            _error = "Name is required.";
+            return;
+        }
+
+        _isSaving = true;
+        _error = string.Empty;
+
+        try
+        {
+            // For Secret items, encrypt the plaintext before saving.
+            if (_item.Type == VaultItemType.Secret && _secretEditor is not null)
+            {
+                bool encrypted = await _secretEditor.EncryptAndStoreAsync();
+
+                if (encrypted == false)
+                {
+                    _isSaving = false;
+                    return;
+                }
+            }
+
+            _item.Name = _name.Trim();
+            _item.LastModified = DateTimeOffset.UtcNow;
+
+            // Check if this item already exists in the vault (re-save scenario).
+            VaultItem? existing = State.Vault.Items.FirstOrDefault(i => i.Id == _itemId);
+
+            if (existing is not null)
+            {
+                // Update the existing entry.
+                int index = State.Vault.Items.IndexOf(existing);
+                State.Vault.Items[index] = _item;
+            }
+            else
+            {
+                // Add as new entry.
+                State.Vault.Items.Add(_item);
+            }
+
+            Nav.NavigateTo("/vault");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Save failed: {ex.Message}";
+            // Rollback on total failure.
+            State.Vault?.Items.Remove(_item);
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private void Cancel()
+    {
+        Nav.NavigateTo("/vault");
+    }
+}

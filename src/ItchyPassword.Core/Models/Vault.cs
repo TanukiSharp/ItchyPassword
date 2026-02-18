@@ -2,8 +2,29 @@ namespace ItchyPassword.Core.Models;
 
 public enum VaultItemType
 {
-    Password = 0,
-    Cipher = 1
+    StaticKey = 0,
+    Secret = 1
+}
+
+/// <summary>
+/// Parameters for Secret-type vault items (encrypted secrets).
+/// </summary>
+public class SecretParameters
+{
+    public int CipherVersion { get; set; } = 3;
+    public string Encoding { get; set; } = "base58";
+}
+
+/// <summary>
+/// Parameters for StaticKey-type vault items (deterministic password generation).
+/// </summary>
+public class StaticKeyParameters
+{
+    public string PublicPart { get; set; } = string.Empty;
+    public string Alphabet { get; set; } = string.Empty;
+    public int Length { get; set; } = 64;
+    public int Version { get; set; } = 2;
+    public string Encoding { get; set; } = "base58";
 }
 
 public class VaultItem
@@ -14,13 +35,19 @@ public class VaultItem
 
     public required VaultItemType Type { get; set; }
 
-    // For "Cipher": The encrypted string.
-    // For "Password": The public part (salt), stored in clear.
+    // For "Secret": The encrypted string.
+    // For "StaticKey": unused (public part is in StaticKeyParameters).
     public string Content { get; set; } = "";
 
-    // Additional parameters for generation (e.g. alphabet, length, version)
-    // Stored as Dictionary<string, string>
-    public Dictionary<string, object> Parameters { get; } = [];
+    /// <summary>
+    /// Parameters for Secret-type items. Must be null when Type is StaticKey.
+    /// </summary>
+    public SecretParameters? SecretParameters { get; set; }
+
+    /// <summary>
+    /// Parameters for StaticKey-type items. Must be null when Type is Secret.
+    /// </summary>
+    public StaticKeyParameters? StaticKeyParameters { get; set; }
 
     public Dictionary<string, string>? Metadata { get; set; }
 

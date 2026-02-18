@@ -28,13 +28,24 @@
                 <input class="input" id="publicPart" type="text" value="@publicPart" @oninput="OnPublicPartInput" placeholder="e.g. google.com" required autofocus />
             </div>
 
+            <div class="form-group">
+                <label>Encoding</label>
+                <select class="input" value="@encodingVersion" @onchange="OnEncodingVersionChange">
+                    <option value="base58">Base58</option>
+                    <option value="legacy">Legacy</option>
+                </select>
+            </div>
+
             <details>
-                <summary style="cursor: pointer; margin-bottom: 1rem; color: var(--text-muted); user-select: none;">Options (Length, Alphabet)</summary>
+                <summary style="cursor: pointer; margin-bottom: 1rem; color: var(--text-muted); user-select: none;">Options (Length@(encodingVersion == "legacy" ? ", Alphabet" : ""))</summary>
                 <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 1rem;">
-                    <div class="form-group">
-                        <label>Alphabet</label>
-                        <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
-                    </div>
+                    @if (encodingVersion == "legacy")
+                    {
+                        <div class="form-group">
+                            <label>Alphabet</label>
+                            <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
+                        </div>
+                    }
 
                     <div class="form-group">
                         <label>Length</label>
@@ -79,7 +90,8 @@
 @code {
     private string publicPart = "";
     private int length = 64;
-    private string alphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+    private string alphabet = VaultMigrationService.DefaultAlphabet;
+    private string encodingVersion = "base58";
     private string result = "";
     private string error = "";
 
@@ -119,6 +131,12 @@
         await GenerateAsync();
     }
 
+    private async Task OnEncodingVersionChange(ChangeEventArgs e)
+    {
+        encodingVersion = e.Value?.ToString() ?? "base58";
+        await GenerateAsync();
+    }
+
     private async Task GenerateAsync()
     {
         if (State.HasMasterKey == false)
@@ -127,10 +145,16 @@
             return;
         }
 
-        if (string.IsNullOrEmpty(publicPart) || string.IsNullOrEmpty(alphabet) || alphabet.Length < 2)
+        if (string.IsNullOrEmpty(publicPart))
         {
-             result = "";
-             return;
+            result = "";
+            return;
+        }
+
+        if (encodingVersion == "legacy" && (string.IsNullOrEmpty(alphabet) || alphabet.Length < 2))
+        {
+            result = "";
+            return;
         }
 
         error = "";
@@ -142,11 +166,20 @@
 
             byte[] rawHashBytes = await Crypto.GeneratePasswordV2Async(mkBytes, partBytes);
 
-            string encoded = BaseN.EncodeOneWay(rawHashBytes, alphabet);
+            string encoded;
+
+            if (encodingVersion == "legacy")
+            {
+                encoded = BaseN.EncodeOneWay(rawHashBytes, alphabet);
+            }
+            else
+            {
+                encoded = Base58.Encode(rawHashBytes);
+            }
 
             if (encoded.Length > length)
             {
-                result = encoded.Substring(0, length);
+                result = encoded[..length];
             }
             else
             {

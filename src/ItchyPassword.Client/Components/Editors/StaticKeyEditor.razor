@@ -1,7 +1,7 @@
 @using ItchyPassword.Client.Services
-@using ItchyPassword.Core.Extensions;
 @inject ICryptoService Crypto
 @inject ClipboardService Clipboard
+@inject ClientVaultState State
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
     <div>
@@ -41,24 +41,29 @@
     [Parameter]
     public required VaultItem Item { get; init; }
 
-    [Parameter]
-    public required string MasterKey { get; init; }
-
     private string _publicPart = string.Empty;
     private string _alphabet = string.Empty;
     private int _length;
-    private int _version;
+    private int _cipherVersion;
     private string _result = string.Empty;
     private bool _isGenerating = false;
 
     private const int DefaultLength = 64;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        _publicPart = Item.Parameters?.GetStringValueOrDefault("public", string.Empty) ?? string.Empty;
-        _alphabet = Item.Parameters?.GetStringValueOrDefault("alphabet", string.Empty) ?? string.Empty;
-        _length = Item.Parameters?.GetIntegerValueOrDefault("length", DefaultLength) ?? DefaultLength;
-        _version = Item.Parameters?.GetIntegerValueOrDefault("version", 1) ?? 1;
+        StaticKeyParameters parameters = Item.StaticKeyParameters ?? new StaticKeyParameters();
+
+        _publicPart = parameters.PublicPart;
+        _alphabet = parameters.Alphabet;
+        _length = parameters.Length;
+        _cipherVersion = parameters.Version;
+
+        // Auto-generate if editing an existing item with a public part.
+        if (string.IsNullOrWhiteSpace(_publicPart) == false)
+        {
+            await GenerateAsync();
+        }
     }
 
     private async Task GenerateAsync()
@@ -67,39 +72,44 @@
 
         try
         {
-            Item.Parameters["public"] = _publicPart;
-            Item.Parameters["alphabet"] = _alphabet;
-            Item.Parameters["length"] = _length;
+            // Ensure StaticKeyParameters exist.
+            Item.StaticKeyParameters ??= new StaticKeyParameters();
+
+            Item.StaticKeyParameters.PublicPart = _publicPart;
+            Item.StaticKeyParameters.Alphabet = _alphabet;
+            Item.StaticKeyParameters.Length = _length;
 
             byte[] rawBytes;
 
-            if (_version == 1)
+            if (_cipherVersion == 1)
             {
                 rawBytes = await Crypto.GeneratePasswordV1Async(
-                    System.Text.Encoding.UTF8.GetBytes(MasterKey),
+                    System.Text.Encoding.UTF8.GetBytes(State.MasterKey),
                     System.Text.Encoding.UTF8.GetBytes(_publicPart)
                 );
             }
-            else if (_version == 2)
+            else if (_cipherVersion == 2)
             {
                 rawBytes = await Crypto.GeneratePasswordV2Async(
-                    System.Text.Encoding.UTF8.GetBytes(MasterKey),
+                    System.Text.Encoding.UTF8.GetBytes(State.MasterKey),
                     System.Text.Encoding.UTF8.GetBytes(_publicPart)
                 );
             }
             else
             {
-                throw new InvalidOperationException($"Unsupported version: {_version}.");
+                throw new InvalidOperationException($"Unsupported cipher version: {_cipherVersion}.");
             }
 
             if (string.IsNullOrWhiteSpace(_alphabet))
             {
                 _result = Base58.Encode(rawBytes);
+                Item.StaticKeyParameters.Encoding = "base58";
             }
             else
             {
                 // Using OneWay encoding to match legacy implementation.
                 _result = BaseN.EncodeOneWay(rawBytes, _alphabet);
+                Item.StaticKeyParameters.Encoding = "legacy";
             }
 
             if (_result.Length > _length)
