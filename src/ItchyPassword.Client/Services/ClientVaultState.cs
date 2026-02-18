@@ -17,12 +17,12 @@ public class ClientVaultState : INotifyPropertyChanged
     private readonly LocalStorageService _storage;
     private bool _initialized;
 
-    private Vault? _vault;
+    private VaultV2? _vault;
 
     /// <summary>
     /// Gets or sets the currently loaded vault.
     /// </summary>
-    public Vault? Vault
+    public VaultV2? Vault
     {
         get
         {

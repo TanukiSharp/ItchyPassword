@@ -42,12 +42,12 @@ public class VaultUnlockService(ClientVaultState state)
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                state.Vault = new Vault() { Version = 2, Items = [] };
+                state.Vault = new VaultV2() { Version = 2, Items = [] };
             }
             else
             {
                 // Try Load V2
-                Vault? vault = VaultDataService.DeserializeVault(content);
+                VaultV2? vault = VaultDataService.DeserializeVault(content);
 
                 if (vault is null)
                 {
@@ -66,7 +66,7 @@ public class VaultUnlockService(ClientVaultState state)
                     }
                 }
 
-                state.Vault = vault ?? new Vault { Version = 2, Items = [] };
+                state.Vault = vault ?? new VaultV2 { Version = 2, Items = [] };
             }
 
             return (true, string.Empty);

@@ -16,11 +16,11 @@ public class VaultDataService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public static Vault? DeserializeVault(string jsonContent)
+    public static VaultV2? DeserializeVault(string jsonContent)
     {
         try
         {
-            Vault? vault = JsonSerializer.Deserialize<Vault>(jsonContent, _loadOptions);
+            VaultV2? vault = JsonSerializer.Deserialize<VaultV2>(jsonContent, _loadOptions);
 
             // V2 or newer detected
             if (vault is not null && vault.Version >= 2)
@@ -36,7 +36,7 @@ public class VaultDataService
         return null;
     }
 
-    public static string SerializeVault(Vault vault)
+    public static string SerializeVault(VaultV2 vault)
     {
         // TODO: Implement sorting logic here using JsonDocument/Node manipulation if standard serializer doesn't support property sorting.
         // Or implement custom Converter.

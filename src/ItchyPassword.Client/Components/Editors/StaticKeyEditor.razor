@@ -39,7 +39,7 @@
 
 @code {
     [Parameter]
-    public required VaultItem Item { get; init; }
+    public required VaultItemV2 Item { get; init; }
 
     private string _publicPart = string.Empty;
     private string _alphabet = string.Empty;
@@ -52,12 +52,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        StaticKeyParameters parameters = Item.StaticKeyParameters ?? new StaticKeyParameters();
+        StaticKeyDataV2 parameters = Item.StaticKeyData ?? new StaticKeyDataV2();
 
         _publicPart = parameters.PublicPart;
         _alphabet = parameters.Alphabet;
         _length = parameters.Length;
-        _cipherVersion = parameters.Version;
+        _cipherVersion = parameters.CryptoVersion;
 
         // Auto-generate if editing an existing item with a public part.
         if (string.IsNullOrWhiteSpace(_publicPart) == false)
@@ -72,13 +72,6 @@
 
         try
         {
-            // Ensure StaticKeyParameters exist.
-            Item.StaticKeyParameters ??= new StaticKeyParameters();
-
-            Item.StaticKeyParameters.PublicPart = _publicPart;
-            Item.StaticKeyParameters.Alphabet = _alphabet;
-            Item.StaticKeyParameters.Length = _length;
-
             byte[] rawBytes;
 
             if (_cipherVersion == 1)
@@ -100,22 +93,33 @@
                 throw new InvalidOperationException($"Unsupported cipher version: {_cipherVersion}.");
             }
 
+            string encoding;
+
             if (string.IsNullOrWhiteSpace(_alphabet))
             {
                 _result = Base58.Encode(rawBytes);
-                Item.StaticKeyParameters.Encoding = "base58";
+                encoding = "base58";
             }
             else
             {
                 // Using OneWay encoding to match legacy implementation.
                 _result = BaseN.EncodeOneWay(rawBytes, _alphabet);
-                Item.StaticKeyParameters.Encoding = "legacy";
+                encoding = "legacy";
             }
 
             if (_result.Length > _length)
             {
                 _result = _result.Substring(0, _length);
             }
+
+            Item.SetData(new StaticKeyDataV2
+            {
+                PublicPart = _publicPart,
+                Alphabet = _alphabet,
+                Length = _length,
+                CryptoVersion = _cipherVersion,
+                Encoding = encoding
+            });
         }
         finally
         {

@@ -30,7 +30,7 @@ else
 
                 <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
 
-                @if (_item.Type == VaultItemType.StaticKey)
+                @if (_item.Type == VaultItemTypeV2.StaticKey)
                 {
                     <StaticKeyEditor Item="@_item" />
                 }
@@ -59,7 +59,7 @@ else
     [Parameter]
     public required string ItemId { get; set; }
 
-    private VaultItem? _item;
+    private VaultItemV2? _item;
     private bool _isSaving = false;
     private string _error = string.Empty;
 
@@ -90,7 +90,7 @@ else
         try
         {
             // For Secret items, encrypt the plaintext before saving.
-            if (_item.Type == VaultItemType.Secret && _secretEditor is not null)
+            if (_item.Type == VaultItemTypeV2.Secret && _secretEditor is not null)
             {
                 bool encrypted = await _secretEditor.EncryptAndStoreAsync();
 

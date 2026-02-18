@@ -65,8 +65,8 @@
     private SecretEditor? _secretEditor;
     private StaticKeyEditor? _staticKeyEditor;
 
-    // Create a temporary VaultItem that the embedded editors can work with.
-    private VaultItem _item = null!;
+    // Create a temporary VaultItemV2 that the embedded editors can work with.
+    private VaultItemV2 _item = null!;
 
     protected override void OnInitialized()
     {
@@ -76,16 +76,16 @@
             return;
         }
 
-        _item = CreateDefaultItem(VaultItemType.Secret);
+        _item = CreateDefaultItem(VaultItemTypeV2.Secret);
     }
 
     private void OnTypeChanged(ChangeEventArgs e)
     {
         _selectedType = e.Value?.ToString() ?? "Secret";
 
-        VaultItemType newType = _selectedType == "StaticKey"
-            ? VaultItemType.StaticKey
-            : VaultItemType.Secret;
+        VaultItemTypeV2 newType = _selectedType == "StaticKey"
+            ? VaultItemTypeV2.StaticKey
+            : VaultItemTypeV2.Secret;
 
         // Recreate the item to reset parameters for the new type, keeping the same Id.
         _item = CreateDefaultItem(newType);
@@ -95,9 +95,9 @@
         _staticKeyEditor = null;
     }
 
-    private VaultItem CreateDefaultItem(VaultItemType type)
+    private VaultItemV2 CreateDefaultItem(VaultItemTypeV2 type)
     {
-        var item = new VaultItem
+        var item = new VaultItemV2
         {
             Id = _itemId,
             Name = string.Empty,
@@ -105,13 +105,13 @@
             LastModified = DateTimeOffset.UtcNow
         };
 
-        if (type == VaultItemType.Secret)
+        if (type == VaultItemTypeV2.Secret)
         {
-            item.SecretParameters = new SecretParameters();
+            item.SetData(new SecretDataV2());
         }
         else
         {
-            item.StaticKeyParameters = new StaticKeyParameters();
+            item.SetData(new StaticKeyDataV2());
         }
 
         return item;
@@ -136,7 +136,7 @@
         try
         {
             // For Secret items, encrypt the plaintext before saving.
-            if (_item.Type == VaultItemType.Secret && _secretEditor is not null)
+            if (_item.Type == VaultItemTypeV2.Secret && _secretEditor is not null)
             {
                 bool encrypted = await _secretEditor.EncryptAndStoreAsync();
 
@@ -151,13 +151,12 @@
             _item.LastModified = DateTimeOffset.UtcNow;
 
             // Check if this item already exists in the vault (re-save scenario).
-            VaultItem? existing = State.Vault.Items.FirstOrDefault(i => i.Id == _itemId);
+            int existingIndex = State.Vault.Items.FindIndex(i => i.Id == _itemId);
 
-            if (existing is not null)
+            if (existingIndex >= 0)
             {
                 // Update the existing entry.
-                int index = State.Vault.Items.IndexOf(existing);
-                State.Vault.Items[index] = _item;
+                State.Vault.Items[existingIndex] = _item;
             }
             else
             {
