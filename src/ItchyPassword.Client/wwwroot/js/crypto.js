@@ -49,7 +49,7 @@ window.ItchyPassword.Crypto = {
             // 1. Get Derived Key (PBKDF2 -> AES-GCM) with 100,000 iterations
             const derivedKey = await this.getDerivedBytes(privatePart, publicPart, 100000);
 
-            // 2. Import as HMAC Key
+            // 2. Import as HMAC key
             const hmacKey = await window.crypto.subtle.importKey(
                 'raw',
                 derivedKey,
@@ -58,10 +58,10 @@ window.ItchyPassword.Crypto = {
                 ['sign']
             );
 
-            // 3. Sign 'Password' (hkdfPurpose)
             const hkdfPurpose = 'Password';
             const purposeBytes = new TextEncoder().encode(hkdfPurpose);
 
+            // 3. Sign
             const signature = await window.crypto.subtle.sign(
                 'HMAC',
                 hmacKey,
@@ -76,6 +76,48 @@ window.ItchyPassword.Crypto = {
         }
     },
 
+    _generatePassword: async function (privatePart, publicPart, hkdfPurpose, iterations) {
+        // 1. Get Derived Key (PBKDF2 -> AES-GCM) with N iterations
+        const derivedKey = await this.getDerivedBytes(privatePart, publicPart, iterations);
+
+        // 2. Import as HMAC key
+        const hmacKey = await window.crypto.subtle.importKey(
+            'raw',
+            derivedKey,
+            { name: 'HMAC', hash: { name: 'SHA-512' } },
+            false,
+            ['sign']
+        );
+
+        const purposeBytes = new TextEncoder().encode(hkdfPurpose);
+
+        // 3. Sign
+        const signature = await window.crypto.subtle.sign(
+            'HMAC',
+            hmacKey,
+            purposeBytes
+        );
+
+        return new Uint8Array(signature);
+    },
+
+    generatePasswordV2: async function (privatePart, publicPart) {
+        try {
+            return await this._generatePassword(privatePart, publicPart, 'Password', 100000);
+        } catch (e) {
+            console.error('Password V1 generation error:', e);
+            throw e;
+        }
+    },
+
+    generatePasswordV2: async function (privatePart, publicPart, hkdfPurpose) {
+        try {
+            return await this._generatePassword(privatePart, publicPart, hkdfPurpose || 'Password', 400000);
+        } catch (e) {
+            console.error('Password V2 generation error:', e);
+            throw e;
+        }
+    },
 
     encryptV3: async function (input, password) {
         try {
@@ -175,66 +217,7 @@ window.ItchyPassword.Crypto = {
 
         } catch (e) {
             console.error('Decrypt V3 Error:', e);
-            throw e; // Let C# handle
-        }
-    },
-
-    // Generates deterministic password (legacy V2)
-    generatePasswordV2: async function (privatePart, publicPart, hkdfPurpose) {
-        try {
-             // The default purpose used in v2 generator is 'Password'
-            const purpose = hkdfPurpose || 'Password';
-
-            const purposeBytes = new TextEncoder().encode(purpose);
-            const iterations = 400000;
-
-            const baseKey = await window.crypto.subtle.importKey(
-                'raw',
-                privatePart,
-                { name: 'PBKDF2' },
-                false,
-                ['deriveKey']
-            );
-
-            const deriveParams = {
-                name: 'PBKDF2',
-                hash: 'SHA-512',
-                iterations: iterations,
-                salt: publicPart
-            };
-
-            // 1. Derive AES-GCM 256 key bits (32 bytes)
-             const aesDerivedKey = await window.crypto.subtle.deriveKey(
-                deriveParams,
-                baseKey,
-                { name: 'AES-GCM', length: 256 },
-                true, // exportable
-                ['encrypt'] // Dummy usage
-            );
-
-            const rawDerivedBytes = await window.crypto.subtle.exportKey('raw', aesDerivedKey);
-
-            // 2. Import as HMAC key
-            const hmacKey = await window.crypto.subtle.importKey(
-                'raw',
-                rawDerivedBytes,
-                { name: 'HMAC', hash: { name: 'SHA-512' } },
-                false,
-                ['sign']
-            );
-
-            // 3. Sign
-            const signature = await window.crypto.subtle.sign(
-                'HMAC',
-                hmacKey,
-                purposeBytes
-            );
-
-            return new Uint8Array(signature);
-
-        } catch (e) {
-             console.error('Generate Password V2 Error:', e);
-             throw e;
+            throw e;
         }
     },
 
