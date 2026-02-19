@@ -74,9 +74,16 @@ public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, 
         await VaultConnectorHelper.BindStorageToMemoryAsync(VaultFilePathKey, storage, Configuration);
         await VaultConnectorHelper.BindStorageToMemoryAsync(PersonalAccessTokenKey, storage, Configuration, async value =>
         {
-            return state.HasMasterKey
-                ? await VaultConnectorHelper.DecryptIfNeededAsync(value, state.MasterKey, crypto)
-                : value;
+            try
+            {
+                return state.HasMasterKey
+                    ? await VaultConnectorHelper.DecryptIfNeededAsync(value, state.MasterKey, crypto)
+                    : value;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("Failed to decrypt personal access token for GitHub access, the master key may be incorrect.", ex);
+            }
         });
     }
 

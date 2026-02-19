@@ -38,12 +38,17 @@ else if (State.IsUnlocked)
             return;
         }
 
-        if (State.HasMasterKey)
+        if (State.HasMasterKey == false)
         {
-            // Try to unlock using the known key
-            _isLoading = true;
-            StateHasChanged();
+            Nav.NavigateTo("/");
+            return;
+        }
 
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
             (bool success, string? msg) = await UnlockService.UnlockAsync(status =>
             {
                 InvokeAsync(() =>
@@ -57,7 +62,7 @@ else if (State.IsUnlocked)
 
             if (success)
             {
-               // State.Vault is populated, UI updates automatically
+                // State.Vault is populated, UI updates automatically.
             }
             else
             {
@@ -67,18 +72,21 @@ else if (State.IsUnlocked)
                 }
                 else
                 {
-                    _error = msg;
+                    _error = msg ?? "An unknown error occurred while unlocking the vault.";
                 }
             }
         }
-        else
+        catch (Exception ex)
         {
-            Nav.NavigateTo("/");
+            _isLoading = false;
+            _error = $"Vault unlock failed: {ex.Message}";
         }
     }
 
     private void GoHome()
     {
+        State.MasterKey = string.Empty;
+        State.Vault = null;
         Nav.NavigateTo("/");
     }
 }

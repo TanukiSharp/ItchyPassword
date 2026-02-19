@@ -21,8 +21,15 @@ public class VaultUnlockService(ClientVaultState state)
              return (false, "No active vault connector selected.");
         }
 
-        // Ensure current connector config is loaded (secrets are decrypted automatically via state).
-        await state.ReadConnector.LoadConfigurationAsync();
+        try
+        {
+            // Ensure current connector config is loaded (secrets are decrypted with the master key).
+            await state.ReadConnector.LoadConfigurationAsync();
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
 
         if (state.ReadConnector.IsConfigured == false)
         {

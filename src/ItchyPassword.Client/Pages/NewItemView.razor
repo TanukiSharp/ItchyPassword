@@ -15,7 +15,7 @@
         <EditForm Model="_item" OnValidSubmit="SaveAsync">
             <div class="form-group">
                 <label>Name</label>
-                <input class="input" @bind="_name" required placeholder="e.g. My Service" />
+                <input class="input" @bind="_name" @bind:event="oninput" required placeholder="e.g. My Service" />
             </div>
 
             <div class="form-group">
@@ -30,11 +30,11 @@
 
             @if (_selectedType == "StaticKey")
             {
-                <StaticKeyEditor @ref="_staticKeyEditor" Item="@_item" />
+                <StaticKeyEditor @ref="_editor" Item="@_item" />
             }
             else
             {
-                <SecretEditor @ref="_secretEditor" Item="@_item" />
+                <SecretEditor @ref="_editor" Item="@_item" />
             }
 
             <div style="margin-top: 2rem; display: flex; gap: 1rem;">
@@ -61,9 +61,8 @@
     // Stable Id generated once so re-saves update the same entry.
     private readonly Guid _itemId = Guid.NewGuid();
 
-    // Component references for calling encrypt at save time.
-    private SecretEditor? _secretEditor;
-    private StaticKeyEditor? _staticKeyEditor;
+    // Component reference for calling PrepareForSaveAsync at save time.
+    private IItemEditor? _editor;
 
     // Create a temporary VaultItemV2 that the embedded editors can work with.
     private VaultItemV2 _item = null!;
@@ -90,9 +89,8 @@
         // Recreate the item to reset parameters for the new type, keeping the same Id.
         _item = CreateDefaultItem(newType);
 
-        // Reset editor references since the component will be re-created.
-        _secretEditor = null;
-        _staticKeyEditor = null;
+        // Reset editor reference since the component will be re-created.
+        _editor = null;
     }
 
     private VaultItemV2 CreateDefaultItem(VaultItemTypeV2 type)
@@ -135,12 +133,12 @@
 
         try
         {
-            // For Secret items, encrypt the plaintext before saving.
-            if (_item.Type == VaultItemTypeV2.Secret && _secretEditor is not null)
+            // Let the editor finalize item data (encrypt, generate, etc.).
+            if (_editor is not null)
             {
-                bool encrypted = await _secretEditor.EncryptAndStoreAsync();
+                bool ready = await _editor.PrepareForSaveAsync();
 
-                if (encrypted == false)
+                if (ready == false)
                 {
                     _isSaving = false;
                     return;

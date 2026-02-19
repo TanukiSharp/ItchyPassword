@@ -1,38 +1,42 @@
 @using ItchyPassword.Client.Services
+@implements IItemEditor
 @inject ICryptoService Crypto
-@inject ClipboardService Clipboard
 @inject ClientVaultState State
 
 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
     <div>
         <div class="form-group">
             <label>Public Salt</label>
-            <input class="input" @bind="_publicPart" />
+            <input class="input" @bind="_publicPart" @bind:event="oninput" minlength="@MinPublicSaltLength" placeholder="@($"At least {MinPublicSaltLength} characters")" />
         </div>
 
         <div class="form-group">
             <label>Alphabet</label>
-            <input class="input" @bind="_alphabet" />
+            <input class="input" @bind="_alphabet" @bind:event="oninput" />
         </div>
 
         <div class="form-group">
             <label>Length</label>
-            <input class="input" type="number" @bind="_length" />
+            <input class="input" type="number" min="@MinLength" @bind="_length" @bind:event="oninput" />
         </div>
 
-        <button type="button" class="button primary" style="width: 100%;" @onclick="GenerateAsync" disabled="@_isGenerating">
+        <button type="button" class="button primary" style="width: 100%;" @onclick="GenerateAsync" disabled="@(_isGenerating || _publicPart.Length < MinPublicSaltLength || _length < MinLength)">
             Generate Password
         </button>
+
+        @if (string.IsNullOrWhiteSpace(_error) == false)
+        {
+            <div class="alert danger" style="margin-top: 0.5rem;">@_error</div>
+        }
     </div>
 
     <div>
         <div class="form-group">
             <label>Result</label>
-            <div style="display: flex; gap: 0.5rem;">
-                <input class="input" type="text" readonly value="@_result" style="flex: 1;" />
-                <button class="button secondary" type="button" @onclick="CopyAsync">Copy</button>
+            <div style="display: flex; gap: 0.5rem; align-items: start;">
+                <input class="input" type="text" readonly value="@_result" style="flex: 1; margin-bottom: 0; min-height: 2.5rem;" />
+                <CopyButton Text="@_result" />
             </div>
-            <small style="color: var(--text-muted); display: block; margin-top: 0.5rem;">Calculated output.</small>
         </div>
     </div>
 </div>
@@ -42,12 +46,15 @@
     public required VaultItemV2 Item { get; init; }
 
     private string _publicPart = string.Empty;
-    private string _alphabet = string.Empty;
+    private string _alphabet = VaultMigrationService.DefaultAlphabet;
     private int _length;
     private int _cipherVersion;
     private string _result = string.Empty;
     private bool _isGenerating = false;
+    private string _error = string.Empty;
 
+    private const int MinPublicSaltLength = 8;
+    private const int MinLength = 8;
     private const int DefaultLength = 64;
 
     protected override async Task OnInitializedAsync()
@@ -55,7 +62,10 @@
         StaticKeyDataV2 parameters = Item.StaticKeyData ?? new StaticKeyDataV2();
 
         _publicPart = parameters.PublicPart;
-        _alphabet = parameters.Alphabet;
+        if (string.IsNullOrEmpty(parameters.Alphabet) == false)
+        {
+            _alphabet = parameters.Alphabet;
+        }
         _length = parameters.Length;
         _cipherVersion = parameters.CryptoVersion;
 
@@ -127,11 +137,29 @@
         }
     }
 
-    private async Task CopyAsync()
+    /// <summary>
+    /// Validates inputs and generates the password, storing data on the item.
+    /// Called by the parent view before saving to the vault.
+    /// </summary>
+    public async Task<bool> PrepareForSaveAsync()
     {
-        if (string.IsNullOrWhiteSpace(_result) == false)
+        _error = string.Empty;
+
+        if (_publicPart.Length < MinPublicSaltLength)
         {
-             await Clipboard.CopyTextAsync(_result);
+            _error = $"Public salt must be at least {MinPublicSaltLength} characters.";
+            return false;
         }
+
+        if (_length < MinLength)
+        {
+            _error = $"Length must be at least {MinLength}.";
+            return false;
+        }
+
+        await GenerateAsync();
+        return true;
     }
+
+
 }

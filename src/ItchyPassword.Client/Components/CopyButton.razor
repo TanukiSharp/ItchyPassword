@@ -1,0 +1,58 @@
+@inject ClipboardService Clipboard
+
+<button class="button secondary" type="button"
+        @onclick="CopyAsync"
+        disabled="@(string.IsNullOrWhiteSpace(Text))"
+        title="@Tooltip"
+        style="margin-bottom: 0; width: 2.5rem; height: 2.5rem; aspect-ratio: 1; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+    @if (_state == CopyState.Success)
+    {
+        <img src="icons/check.svg" width="16" height="16" alt="Success" />
+    }
+    else if (_state == CopyState.Error)
+    {
+        <img src="icons/error.svg" width="16" height="16" alt="Error" />
+    }
+    else
+    {
+        <img src="icons/copy-light.svg" width="16" height="16" alt="Copy" />
+    }
+</button>
+
+@code {
+    [Parameter]
+    public string? Text { get; set; }
+
+    private enum CopyState { Idle, Success, Error }
+    private CopyState _state = CopyState.Idle;
+
+    private string Tooltip => _state switch
+    {
+        CopyState.Success => "Copied!",
+        CopyState.Error => "Failed to copy",
+        _ => "Copy to clipboard"
+    };
+
+    private async Task CopyAsync()
+    {
+        if (string.IsNullOrWhiteSpace(Text))
+        {
+            return;
+        }
+
+        try
+        {
+            await Clipboard.CopyTextAsync(Text);
+            _state = CopyState.Success;
+        }
+        catch
+        {
+            _state = CopyState.Error;
+        }
+
+        StateHasChanged();
+        await Task.Delay(2000);
+        _state = CopyState.Idle;
+        StateHasChanged();
+    }
+}

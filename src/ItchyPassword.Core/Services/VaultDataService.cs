@@ -13,7 +13,8 @@ public class VaultDataService
     private static readonly JsonSerializerOptions _saveOptions = new()
     {
         WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
     };
 
     public static VaultV2? DeserializeVault(string jsonContent)

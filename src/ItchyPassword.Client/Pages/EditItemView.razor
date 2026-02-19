@@ -32,11 +32,11 @@ else
 
                 @if (_item.Type == VaultItemTypeV2.StaticKey)
                 {
-                    <StaticKeyEditor Item="@_item" />
+                    <StaticKeyEditor @ref="_editor" Item="@_item" />
                 }
                 else
                 {
-                    <SecretEditor @ref="_secretEditor" Item="@_item" />
+                    <SecretEditor @ref="_editor" Item="@_item" />
                 }
 
                 <div style="margin-top: 2rem; display: flex; gap: 1rem;">
@@ -63,8 +63,8 @@ else
     private bool _isSaving = false;
     private string _error = string.Empty;
 
-    // Component reference for calling encrypt at save time.
-    private SecretEditor? _secretEditor;
+    // Component reference for calling PrepareForSaveAsync at save time.
+    private IItemEditor? _editor;
 
     protected override void OnInitialized()
     {
@@ -89,12 +89,12 @@ else
 
         try
         {
-            // For Secret items, encrypt the plaintext before saving.
-            if (_item.Type == VaultItemTypeV2.Secret && _secretEditor is not null)
+            // Let the editor finalize item data (encrypt, generate, etc.).
+            if (_editor is not null)
             {
-                bool encrypted = await _secretEditor.EncryptAndStoreAsync();
+                bool ready = await _editor.PrepareForSaveAsync();
 
-                if (encrypted == false)
+                if (ready == false)
                 {
                     _isSaving = false;
                     return;

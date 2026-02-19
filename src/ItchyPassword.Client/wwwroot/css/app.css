@@ -198,7 +198,7 @@ button, .button, input[type="submit"] {
 }
 button:hover, .button:hover { background-color: var(--primary-hover); }
 button:active, .button:active { transform: translateY(1px); }
-button:disabled { opacity: 0.6; cursor: not-allowed; }
+button:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
 
 /* Secondary Variant */
 button.secondary, .button.secondary {

@@ -5,7 +5,6 @@
 @inject ICryptoService Crypto
 @inject ClientVaultState State
 @inject NavigationManager Nav
-@inject ClipboardService Clipboard
 
 <div style="max-width: 800px; margin: 0 auto; padding: 1rem;">
     <div style="margin-bottom: 2rem;">
@@ -59,23 +58,10 @@
         {
             <div class="form-group" style="margin-top: 2rem;">
                 <label>Result</label>
-                <div style="display: flex; gap: 0.5rem; align-items: stretch; position: relative;">
-                   <input class="input" type="text" readonly value="@result" id="resultBox" style="font-family: monospace; font-size: 1.1em; letter-spacing: 0.05em; flex-grow: 1; margin-bottom: 0;" />
+                <div style="display: flex; gap: 0.5rem; align-items: start; position: relative;">
+                   <input class="input" type="text" readonly value="@result" id="resultBox" style="font-family: monospace; font-size: 1.1em; letter-spacing: 0.05em; flex-grow: 1; margin-bottom: 0; min-height: 2.5rem;" />
 
-                   <button class="button secondary" @onclick="CopyToClipboard" title="@copyButtonTooltip" style="margin-bottom: 0; padding: 0 1rem; display: flex; align-items: center; justify-content: center;">
-                        @if (copyState == CopyState.Success)
-                        {
-                            <img src="icons/check.svg" width="16" height="16" alt="Success" />
-                        }
-                        else if (copyState == CopyState.Error)
-                        {
-                             <img src="icons/error.svg" width="16" height="16" alt="Error" />
-                        }
-                        else
-                        {
-                            <img src="icons/copy.svg" width="16" height="16" alt="Copy" />
-                        }
-                   </button>
+                   <CopyButton Text="@result" />
                 </div>
             </div>
         }
@@ -95,15 +81,6 @@
     private string result = "";
     private string error = "";
 
-    private enum CopyState { Idle, Success, Error }
-    private CopyState copyState = CopyState.Idle;
-
-    private string copyButtonTooltip => copyState switch
-    {
-        CopyState.Success => "Copied!",
-        CopyState.Error => "Failed to copy",
-        _ => "Copy to clipboard"
-    };
 
     private void GoToLogin()
     {
@@ -189,31 +166,6 @@
         catch (Exception ex)
         {
             error = $"Error: {ex.Message}";
-        }
-    }
-
-    private async Task CopyToClipboard()
-    {
-        if (string.IsNullOrWhiteSpace(result) == false)
-        {
-            try
-            {
-                await Clipboard.CopyTextAsync(result);
-                copyState = CopyState.Success;
-                StateHasChanged();
-                await Task.Delay(2000); // Reset after 2 seconds
-                copyState = CopyState.Idle;
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Clipboard failed: " + ex.Message);
-                copyState = CopyState.Error;
-                StateHasChanged();
-                await Task.Delay(2000); // Reset after 2 seconds
-                copyState = CopyState.Idle;
-                StateHasChanged();
-            }
         }
     }
 }
