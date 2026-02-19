@@ -3,8 +3,8 @@
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 
-<div class="card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+<div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 2rem); margin-bottom: 0; overflow: hidden;">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
         <h3 style="margin: 0;">Vault Items</h3>
         <div style="display: flex; gap: 0.5rem;">
             <button class="button secondary" @onclick="LockVault">Lock Workspace</button>
@@ -12,13 +12,13 @@
         </div>
     </div>
 
-    <div style="margin-bottom: 1rem;">
-        <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" />
+    <div style="margin-bottom: 1rem; flex-shrink: 0;">
+        <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" style="margin-bottom: 0;" />
     </div>
 
-    <div style="overflow-x: auto;">
+    <div style="flex: 1; overflow-y: auto; min-height: 0;">
         <table class="table" style="width: 100%; border-collapse: collapse;">
-            <thead>
+            <thead style="position: sticky; top: 0; z-index: 1; background-color: var(--card-bg);">
                 <tr>
                     <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Name</th>
                     <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Modified</th>
