@@ -1,0 +1,178 @@
+@using ItchyPassword.Client.Services.VaultConnectors
+@inject ICryptoService Crypto
+@inject ClientVaultState State
+
+<div style="display: flex; flex-direction: column; gap: 0.75rem;">
+    <label style="font-weight: 600; margin-bottom: 0;">Metadata</label>
+
+    @for (int i = 0; i < _entries.Count; i++)
+    {
+        var index = i;
+        <div style="display: flex; gap: 0.5rem; align-items: start;">
+            <input class="input" @bind="_entries[index].Key" @bind:event="oninput"
+                   placeholder="Key" style="flex: 1; margin-bottom: 0; min-height: 2.5rem;" />
+            <input class="input" @bind="_entries[index].NewValue" @bind:event="oninput"
+                   placeholder="Value"
+                   style="flex: 2; margin-bottom: 0; min-height: 2.5rem;" />
+            <button type="button"
+                    class="button @(_entries[index].IsEncrypted ? "primary" : "secondary")"
+                    style="width: 2.5rem; height: 2.5rem; aspect-ratio: 1; padding: 0; flex-shrink: 0;"
+                    @onclick="() => ToggleEncrypted(index)"
+                    title="@(_entries[index].IsEncrypted ? "Value stored encrypted, click to store in plain text." : "Value stored as plain text, click to store encrypted.")">
+                <img src="icons/@(_entries[index].IsEncrypted ? "lock" : "unlock").svg"
+                     alt="@(_entries[index].IsEncrypted ? "Encrypted" : "Plaintext")"
+                     style="width: 16px; height: 16px;" />
+            </button>
+            <button type="button" class="button danger"
+                    style="width: 2.5rem; height: 2.5rem; aspect-ratio: 1; padding: 0; flex-shrink: 0;"
+                    @onclick="() => RemoveEntry(index)" title="Remove entry">
+                ✕
+            </button>
+        </div>
+    }
+
+    <button type="button" class="button secondary" style="align-self: flex-start;" @onclick="AddEntry">
+        + Add metadata
+    </button>
+
+    @if (string.IsNullOrWhiteSpace(_error) == false)
+    {
+        <div class="alert danger" style="margin-top: 0.25rem;">@_error</div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The vault item whose metadata is being edited.
+    /// Existing metadata entries are loaded on initialization; encrypted values (with "enc:" prefix) are decrypted for display.
+    /// </summary>
+    [Parameter]
+    public required VaultItemV2 Item { get; set; }
+
+    private readonly List<MetadataEntry> _entries = [];
+    private string _error = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Item.Metadata is null)
+        {
+            return;
+        }
+
+        string masterKey = State.MasterKey ?? string.Empty;
+
+        foreach (MetadataEntryV2 entry in Item.Metadata)
+        {
+            bool isEncrypted = entry.Value.StartsWith("enc:", StringComparison.Ordinal);
+
+            string decryptedValue = isEncrypted
+                ? await VaultConnectorHelper.DecryptIfNeededAsync(entry.Value, masterKey, Crypto)
+                : entry.Value;
+
+            _entries.Add(new MetadataEntry
+            {
+                Key = entry.Key,
+                DecryptedValue = decryptedValue,
+                EncryptedValue = isEncrypted ? entry.Value : null,
+                NewValue = decryptedValue,
+                IsEncrypted = isEncrypted
+            });
+        }
+    }
+
+    /// <summary>
+    /// Finalizes metadata entries: encrypts flagged values and assigns the result to <see cref="Item"/>.Metadata.
+    /// Unchanged encrypted values are reused as-is to avoid unnecessary re-encryption and diff noise.
+    /// </summary>
+    public async Task<bool> PrepareMetadataAsync()
+    {
+        _error = string.Empty;
+
+        // Filter out entries with empty keys.
+        List<MetadataEntry> valid = _entries
+            .Where(e => string.IsNullOrWhiteSpace(e.Key) == false)
+            .ToList();
+
+        if (valid.Count == 0)
+        {
+            Item.Metadata = null;
+            return true;
+        }
+
+        string masterKey = State.MasterKey ?? string.Empty;
+        var metadata = new List<MetadataEntryV2>(valid.Count);
+
+        foreach (MetadataEntry entry in valid)
+        {
+            string storedValue;
+
+            if (entry.IsEncrypted && string.IsNullOrWhiteSpace(masterKey) == false)
+            {
+                // Reuse the original cipher if the value has not changed, to avoid diff noise.
+                bool valueUnchanged = entry.EncryptedValue is not null
+                    && string.Equals(entry.DecryptedValue, entry.NewValue, StringComparison.Ordinal);
+
+                storedValue = valueUnchanged
+                    ? entry.EncryptedValue!
+                    : await VaultConnectorHelper.EncryptAsync(entry.NewValue, masterKey, Crypto);
+            }
+            else
+            {
+                storedValue = entry.NewValue;
+            }
+
+            metadata.Add(new MetadataEntryV2
+            {
+                Key = entry.Key.Trim(),
+                Value = storedValue
+            });
+        }
+
+        Item.Metadata = metadata;
+        return true;
+    }
+
+    private void AddEntry()
+    {
+        _entries.Add(new MetadataEntry());
+    }
+
+    private void RemoveEntry(int index)
+    {
+        if (index >= 0 && index < _entries.Count)
+        {
+            _entries.RemoveAt(index);
+        }
+    }
+
+    private void ToggleEncrypted(int index)
+    {
+        if (index >= 0 && index < _entries.Count)
+        {
+            _entries[index].IsEncrypted = !_entries[index].IsEncrypted;
+        }
+    }
+
+    private sealed class MetadataEntry
+    {
+        public string Key { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The original decrypted value loaded from the vault. Used to detect changes.
+        /// </summary>
+        public string DecryptedValue { get; set; } = string.Empty;
+
+        /// <summary>
+        /// The original encrypted ("enc:"-prefixed) value from the vault, if any.
+        /// Reused on save when the value has not changed to avoid re-encryption and diff noise.
+        /// </summary>
+        public string? EncryptedValue { get; set; }
+
+        /// <summary>
+        /// The current value being edited by the user.
+        /// </summary>
+        public string NewValue { get; set; } = string.Empty;
+
+        public bool IsEncrypted { get; set; }
+    }
+}

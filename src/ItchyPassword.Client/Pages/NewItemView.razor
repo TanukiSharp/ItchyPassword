@@ -37,6 +37,10 @@
                 <SecretEditor @ref="_editor" Item="@_item" />
             }
 
+            <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+
+            <MetadataEditor @ref="_metadataEditor" Item="@_item" />
+
             <div style="margin-top: 2rem; display: flex; gap: 1rem;">
                 <button class="button primary" type="submit" disabled="@(_isSaving || string.IsNullOrWhiteSpace(_name))">
                     @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
@@ -63,6 +67,9 @@
 
     // Component reference for calling PrepareForSaveAsync at save time.
     private IItemEditor? _editor;
+
+    // Component reference for finalizing metadata before saving.
+    private MetadataEditor? _metadataEditor;
 
     // Create a temporary VaultItemV2 that the embedded editors can work with.
     private VaultItemV2 _item = null!;
@@ -139,6 +146,18 @@
                 bool ready = await _editor.PrepareForSaveAsync();
 
                 if (ready == false)
+                {
+                    _isSaving = false;
+                    return;
+                }
+            }
+
+            // Let the metadata editor finalize metadata (encrypt flagged values, etc.).
+            if (_metadataEditor is not null)
+            {
+                bool metadataReady = await _metadataEditor.PrepareMetadataAsync();
+
+                if (metadataReady == false)
                 {
                     _isSaving = false;
                     return;

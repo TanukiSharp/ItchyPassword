@@ -74,9 +74,18 @@ public class VaultItemV2
         SecretData = null;
     }
 
-    public Dictionary<string, string>? Metadata { get; set; }
+    public List<MetadataEntryV2>? Metadata { get; set; }
 
     public required DateTimeOffset LastModified { get; set; }
+}
+
+/// <summary>
+/// A single key-value metadata entry attached to a vault item.
+/// </summary>
+public class MetadataEntryV2
+{
+    public string Key { get; set; } = string.Empty;
+    public string Value { get; set; } = string.Empty;
 }
 
 public class VaultV2

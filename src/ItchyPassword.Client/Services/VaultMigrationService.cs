@@ -133,7 +133,11 @@ public class VaultMigrationService(ICryptoService crypto)
                     foreach (KeyValuePair<string, JsonNode?> k in ckObj)
                     {
                         item.Metadata ??= [];
-                        item.Metadata[k.Key] = k.Value?.ToString() ?? string.Empty;
+                        item.Metadata.Add(new MetadataEntryV2
+                        {
+                            Key = k.Key,
+                            Value = k.Value?.ToString() ?? string.Empty
+                        });
                     }
                 }
 
@@ -203,10 +207,14 @@ public class VaultMigrationService(ICryptoService crypto)
                         }
                         if (cipherDetail.TryGetPropertyValue("customKeys", out JsonNode? ck) && ck is JsonObject ckObj)
                         {
-                            foreach(KeyValuePair<string, JsonNode?> k in ckObj)
+                            foreach (KeyValuePair<string, JsonNode?> k in ckObj)
                             {
                                 item.Metadata ??= [];
-                                item.Metadata[k.Key] = k.Value?.ToString() ?? string.Empty;
+                                item.Metadata.Add(new MetadataEntryV2
+                                {
+                                    Key = k.Key,
+                                    Value = k.Value?.ToString() ?? string.Empty
+                                });
                             }
                         }
 
