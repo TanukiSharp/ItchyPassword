@@ -67,6 +67,12 @@ public class ClientVaultState : INotifyPropertyChanged
     /// </summary>
     public List<IVaultConnector> Connectors { get; } = [];
 
+    /// <summary>
+    /// Gets or sets the search query used to filter vault items.
+    /// This is kept in-memory so it survives navigation between pages.
+    /// </summary>
+    public string SearchQuery { get; set; } = string.Empty;
+
     private Guid _activeReaderId;
 
     /// <summary>

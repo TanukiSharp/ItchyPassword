@@ -13,7 +13,7 @@
     </div>
 
     <div style="margin-bottom: 1rem;">
-        <input class="input" type="text" placeholder="Search items..." @bind="_searchQuery" @bind:event="oninput" />
+        <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" />
     </div>
 
     <div style="overflow-x: auto;">
@@ -50,8 +50,6 @@
 </div>
 
 @code {
-    private string _searchQuery = "";
-
     private void CreateNew()
     {
         Nav.NavigateTo("item/new");
@@ -71,17 +69,17 @@
             {
                 return Enumerable.Empty<VaultItemV2>();
             }
-            if (string.IsNullOrWhiteSpace(_searchQuery))
+            if (string.IsNullOrWhiteSpace(State.SearchQuery))
             {
                 return State.Vault.Items;
             }
 
             // Basic search (Fuzzy later)
             return State.Vault.Items.Where(i =>
-                i.Name.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
+                i.Name.Contains(State.SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                 i.Metadata?.Any(m =>
-                    m.Key.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    m.Value.Contains(_searchQuery, StringComparison.OrdinalIgnoreCase)
+                    m.Key.Contains(State.SearchQuery, StringComparison.OrdinalIgnoreCase) ||
+                    m.Value.Contains(State.SearchQuery, StringComparison.OrdinalIgnoreCase)
                 ) == true
             );
         }
