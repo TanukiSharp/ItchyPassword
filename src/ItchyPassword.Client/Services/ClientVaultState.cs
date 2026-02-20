@@ -1,6 +1,7 @@
 using ItchyPassword.Client.Services.VaultConnectors;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
+using Microsoft.JSInterop;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -103,15 +104,18 @@ public class ClientVaultState : INotifyPropertyChanged
     /// <param name="http">The HTTP client used by connectors.</param>
     /// <param name="storage">The storage service used by connectors.</param>
     /// <param name="crypto">The crypto service used by connectors for encrypting/decrypting secrets.</param>
-    public ClientVaultState(HttpClient http, LocalStorageService storage, ICryptoService crypto)
+    /// <param name="js">The JS runtime used by connectors that need browser API interop.</param>
+    public ClientVaultState(HttpClient http, LocalStorageService storage, ICryptoService crypto, IJSRuntime js)
     {
         _storage = storage;
 
         var gh = new GitHubVaultConnector(http, storage, crypto, this);
         var gd = new GoogleDriveVaultConnector(http, storage, crypto, this);
+        var lf = new LocalFileVaultConnector(js);
 
         Connectors.Add(gh);
         Connectors.Add(gd);
+        Connectors.Add(lf);
 
         // Default to the first connector; InitializeAsync will override with the saved preference.
         ActiveReaderId = gh.Id;

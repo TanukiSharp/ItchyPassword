@@ -27,29 +27,30 @@
                 <input class="input" id="publicPart" type="text" value="@publicPart" @oninput="OnPublicPartInput" placeholder="e.g. google.com" required autofocus />
             </div>
 
-            <div class="form-group">
-                <label>Encoding</label>
-                <select class="input" value="@encodingVersion" @onchange="OnEncodingVersionChange">
-                    <option value="base58">Base58</option>
-                    <option value="legacy">Legacy</option>
-                </select>
-            </div>
-
             <details>
-                <summary style="cursor: pointer; margin-bottom: 1rem; color: var(--text-muted); user-select: none;">Options (Length@(encodingVersion == "legacy" ? ", Alphabet" : ""))</summary>
+                <summary style="cursor: pointer; margin-bottom: 1rem; color: var(--text-muted); user-select: none;">Options</summary>
                 <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 1rem;">
-                    @if (encodingVersion == "legacy")
-                    {
-                        <div class="form-group">
-                            <label>Alphabet</label>
-                            <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
-                        </div>
-                    }
+                    <div class="form-group">
+                        <label>Alphabet</label>
+                        <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
+                    </div>
 
                     <div class="form-group">
                         <label>Length</label>
                         <input class="input" type="number" value="@length" @oninput="OnLengthInput" min="4" max="128" />
                     </div>
+
+                    <label>Crypto version</label>
+                    <select class="input" value="@cryptoVersion" @onchange="OnCryptoVersionChange">
+                        <option value="v2">v2</option>
+                        <option value="v1">v1 (Legacy)</option>
+                    </select>
+
+                    <label>Encoding</label>
+                    <select class="input" value="@encoding" @onchange="OnEncodingChange">
+                        <option value="v2">v2</option>
+                        <option value="v1">v1 (Legacy)</option>
+                    </select>
                 </div>
             </details>
         </div>
@@ -77,10 +78,10 @@
     private string publicPart = "";
     private int length = 64;
     private string alphabet = VaultMigrationService.DefaultAlphabet;
-    private string encodingVersion = "base58";
+    private string cryptoVersion = "v2";
+    private string encoding = "v2";
     private string result = "";
     private string error = "";
-
 
     private void GoToLogin()
     {
@@ -108,9 +109,15 @@
         await GenerateAsync();
     }
 
-    private async Task OnEncodingVersionChange(ChangeEventArgs e)
+    private async Task OnCryptoVersionChange(ChangeEventArgs e)
     {
-        encodingVersion = e.Value?.ToString() ?? "base58";
+        cryptoVersion = e.Value?.ToString() ?? "v2";
+        await GenerateAsync();
+    }
+
+    private async Task OnEncodingChange(ChangeEventArgs e)
+    {
+        encoding = e.Value?.ToString() ?? "v2";
         await GenerateAsync();
     }
 
@@ -128,7 +135,7 @@
             return;
         }
 
-        if (encodingVersion == "legacy" && (string.IsNullOrEmpty(alphabet) || alphabet.Length < 2))
+        if (string.IsNullOrEmpty(alphabet) || alphabet.Length < 2)
         {
             result = "";
             return;
@@ -141,17 +148,26 @@
             byte[] mkBytes = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
             byte[] partBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
 
-            byte[] rawHashBytes = await Crypto.GeneratePasswordV2Async(mkBytes, partBytes);
+            byte[] rawHashBytes;
 
             string encoded;
 
-            if (encodingVersion == "legacy")
+            if (cryptoVersion == "v1")
+            {
+                rawHashBytes = await Crypto.GeneratePasswordV1Async(mkBytes, partBytes);
+            }
+            else // v2
+            {
+                rawHashBytes = await Crypto.GeneratePasswordV2Async(mkBytes, partBytes);
+            }
+
+            if (encoding == "v1")
             {
                 encoded = BaseN.EncodeOneWay(rawHashBytes, alphabet);
             }
-            else
+            else // v2
             {
-                encoded = Base58.Encode(rawHashBytes);
+                encoded = BaseN.Encode(rawHashBytes, alphabet);
             }
 
             if (encoded.Length > length)

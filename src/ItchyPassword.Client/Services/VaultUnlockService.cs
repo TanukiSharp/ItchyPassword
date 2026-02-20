@@ -42,9 +42,18 @@ public class VaultUnlockService(ClientVaultState state)
 
             if (isConnected == false)
             {
-                 return (false, $"Could not connect to {state.ReadConnector.Name}.");
+                 string errorMessage = state.ReadConnector.ConnectFailureMessage
+                     ?? $"Could not connect to {state.ReadConnector.Name}.";
+                 return (false, errorMessage);
             }
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
 
+        try
+        {
             string content = await state.ReadConnector.LoadVaultAsync();
 
             if (string.IsNullOrWhiteSpace(content))

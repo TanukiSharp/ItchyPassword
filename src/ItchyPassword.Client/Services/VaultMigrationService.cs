@@ -105,23 +105,25 @@ public class VaultMigrationService(ICryptoService crypto)
                     LastModified = DateTime.UtcNow
                 };
 
-                int cryptoVersion = passObj.TryGetPropertyValue("version", out JsonNode? ver)
+                int version = passObj.TryGetPropertyValue("version", out JsonNode? ver)
                     ? ver?.GetValue<int?>() ?? 2
                     : 2;
                 int length = passObj.TryGetPropertyValue("length", out JsonNode? len)
                     ? len?.GetValue<int?>() ?? 64
                     : 64;
                 string alphabet = passObj.TryGetPropertyValue("alphabet", out JsonNode? alpha)
-                    ? alpha?.ToString() ?? string.Empty
-                    : string.Empty;
+                    ? alpha?.ToString() ?? DefaultAlphabet
+                    : DefaultAlphabet;
 
                 item.SetData(new StaticKeyDataV2
                 {
                     PublicPart = pubPartNode.ToString(),
-                    CryptoVersion = cryptoVersion,
+                    CryptoVersion = version,
                     Length = length,
-                    Alphabet = alphabet
+                    Alphabet = alphabet,
+                    EncodingVersion = 1,
                 });
+
                 if (passObj.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
                 {
                     item.LastModified = date;
@@ -288,7 +290,16 @@ public class VaultMigrationService(ICryptoService crypto)
                     derivedBytes = await crypto.GeneratePasswordV2Async(masterKeyBytes, publicBytes, "Password");
                 }
 
-                string password = BaseN.EncodeOneWay(derivedBytes, alphabet);
+                string password;
+
+                if (skParams.EncodingVersion == 1)
+                {
+                    password = BaseN.EncodeOneWay(derivedBytes, alphabet);
+                }
+                else
+                {
+                    password = BaseN.Encode(derivedBytes, alphabet);
+                }
 
                 if (password.Length > length)
                 {

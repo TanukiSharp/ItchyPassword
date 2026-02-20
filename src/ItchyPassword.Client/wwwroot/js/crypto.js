@@ -42,40 +42,6 @@ window.ItchyPassword.Crypto = {
         }
     },
 
-    // Password V1 Generation
-    // HKDF(PBKDF2(100k), HMAC-SHA512)
-    generatePasswordV1: async function (privatePart, publicPart) {
-        try {
-            // 1. Get Derived Key (PBKDF2 -> AES-GCM) with 100,000 iterations
-            const derivedKey = await this.getDerivedBytes(privatePart, publicPart, 100000);
-
-            // 2. Import as HMAC key
-            const hmacKey = await window.crypto.subtle.importKey(
-                'raw',
-                derivedKey,
-                { name: 'HMAC', hash: { name: 'SHA-512' } },
-                false,
-                ['sign']
-            );
-
-            const hkdfPurpose = 'Password';
-            const purposeBytes = new TextEncoder().encode(hkdfPurpose);
-
-            // 3. Sign
-            const signature = await window.crypto.subtle.sign(
-                'HMAC',
-                hmacKey,
-                purposeBytes
-            );
-
-            return new Uint8Array(signature);
-
-        } catch (e) {
-            console.error('Crypto V1 Error:', e);
-            throw e;
-        }
-    },
-
     _generatePassword: async function (privatePart, publicPart, hkdfPurpose, iterations) {
         // 1. Get Derived Key (PBKDF2 -> AES-GCM) with N iterations
         const derivedKey = await this.getDerivedBytes(privatePart, publicPart, iterations);
@@ -101,7 +67,7 @@ window.ItchyPassword.Crypto = {
         return new Uint8Array(signature);
     },
 
-    generatePasswordV2: async function (privatePart, publicPart) {
+    generatePasswordV1: async function (privatePart, publicPart) {
         try {
             return await this._generatePassword(privatePart, publicPart, 'Password', 100000);
         } catch (e) {

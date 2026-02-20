@@ -27,11 +27,11 @@ public class SecretDataV2
 /// </summary>
 public class StaticKeyDataV2
 {
-    public string PublicPart { get; init; } = string.Empty;
-    public string Alphabet { get; init; } = string.Empty;
-    public int Length { get; init; } = 64;
-    public int CryptoVersion { get; init; } = 2;
-    public string Encoding { get; init; } = "base58";
+    public required string PublicPart { get; init; }
+    public required string Alphabet { get; init; }
+    public required int Length { get; init; }
+    public required int CryptoVersion { get; init; }
+    public required int EncodingVersion { get; init; }
 }
 
 public class VaultItemV2

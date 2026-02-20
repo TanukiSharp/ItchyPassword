@@ -116,7 +116,14 @@
         }
         else
         {
-            item.SetData(new StaticKeyDataV2());
+            item.SetData(new StaticKeyDataV2()
+            {
+                Alphabet = VaultMigrationService.DefaultAlphabet,
+                EncodingVersion = 2,
+                CryptoVersion = 2,
+                Length = 64,
+                PublicPart = string.Empty,
+            });
         }
 
         return item;

@@ -123,10 +123,14 @@
 
     private async Task TestConnection(IVaultConnector connector)
     {
+        // Call ConnectAsync before any await to let the connector's synchronous
+        // preamble run on the click call-stack (preserving the browser gesture).
+        Task<bool> connectTask = connector.ConnectAsync();
+
         testResults[connector] = (null, "Testing...");
         StateHasChanged();
 
-        bool success = await connector.ConnectAsync();
+        bool success = await connectTask;
         testResults[connector] = (success, success ? "Connected successfully." : "Connection failed.");
         StateHasChanged();
     }
@@ -140,6 +144,10 @@
             return;
         }
 
+        // Call ConnectAsync before any await to let the connector's synchronous
+        // preamble run on the click call-stack (preserving the browser gesture).
+        Task<bool> connectTask = State.ReadConnector.ConnectAsync();
+
         isUnlocking = true;
         actionMessage = "Connecting to unlock...";
         isActionError = false;
@@ -148,7 +156,7 @@
 
         try
         {
-            bool isConnected = await State.ReadConnector.ConnectAsync();
+            bool isConnected = await connectTask;
 
             if (isConnected == false)
             {
