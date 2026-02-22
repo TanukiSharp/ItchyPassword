@@ -188,6 +188,38 @@
                 State.Vault.Items.Add(_item);
             }
 
+            // Serialize the entire vault and persist to all write connectors.
+            string json = VaultDataService.SerializeVault(State.Vault);
+
+            var tasks = State.WriteConnectors.Select(async c =>
+            {
+                try
+                {
+                    await c.SaveVaultAsync(json);
+                    return (Connector: c, Success: true, Error: "");
+                }
+                catch (Exception ex)
+                {
+                    return (Connector: c, Success: false, Error: ex.Message);
+                }
+            });
+
+            var results = await Task.WhenAll(tasks);
+
+            var failures = results.Where(r => r.Success == false).ToList();
+
+            if (failures.Count > 0)
+            {
+                _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
+
+                // If ALL connectors failed, rollback and stay on page.
+                if (results.All(r => r.Success == false))
+                {
+                    State.Vault.Items.Remove(_item);
+                    return;
+                }
+            }
+
             Nav.NavigateTo("/vault");
         }
         catch (Exception ex)

@@ -110,7 +110,7 @@ public class ClientVaultState : INotifyPropertyChanged
         _storage = storage;
 
         var gh = new GitHubVaultConnector(http, storage, crypto, this);
-        var gd = new GoogleDriveVaultConnector(http, storage, crypto, this);
+        var gd = new GoogleDriveVaultConnector(http, storage, crypto, this, js);
         var lf = new LocalFileVaultConnector(js);
 
         Connectors.Add(gh);

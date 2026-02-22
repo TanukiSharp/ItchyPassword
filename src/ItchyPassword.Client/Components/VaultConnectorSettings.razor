@@ -6,7 +6,7 @@
     {
         @foreach (string key in Connector.Configuration.Keys)
         {
-            string currentKey = key; // Capture for lambda
+            string currentKey = key; // Capture for lambda.
             string val = Connector.Configuration[currentKey];
             bool isSecret = currentKey.Contains("token", StringComparison.OrdinalIgnoreCase) ||
                             currentKey.Contains("password", StringComparison.OrdinalIgnoreCase) ||
