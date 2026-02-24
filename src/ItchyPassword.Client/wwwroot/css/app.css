@@ -326,6 +326,13 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
     margin-top: 1rem;
 }
 
+.form-description {
+    display: block;
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .app-layout {

@@ -1,6 +1,6 @@
-namespace ItchyPassword.Client.Services.VaultConnectors;
+using ItchyPassword.Core.Models;
 
-public record struct ConfigStorageKey(string Config, string Storage);
+namespace ItchyPassword.Client.Services.VaultConnectors;
 
 /// <summary>
 /// Defines a connector for a password vault storage provider.
@@ -91,7 +91,8 @@ public interface IVaultConnector
     }
 
     /// <summary>
-    /// Gets the configuration dictionary for the connector.
+    /// Gets the configuration entries for the connector.
+    /// Each entry describes a user-configurable field with its type, label, and current value.
     /// </summary>
-    Dictionary<string, string> Configuration { get; }
+    IReadOnlyList<ConfigurationEntry> Configuration { get; }
 }

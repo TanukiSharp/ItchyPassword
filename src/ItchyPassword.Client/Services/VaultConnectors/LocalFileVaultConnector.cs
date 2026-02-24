@@ -1,3 +1,4 @@
+using ItchyPassword.Core.Models;
 using Microsoft.JSInterop;
 
 namespace ItchyPassword.Client.Services.VaultConnectors;
@@ -46,7 +47,7 @@ public class LocalFileVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public Dictionary<string, string> Configuration { get; } = [];
+    public IReadOnlyList<ConfigurationEntry> Configuration { get; } = [];
 
     /// <inheritdoc />
     public bool CanRetryConnect

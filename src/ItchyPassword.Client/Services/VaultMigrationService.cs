@@ -1,6 +1,7 @@
 using ItchyPassword.Core.Helpers;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -46,10 +47,10 @@ public class VaultMigrationService(ICryptoService crypto)
     /// <summary>
     /// Migrates a V1 vault string to a V2 Vault object, including password-to-cipher conversion.
     /// </summary>
-    public static async Task<VaultV2> MigrateAsync(string jsonContent, string masterKey, IProgress<double>? progress = null)
+    public async Task<VaultV2> MigrateAsync(string jsonContent, string masterKey, IProgress<double>? progress = null)
     {
         // 1. Structural Migration (JSON -> Vault Items)
-        VaultV2 vault = PerformStructuralMigration(jsonContent);
+        VaultV2 vault = PerformStructuralMigration(analyseMode: true, jsonContent);
 
         // 2. Content Migration (Password Recipes -> Encrypted Ciphers)
         await MigrateLegacyPasswordRecipesToCiphersAsync(vault, masterKey, progress);
@@ -57,7 +58,7 @@ public class VaultMigrationService(ICryptoService crypto)
         return vault;
     }
 
-    private static VaultV2 PerformStructuralMigration(string jsonContent)
+    private static VaultV2 PerformStructuralMigration(bool analyseMode, string jsonContent)
     {
         var vault = new VaultV2 { Version = 2, Items = [] };
 
@@ -71,7 +72,7 @@ public class VaultMigrationService(ICryptoService crypto)
                 {
                     if (kvp.Value is JsonObject childObj)
                     {
-                        TraverseV1Node(childObj, kvp.Key, string.Empty, vault.Items);
+                        TraverseV1Node(analyseMode, childObj, kvp.Key, string.Empty, vault.Items);
                     }
                 }
             }
@@ -84,7 +85,7 @@ public class VaultMigrationService(ICryptoService crypto)
         return vault;
     }
 
-    private static void TraverseV1Node(JsonObject node, string name, string parentPath, List<VaultItemV2> items)
+    private static void TraverseV1Node(bool analyseMode, JsonObject node, string name, string parentPath, List<VaultItemV2> items)
     {
         bool processedPassword = false;
         bool processedCiphers = false;
@@ -105,15 +106,9 @@ public class VaultMigrationService(ICryptoService crypto)
                     LastModified = DateTime.UtcNow
                 };
 
-                int version = passObj.TryGetPropertyValue("version", out JsonNode? ver)
-                    ? ver?.GetValue<int?>() ?? 2
-                    : 2;
-                int length = passObj.TryGetPropertyValue("length", out JsonNode? len)
-                    ? len?.GetValue<int?>() ?? 64
-                    : 64;
-                string alphabet = passObj.TryGetPropertyValue("alphabet", out JsonNode? alpha)
-                    ? alpha?.ToString() ?? DefaultAlphabet
-                    : DefaultAlphabet;
+                int version = ExtractValue($"p: {item.Name}", passObj, "version", 2, analyseMode);
+                int length = ExtractValue($"p: {item.Name}", passObj, "length", 64, analyseMode);
+                string alphabet = ExtractValue($"p: {item.Name}", passObj, "alphabet", DefaultAlphabet, analyseMode);
 
                 item.SetData(new StaticKeyDataV2
                 {
@@ -145,6 +140,10 @@ public class VaultMigrationService(ICryptoService crypto)
 
                 items.Add(item);
                 processedPassword = true;
+            }
+            else if (analyseMode)
+            {
+                Console.WriteLine($"Node '{parentPath} / {name}' is an invalid password node.");
             }
         }
 
@@ -187,15 +186,9 @@ public class VaultMigrationService(ICryptoService crypto)
                             LastModified = DateTime.UtcNow
                         };
 
-                        string cipher = cipherDetail.TryGetPropertyValue("value", out JsonNode? val)
-                            ? val?.ToString() ?? string.Empty
-                            : string.Empty;
-                        int cipherCryptoVersion = cipherDetail.TryGetPropertyValue("version", out JsonNode? ver)
-                            ? ver?.GetValue<int?>() ?? 3
-                            : 3;
-                        string encoding = cipherDetail.TryGetPropertyValue("encoding", out JsonNode? enc)
-                            ? enc?.ToString() ?? "base62"
-                            : "base62";
+                        string cipher = ExtractValue($"c: {item.Name}", cipherDetail, "value", string.Empty, analyseMode);
+                        int cipherCryptoVersion = ExtractValue($"c: {item.Name}", cipherDetail, "version", 3, analyseMode);
+                        string encoding = ExtractValue($"c: {item.Name}", cipherDetail, "encoding", "base62", analyseMode);
 
                         item.SetData(new SecretDataV2
                         {
@@ -241,7 +234,7 @@ public class VaultMigrationService(ICryptoService crypto)
 
             if (kvp.Value is JsonObject childNode)
             {
-                TraverseV1Node(childNode, kvp.Key, newPath, items);
+                TraverseV1Node(analyseMode, childNode, kvp.Key, newPath, items);
             }
         }
     }
@@ -327,5 +320,42 @@ public class VaultMigrationService(ICryptoService crypto)
                 progress?.Report(completed * 100.0 / total);
             }
         }
+    }
+
+    private static T ExtractValue<T>(string parentPath, JsonObject obj, string key, T defaultValue, bool analyseMode = false)
+    {
+        if (obj.TryGetPropertyValue(key, out JsonNode? valNode) == false)
+        {
+            if (analyseMode)
+            {
+                string fullPath = string.IsNullOrWhiteSpace(parentPath) ? key : $"{parentPath} / {key}";
+                Console.WriteLine($"Key '{fullPath}' does not exist.");
+            }
+            return defaultValue;
+        }
+
+        if (valNode is null)
+        {
+            if (analyseMode)
+            {
+                string fullPath = string.IsNullOrWhiteSpace(parentPath) ? key : $"{parentPath} / {key}";
+                Console.WriteLine($"Key '{fullPath}' is null.");
+            }
+            return defaultValue;
+        }
+
+        T? nullableValue = valNode.GetValue<T?>();
+
+        if (nullableValue is null)
+        {
+            if (analyseMode)
+            {
+                string fullPath = string.IsNullOrWhiteSpace(parentPath) ? key : $"{parentPath} / {key}";
+                Console.WriteLine($"Key '{fullPath}' is not of expected type {typeof(T).FullName}.");
+            }
+            return defaultValue;
+        }
+
+        return nullableValue;
     }
 }

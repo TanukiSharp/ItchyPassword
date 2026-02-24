@@ -1,11 +1,12 @@
 using ItchyPassword.Core.Helpers;
+using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using System.Text;
 
 namespace ItchyPassword.Client.Services.VaultConnectors;
 
 /// <summary>
-/// Provides shared encryption and decryption helpers for vault connector secret values.
+/// Provides shared encryption, decryption, and configuration persistence helpers for vault connectors.
 /// Secrets are encrypted with the master key using EncryptV3, then base58-encoded with an "enc:" prefix.
 /// </summary>
 internal static class VaultConnectorHelper
@@ -49,44 +50,172 @@ internal static class VaultConnectorHelper
         return Encoding.UTF8.GetString(decrypted);
     }
 
-    public static async Task BindMemoryToStorageAsync(ConfigStorageKey key, Dictionary<string, string> config, LocalStorageService storage)
+    /// <summary>
+    /// Loads all persistable configuration entries from localStorage into their in-memory values.
+    /// Entries marked as encrypted are decrypted using the master key when available.
+    /// </summary>
+    /// <param name="entries">The configuration entries to load.</param>
+    /// <param name="storage">The localStorage service.</param>
+    /// <param name="masterKey">The current master key, or <c>null</c> if unavailable.</param>
+    /// <param name="crypto">The crypto service for decryption.</param>
+    public static async Task LoadEntriesAsync(
+        IReadOnlyList<ConfigurationEntry> entries,
+        LocalStorageService storage,
+        string? masterKey,
+        ICryptoService crypto)
     {
-        if (config.TryGetValue(key.Config, out string? value))
+        foreach (ConfigurationEntry entry in entries)
         {
-            await storage.SetItemAsync(key.Storage, value);
-        }
-    }
-
-    public static async Task BindMemoryToStorageAsync(ConfigStorageKey key, Dictionary<string, string> config, LocalStorageService storage, Func<string, Task<string?>> getter)
-    {
-        if (config.TryGetValue(key.Config, out string? value) && string.IsNullOrWhiteSpace(value) == false)
-        {
-            string? newValue = await getter(value);
-
-            if (newValue is not null)
+            if (entry.StorageKey is null)
             {
-                await storage.SetItemAsync(key.Storage, newValue);
+                continue;
+            }
+
+            string? stored = await storage.GetItemAsync(entry.StorageKey);
+
+            if (string.IsNullOrWhiteSpace(stored))
+            {
+                continue;
+            }
+
+            if (entry.IsEncrypted && string.IsNullOrWhiteSpace(masterKey) == false)
+            {
+                try
+                {
+                    entry.Value = await DecryptIfNeededAsync(stored, masterKey, crypto);
+                }
+                catch
+                {
+                    // Decryption failed — leave value as-is (empty or default).
+                    // This can happen when the master key is incorrect.
+                }
+            }
+            else
+            {
+                entry.Value = stored;
             }
         }
     }
 
-    public static async Task BindStorageToMemoryAsync(ConfigStorageKey key, LocalStorageService storage, Dictionary<string, string> config)
+    /// <summary>
+    /// Persists all persistable configuration entries to localStorage.
+    /// Entries marked as encrypted are encrypted using the master key when available.
+    /// </summary>
+    /// <param name="entries">The configuration entries to save.</param>
+    /// <param name="storage">The localStorage service.</param>
+    /// <param name="masterKey">The current master key, or <c>null</c> if unavailable.</param>
+    /// <param name="crypto">The crypto service for encryption.</param>
+    public static async Task SaveEntriesAsync(
+        IReadOnlyList<ConfigurationEntry> entries,
+        LocalStorageService storage,
+        string? masterKey,
+        ICryptoService crypto)
     {
-        string? value = await storage.GetItemAsync(key.Storage);
-
-        if (string.IsNullOrWhiteSpace(value) == false)
+        foreach (ConfigurationEntry entry in entries)
         {
-            config[key.Config] = value;
+            if (entry.StorageKey is null)
+            {
+                continue;
+            }
+
+            string valueToStore = entry.Value;
+
+            if (entry.IsEncrypted
+                && string.IsNullOrWhiteSpace(masterKey) == false
+                && string.IsNullOrWhiteSpace(valueToStore) == false)
+            {
+                valueToStore = await EncryptAsync(valueToStore, masterKey, crypto);
+            }
+
+            await storage.SetItemAsync(entry.StorageKey, valueToStore);
         }
     }
 
-    public static async Task BindStorageToMemoryAsync(ConfigStorageKey key, LocalStorageService storage, Dictionary<string, string> config, Func<string, Task<string>> getter)
+    /// <summary>
+    /// Returns the current value of a configuration entry by key.
+    /// Falls back to <see cref="ConfigurationEntry.DefaultValue"/> if the value is empty.
+    /// </summary>
+    /// <param name="entries">The list of configuration entries to search.</param>
+    /// <param name="key">The key of the entry to look up.</param>
+    /// <returns>The entry's value, or its default value if empty.</returns>
+    public static string GetValue(IReadOnlyList<ConfigurationEntry> entries, string key)
     {
-        string? value = await storage.GetItemAsync(key.Storage);
-
-        if (string.IsNullOrWhiteSpace(value) == false)
+        foreach (ConfigurationEntry entry in entries)
         {
-            config[key.Config] = await getter(value);
+            if (entry.Key == key)
+            {
+                return string.IsNullOrWhiteSpace(entry.Value) ? entry.DefaultValue : entry.Value;
+            }
         }
+
+        return string.Empty;
+    }
+
+    /// <summary>
+    /// Sets the current value of a configuration entry by key.
+    /// </summary>
+    /// <param name="entries">The list of configuration entries to search.</param>
+    /// <param name="key">The key of the entry to update.</param>
+    /// <param name="value">The new value.</param>
+    public static void SetValue(IReadOnlyList<ConfigurationEntry> entries, string key, string value)
+    {
+        foreach (ConfigurationEntry entry in entries)
+        {
+            if (entry.Key == key)
+            {
+                entry.Value = value;
+                return;
+            }
+        }
+    }
+
+    /// <summary>
+    /// Determines whether all required and visible configuration entries have non-empty values.
+    /// Respects conditional visibility: an entry whose visibility condition is not met is skipped.
+    /// </summary>
+    /// <param name="entries">The list of configuration entries to check.</param>
+    /// <returns><c>true</c> if all visible required entries have values; otherwise, <c>false</c>.</returns>
+    public static bool AreRequiredEntriesFilled(IReadOnlyList<ConfigurationEntry> entries)
+    {
+        foreach (ConfigurationEntry entry in entries)
+        {
+            if (entry.IsRequired == false)
+            {
+                continue;
+            }
+
+            // Skip entries hidden by conditional visibility.
+            if (IsEntryVisible(entries, entry) == false)
+            {
+                continue;
+            }
+
+            string value = string.IsNullOrWhiteSpace(entry.Value) ? entry.DefaultValue : entry.Value;
+
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    /// <summary>
+    /// Determines whether a configuration entry is currently visible based on its
+    /// <see cref="ConfigurationEntry.VisibleWhenKey"/> and <see cref="ConfigurationEntry.VisibleWhenValue"/> rules.
+    /// </summary>
+    /// <param name="entries">All configuration entries (to look up the controlling entry).</param>
+    /// <param name="entry">The entry whose visibility to check.</param>
+    /// <returns><c>true</c> if the entry should be displayed; otherwise, <c>false</c>.</returns>
+    public static bool IsEntryVisible(IReadOnlyList<ConfigurationEntry> entries, ConfigurationEntry entry)
+    {
+        if (entry.VisibleWhenKey is null)
+        {
+            return true;
+        }
+
+        string controllingValue = GetValue(entries, entry.VisibleWhenKey);
+        return string.Equals(controllingValue, entry.VisibleWhenValue, StringComparison.Ordinal);
     }
 }

@@ -1,3 +1,4 @@
+using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using Microsoft.JSInterop;
 using System.Net.Http.Headers;
@@ -53,8 +54,8 @@ public class GoogleDriveVaultConnector : IVaultConnector
     private const string AppDataScope = "https://www.googleapis.com/auth/drive.appdata";
     private const string DriveFileScope = "https://www.googleapis.com/auth/drive.file";
 
-    private static readonly ConfigStorageKey StorageModeKey = new("StorageMode", "itchypassword_gdrive_storage_mode");
-    private static readonly ConfigStorageKey FolderIdKey = new("FolderId", "itchypassword_gdrive_folder_id");
+    private const string StorageModeKey = "StorageMode";
+    private const string FolderIdKey = "FolderId";
     private const string AccessTokenStorageKey = "itchypassword_gdrive_access_token";
     private const string RefreshTokenStorageKey = "itchypassword_gdrive_refresh_token";
 
@@ -101,27 +102,44 @@ public class GoogleDriveVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public Dictionary<string, string> Configuration { get; } = new Dictionary<string, string>
-    {
-        [StorageModeKey.Config] = "appdata",
-        [FolderIdKey.Config] = string.Empty,
-    };
+    public IReadOnlyList<ConfigurationEntry> Configuration { get; } =
+    [
+        new ConfigurationEntry
+        {
+            Key = StorageModeKey,
+            Label = "Storage mode",
+            Description = "Choose where the vault file is stored in Google Drive.", // TODO: Explain pros and cons of App data and User data.
+            Kind = ConfigurationEntryKind.Dropdown,
+            DefaultValue = "appdata",
+            StorageKey = "itchypassword_gdrive_storage_mode",
+            Options =
+            [
+                new DropdownOption("appdata", "App data"),
+                new DropdownOption("folder", "User data"),
+            ],
+        },
+        new ConfigurationEntry
+        {
+            Key = FolderIdKey,
+            Label = "Folder",
+            Description = "Enter a folder name (e.g. \"ItchyPassword\"), a path (e.g. \"MyData/Vaults\"), or a Drive folder ID. Created automatically if it doesn't exist.",
+            Kind = ConfigurationEntryKind.Text,
+            Placeholder = "ItchyPassword",
+            StorageKey = "itchypassword_gdrive_folder_id",
+            IsRequired = true,
+            VisibleWhenKey = StorageModeKey,
+            VisibleWhenValue = "folder",
+        },
+    ];
 
     /// <inheritdoc />
     public bool IsConfigured
     {
         get
         {
-            // Always considered configured — authentication happens at connect time.
-            // FolderId is only required when StorageMode is "folder".
-            string mode = Configuration.GetValueOrDefault(StorageModeKey.Config, "appdata");
-
-            if (mode == "folder")
-            {
-                return string.IsNullOrWhiteSpace(Configuration.GetValueOrDefault(FolderIdKey.Config)) == false;
-            }
-
-            return true;
+            // Authentication happens at connect time.
+            // Only user-visible entries with conditional visibility need checking.
+            return VaultConnectorHelper.AreRequiredEntriesFilled(Configuration);
         }
     }
 
@@ -148,8 +166,8 @@ public class GoogleDriveVaultConnector : IVaultConnector
             return;
         }
 
-        await VaultConnectorHelper.BindStorageToMemoryAsync(StorageModeKey, _storage, Configuration);
-        await VaultConnectorHelper.BindStorageToMemoryAsync(FolderIdKey, _storage, Configuration);
+        string? masterKey = _state.HasMasterKey ? _state.MasterKey : null;
+        await VaultConnectorHelper.LoadEntriesAsync(Configuration, _storage, masterKey, _crypto);
 
         // Load tokens into private fields (not in Configuration, since that is UI-visible).
         _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey);
@@ -161,8 +179,8 @@ public class GoogleDriveVaultConnector : IVaultConnector
     /// <inheritdoc />
     public async Task SaveConfigurationAsync()
     {
-        await VaultConnectorHelper.BindMemoryToStorageAsync(StorageModeKey, Configuration, _storage);
-        await VaultConnectorHelper.BindMemoryToStorageAsync(FolderIdKey, Configuration, _storage);
+        string? masterKey = _state.HasMasterKey ? _state.MasterKey : null;
+        await VaultConnectorHelper.SaveEntriesAsync(Configuration, _storage, masterKey, _crypto);
 
         // Persist tokens encrypted directly to localStorage (not via Configuration).
         await SaveEncryptedTokenAsync(AccessTokenStorageKey, _accessToken);
@@ -334,7 +352,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
 
         string accessToken = await GetOrRefreshAccessTokenAsync();
 
-        Console.WriteLine($"[GoogleDrive] SaveVaultAsync: storageMode='{GetStorageMode()}', folderId='{Configuration.GetValueOrDefault(FolderIdKey.Config, "")}'");
+        Console.WriteLine($"[GoogleDrive] SaveVaultAsync: storageMode='{GetStorageMode()}', folderId='{VaultConnectorHelper.GetValue(Configuration, FolderIdKey)}'");
         Console.WriteLine($"[GoogleDrive] SaveVaultAsync: _cachedFileId='{_cachedFileId}'");
 
         if (string.IsNullOrWhiteSpace(_cachedFileId))
@@ -620,7 +638,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
 
     private string GetStorageMode()
     {
-        return Configuration.GetValueOrDefault(StorageModeKey.Config, "appdata");
+        return VaultConnectorHelper.GetValue(Configuration, StorageModeKey);
     }
 
     /// <summary>
@@ -635,7 +653,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
             return _resolvedFolderId;
         }
 
-        string configured = Configuration.GetValueOrDefault(FolderIdKey.Config, string.Empty);
+        string configured = VaultConnectorHelper.GetValue(Configuration, FolderIdKey);
 
         if (string.IsNullOrWhiteSpace(configured))
         {
