@@ -2,11 +2,18 @@
 @inject ClientVaultState State
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
+@inject LocalStorageService Storage
 
 <div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 2rem); margin-bottom: 0; overflow: hidden;">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
         <h3 style="margin: 0;">Vault Items</h3>
-        <div style="display: flex; gap: 0.5rem;">
+        <div style="display: flex; gap: 0.5rem; align-items: center;">
+            <span class="vault-item-count">@FilteredItems.Count() items</span>
+            <select class="input vault-filter-select" value="@_displayFilter" @onchange="OnFilterChanged">
+                <option value="all">Show all</option>
+                <option value="statickey">Static keys only</option>
+                <option value="secret">Secrets only</option>
+            </select>
             <button class="button secondary" @onclick="LockVault">Lock Workspace</button>
             <button class="button primary" @onclick="CreateNew">New Item</button>
         </div>
@@ -29,7 +36,15 @@
                 @foreach (VaultItemV2 item in FilteredItems)
                 {
                     <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 0.75rem;">@item.Name</td>
+                        <td style="padding: 0.75rem;">
+                            <span class="vault-item-name">
+                                @if (item.Type == VaultItemTypeV2.StaticKey)
+                                {
+                                    <img class="vault-icon-key" src="icons/key-dark.svg" alt="Static key" width="14" height="14" />
+                                }
+                                @item.Name
+                            </span>
+                        </td>
                         <td style="padding: 0.75rem;">@item.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td style="padding: 0.75rem; text-align: right;">
                             <button class="button secondary" @onclick="() => EditItem(item)">Edit</button>
@@ -39,7 +54,7 @@
                 @if (FilteredItems.Any() == false)
                 {
                     <tr>
-                        <td colspan="4" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                        <td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-muted);">
                             No items found.
                         </td>
                     </tr>
@@ -50,6 +65,26 @@
 </div>
 
 @code {
+    private const string DisplayFilterStorageKey = "itchypassword_vault_display_filter";
+
+    private string _displayFilter = "all";
+
+    protected override async Task OnInitializedAsync()
+    {
+        string? stored = await Storage.GetItemAsync(DisplayFilterStorageKey);
+
+        if (string.IsNullOrWhiteSpace(stored) == false)
+        {
+            _displayFilter = stored;
+        }
+    }
+
+    private async Task OnFilterChanged(ChangeEventArgs e)
+    {
+        _displayFilter = e.Value?.ToString() ?? "all";
+        await Storage.SetItemAsync(DisplayFilterStorageKey, _displayFilter);
+    }
+
     private void CreateNew()
     {
         Nav.NavigateTo("item/new");
@@ -69,25 +104,38 @@
             {
                 return Enumerable.Empty<VaultItemV2>();
             }
-            if (string.IsNullOrWhiteSpace(State.SearchQuery))
+
+            IEnumerable<VaultItemV2> items = State.Vault.Items;
+
+            // Apply type filter.
+            if (_displayFilter == "statickey")
             {
-                return State.Vault.Items;
+                items = items.Where(i => i.Type == VaultItemTypeV2.StaticKey);
+            }
+            else if (_displayFilter == "secret")
+            {
+                items = items.Where(i => i.Type == VaultItemTypeV2.Secret);
             }
 
-            // Basic search (Fuzzy later)
-            return State.Vault.Items.Where(i =>
-                i.Name.Contains(State.SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                i.Metadata?.Any(m =>
-                    m.Key.Contains(State.SearchQuery, StringComparison.OrdinalIgnoreCase) ||
-                    m.Value.Contains(State.SearchQuery, StringComparison.OrdinalIgnoreCase)
-                ) == true
-            );
+            // Apply search filter.
+            if (string.IsNullOrWhiteSpace(State.SearchQuery) == false)
+            {
+                string query = State.SearchQuery;
+                items = items.Where(i =>
+                    i.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                    i.Metadata?.Any(m =>
+                        m.Key.Contains(query, StringComparison.OrdinalIgnoreCase) ||
+                        m.Value.Contains(query, StringComparison.OrdinalIgnoreCase)
+                    ) == true
+                );
+            }
+
+            return items;
         }
     }
 
     private void EditItem(VaultItemV2 item)
     {
-        // Navigate or Open Modal
         Nav.NavigateTo($"edit/{item.Id:N}");
     }
 }

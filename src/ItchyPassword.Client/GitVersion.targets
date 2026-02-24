@@ -1,0 +1,21 @@
+<Project>
+
+  <!-- Inject git commit hash at build time -->
+  <Target Name="GenerateGitCommitHash" BeforeTargets="CoreCompile">
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+    </Exec>
+    <PropertyGroup>
+      <GitCommitHash Condition="'$(GitCommitHash)' == ''">unknown</GitCommitHash>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)AppVersion.g.cs"
+      Lines="namespace ItchyPassword.Client%3B%0A%0Apublic static partial class AppVersion%0A{%0A    public const string GitCommitHash = &quot;$(GitCommitHash)&quot;%3B%0A}"
+      Overwrite="true"
+      Encoding="UTF-8" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)AppVersion.g.cs" />
+    </ItemGroup>
+  </Target>
+
+</Project>
