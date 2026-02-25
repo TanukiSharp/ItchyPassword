@@ -12,14 +12,14 @@
 }
 else
 {
-    <div class="card" style="max-width: 800px; margin: 0 auto;">
+    <div class="card page-container">
         <div class="card-header">
-            <h3 style="margin: 0;">Edit @_item.Name</h3>
-            <span class="text-muted" style="font-size: 0.8rem;">Created: @_item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
-            <span class="text-muted" style="font-size: 0.8rem;">Last modified: @_item.LastModified.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
+            <h3 class="heading-flush">Edit @_item.Name</h3>
+            <span class="text-muted timestamp">Created: @_item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
+            <span class="text-muted timestamp">Last modified: @_item.LastModified.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
         </div>
 
-        <div style="padding: 1rem;">
+        <div class="card-body">
             <EditForm Model="_item" OnValidSubmit="SaveAsync">
                 <div class="form-group">
                     <label>Name</label>
@@ -30,7 +30,7 @@ else
                     <label>Type: <strong>@_item.Type</strong></label>
                 </div>
 
-                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+                <hr class="section-divider" />
 
                 @if (_item.Type == VaultItemTypeV2.StaticKey)
                 {
@@ -41,11 +41,11 @@ else
                     <SecretEditor @ref="_editor" Item="@_item" />
                 }
 
-                <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+                <hr class="section-divider" />
 
                 <MetadataEditor @ref="_metadataEditor" Item="@_item" />
 
-                <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+                <div class="form-actions">
                     <button class="button primary" type="submit" disabled="@_isSaving">
                         @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
                     </button>
@@ -55,7 +55,7 @@ else
 
             @if (string.IsNullOrWhiteSpace(_error) == false)
             {
-                <div class="alert danger" style="margin-top: 1rem;">@_error</div>
+                <div class="alert danger alert-inline">@_error</div>
             }
         </div>
     </div>

@@ -427,6 +427,455 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
     flex-shrink: 0;
 }
 
+/* ── Page Layouts ────────────────────────────────────────────────── */
+
+.page-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+}
+
+.page-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+/* ── Headings ────────────────────────────────────────────────────── */
+
+.heading-flush {
+    margin: 0;
+}
+
+/* ── Section Dividers ────────────────────────────────────────────── */
+
+.section-divider {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.section-divider-dashed {
+    border: 0;
+    border-top: 1px dashed var(--border-color);
+    margin: 0.5rem 0 1rem 0;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+
+.button-block {
+    width: 100%;
+}
+
+.button-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    aspect-ratio: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* ── Forms ────────────────────────────────────────────────────────── */
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.inline-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.section-label {
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.input-with-action {
+    display: flex;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.input-with-action .input,
+.input-with-action textarea.input {
+    flex: 1;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+/* ── Alerts ──────────────────────────────────────────────────────── */
+
+.alert-inline {
+    margin-top: 1rem;
+}
+
+.alert-inline-sm {
+    margin-top: 0.5rem;
+}
+
+.alert .button {
+    margin-top: 0.5rem;
+}
+
+/* ── Text Alignment ──────────────────────────────────────────────── */
+
+.text-right {
+    text-align: right;
+}
+
+/* ── Grids ───────────────────────────────────────────────────────── */
+
+.grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.grid-3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+/* ── Details / Summary ───────────────────────────────────────────── */
+
+.details-summary {
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.connector-card .details-summary {
+    font-size: 0.9em;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Timestamps ──────────────────────────────────────────────────── */
+
+.timestamp {
+    font-size: 0.8rem;
+}
+
+/* ── Master Key Page ─────────────────────────────────────────────── */
+
+.master-key-overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    cursor: default;
+}
+
+.master-key-panel {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.master-key-panel h2 {
+    margin-bottom: 2rem;
+}
+
+.master-key-panel .form-group {
+    text-align: left;
+}
+
+.master-key-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.master-key-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.master-key-input {
+    margin-bottom: 0;
+    padding-right: 2.5rem;
+}
+
+.char-count {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    min-width: 1.5em;
+    text-align: right;
+}
+
+.master-key-submit {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+
+.mobile-title {
+    font-weight: bold;
+    margin-left: 1rem;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    margin-top: 5px;
+}
+
+/* ── Vault Page (loading / error states) ─────────────────────────── */
+
+.loading-message {
+    margin-top: 1rem;
+    color: var(--text-muted);
+}
+
+.vault-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    padding: 2rem;
+    text-align: center;
+}
+
+.vault-error h3 {
+    color: var(--danger-color);
+}
+
+.vault-error p {
+    margin: 1rem 0;
+}
+
+/* ── Vault Table ─────────────────────────────────────────────────── */
+
+.vault-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.vault-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.vault-search {
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.vault-search .input {
+    margin-bottom: 0;
+}
+
+.vault-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vault-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--card-bg);
+}
+
+.vault-table th,
+.vault-table td {
+    padding: 0.75rem;
+}
+
+.vault-table th {
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.vault-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vault-actions-group {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.vault-empty-row {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ── Settings Page ───────────────────────────────────────────────── */
+
+.settings-alert {
+    max-width: 800px;
+    margin: 0 auto 1rem auto;
+}
+
+.connector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.connector-options {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.connector-description {
+    margin-top: 0;
+}
+
+.connector-test {
+    margin-top: 1rem;
+}
+
+.test-result {
+    margin-left: 1rem;
+}
+
+.settings-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ── Static Key Generator Page ───────────────────────────────────── */
+
+.page-intro {
+    margin-bottom: 2rem;
+}
+
+.page-intro h2,
+.page-intro p {
+    margin: 0;
+}
+
+.page-intro p {
+    color: var(--text-muted);
+}
+
+.options-panel {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.result-section {
+    margin-top: 2rem;
+}
+
+.result-input {
+    font-family: monospace;
+    font-size: 1.1em;
+    letter-spacing: 0.05em;
+    flex-grow: 1;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+/* ── SecretEditor ────────────────────────────────────────────────── */
+
+.editor-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mode-selector {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.symbol-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.symbol-input-group .input {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.symbol-reset-btn {
+    flex-shrink: 0;
+    padding: 0.35rem 0.5rem;
+    line-height: normal;
+}
+
+.secret-textarea {
+    flex: 1;
+    font-family: monospace;
+    resize: vertical;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+/* ── MetadataEditor ──────────────────────────────────────────────── */
+
+.metadata-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.metadata-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.metadata-key {
+    flex: 1;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+.metadata-value {
+    flex: 2;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+.metadata-add-btn {
+    align-self: flex-start;
+}
+
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
     .app-layout {

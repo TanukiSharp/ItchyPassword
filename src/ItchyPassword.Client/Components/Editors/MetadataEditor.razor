@@ -2,42 +2,39 @@
 @inject ICryptoService Crypto
 @inject ClientVaultState State
 
-<div style="display: flex; flex-direction: column; gap: 0.75rem;">
-    <label style="font-weight: 600; margin-bottom: 0;">Metadata</label>
+<div class="metadata-editor">
+    <label class="section-label">Metadata</label>
 
     @for (int i = 0; i < _entries.Count; i++)
     {
         var index = i;
-        <div style="display: flex; gap: 0.5rem; align-items: start;">
-            <input class="input" @bind="_entries[index].Key" @bind:event="oninput"
-                   placeholder="Key" style="flex: 1; margin-bottom: 0; min-height: 2.5rem;" />
-            <input class="input" @bind="_entries[index].NewValue" @bind:event="oninput"
-                   placeholder="Value"
-                   style="flex: 2; margin-bottom: 0; min-height: 2.5rem;" />
+        <div class="metadata-row">
+            <input class="input metadata-key" @bind="_entries[index].Key" @bind:event="oninput"
+                   placeholder="Key" />
+            <input class="input metadata-value" @bind="_entries[index].NewValue" @bind:event="oninput"
+                   placeholder="Value" />
             <button type="button"
-                    class="button @(_entries[index].IsEncrypted ? "primary" : "secondary")"
-                    style="width: 2.5rem; height: 2.5rem; aspect-ratio: 1; padding: 0; flex-shrink: 0;"
+                    class="button @(_entries[index].IsEncrypted ? "primary" : "secondary") icon-btn"
                     @onclick="() => ToggleEncrypted(index)"
                     title="@(_entries[index].IsEncrypted ? "Value stored encrypted, click to store in plain text." : "Value stored as plain text, click to store encrypted.")">
                 <img src="icons/@(_entries[index].IsEncrypted ? "lock" : "unlock").svg"
                      alt="@(_entries[index].IsEncrypted ? "Encrypted" : "Plaintext")"
-                     style="width: 16px; height: 16px;" />
+                     width="16" height="16" />
             </button>
-            <button type="button" class="button danger"
-                    style="width: 2.5rem; height: 2.5rem; aspect-ratio: 1; padding: 0; flex-shrink: 0;"
+            <button type="button" class="button danger icon-btn"
                     @onclick="() => RemoveEntry(index)" title="Remove entry">
                 ✕
             </button>
         </div>
     }
 
-    <button type="button" class="button secondary" style="align-self: flex-start;" @onclick="AddEntry">
+    <button type="button" class="button secondary metadata-add-btn" @onclick="AddEntry">
         + Add metadata
     </button>
 
     @if (string.IsNullOrWhiteSpace(_error) == false)
     {
-        <div class="alert danger" style="margin-top: 0.25rem;">@_error</div>
+        <div class="alert danger alert-inline-sm">@_error</div>
     }
 </div>
 

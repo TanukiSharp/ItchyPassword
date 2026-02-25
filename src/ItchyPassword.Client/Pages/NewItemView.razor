@@ -6,12 +6,12 @@
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 
-<div class="card" style="max-width: 800px; margin: 0 auto;">
+<div class="card page-container">
     <div class="card-header">
-        <h3 style="margin: 0;">New Item</h3>
+        <h3 class="heading-flush">New Item</h3>
     </div>
 
-    <div style="padding: 1rem;">
+    <div class="card-body">
         <EditForm Model="_item" OnValidSubmit="SaveAsync">
             <div class="form-group">
                 <label>Name</label>
@@ -26,7 +26,7 @@
                 </select>
             </div>
 
-            <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+            <hr class="section-divider" />
 
             @if (_selectedType == "StaticKey")
             {
@@ -37,11 +37,11 @@
                 <SecretEditor @ref="_editor" Item="@_item" />
             }
 
-            <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid var(--border-color);" />
+            <hr class="section-divider" />
 
             <MetadataEditor @ref="_metadataEditor" Item="@_item" />
 
-            <div style="margin-top: 2rem; display: flex; gap: 1rem;">
+            <div class="form-actions">
                 <button class="button primary" type="submit" disabled="@(_isSaving || string.IsNullOrWhiteSpace(_name))">
                     @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
                 </button>
@@ -51,7 +51,7 @@
 
         @if (string.IsNullOrWhiteSpace(_error) == false)
         {
-            <div class="alert danger" style="margin-top: 1rem;">@_error</div>
+            <div class="alert danger alert-inline">@_error</div>
         }
     </div>
 </div>

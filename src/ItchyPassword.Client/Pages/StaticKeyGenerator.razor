@@ -6,17 +6,17 @@
 @inject ClientVaultState State
 @inject NavigationManager Nav
 
-<div style="max-width: 800px; margin: 0 auto; padding: 1rem;">
-    <div style="margin-bottom: 2rem;">
-        <h2 style="margin: 0;">Static Key</h2>
-        <p style="margin: 0; color: var(--text-muted);">Generate passwords deterministically using only your <strong>master key</strong> and a public part.</p>
+<div class="page-container card-body">
+    <div class="page-intro">
+        <h2>Static Key</h2>
+        <p>Generate passwords deterministically using only your <strong>master key</strong> and a public part.</p>
     </div>
 
     @if (State.HasMasterKey == false)
     {
         <div class="alert warning">
             You must enter your Master Key first.
-            <button class="button small secondary" style="margin-top: 0.5rem;" @onclick="GoToLogin">Enter Master Key</button>
+            <button class="button small secondary" @onclick="GoToLogin">Enter Master Key</button>
         </div>
     }
     else
@@ -28,8 +28,8 @@
             </div>
 
             <details>
-                <summary style="cursor: pointer; margin-bottom: 1rem; color: var(--text-muted); user-select: none;">Options</summary>
-                <div style="padding: 1rem; border: 1px solid var(--border-color); border-radius: 4px; margin-bottom: 1rem;">
+                <summary class="details-summary">Options</summary>
+                <div class="options-panel">
                     <div class="form-group">
                         <label>Alphabet</label>
                         <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
@@ -57,10 +57,10 @@
 
         @if (string.IsNullOrWhiteSpace(result) == false)
         {
-            <div class="form-group" style="margin-top: 2rem;">
+            <div class="form-group result-section">
                 <label>Result</label>
-                <div style="display: flex; gap: 0.5rem; align-items: start; position: relative;">
-                   <input class="input" type="text" readonly value="@result" id="resultBox" style="font-family: monospace; font-size: 1.1em; letter-spacing: 0.05em; flex-grow: 1; margin-bottom: 0; min-height: 2.5rem;" />
+                <div class="input-with-action">
+                   <input class="input result-input" type="text" readonly value="@result" id="resultBox" />
 
                    <CopyButton Text="@result" />
                 </div>
@@ -69,7 +69,7 @@
 
         @if (string.IsNullOrWhiteSpace(error) == false)
         {
-             <div class="alert danger" style="margin-top: 1rem;">@error</div>
+             <div class="alert danger alert-inline">@error</div>
         }
     }
 </div>

@@ -9,12 +9,12 @@
     {
         <div class="mobile-toggle-bar">
             <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
-            <span style="font-weight: bold; margin-left: 1rem;">ItchyPassword</span>
+            <span class="mobile-title">ItchyPassword</span>
         </div>
 
         <aside class="sidebar @(sidebarOpen ? "open" : "")">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <h2 style="margin-top: 5px;">ItchyPassword</h2>
+            <div class="sidebar-header">
+                <h2>ItchyPassword</h2>
                 <button class="close-sidebar-btn" @onclick="ToggleSidebar">✕</button>
             </div>
             <nav>
@@ -25,7 +25,7 @@
                     }
                     else
                     {
-                        <li><span style="cursor: default;">🔒 Vault</span></li>
+                        <li><span>🔒 Vault</span></li>
                     }
                     <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static Key</NavLink></li>
                     <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>

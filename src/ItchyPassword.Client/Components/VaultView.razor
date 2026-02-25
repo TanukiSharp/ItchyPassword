@@ -5,9 +5,9 @@
 @inject LocalStorageService Storage
 
 <div class="card vault-card">
-    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
-        <h3 style="margin: 0;">Vault Items</h3>
-        <div style="display: flex; gap: 0.5rem; align-items: center;">
+    <div class="card-header vault-header">
+        <h3 class="heading-flush">Vault Items</h3>
+        <div class="vault-header-actions">
             <span class="vault-item-count">@FilteredItems.Count() items</span>
             <select class="input vault-filter-select" value="@_displayFilter" @onchange="OnFilterChanged">
                 <option value="all">Show all</option>
@@ -19,23 +19,23 @@
         </div>
     </div>
 
-    <div style="margin-bottom: 1rem; flex-shrink: 0;">
-        <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" style="margin-bottom: 0;" />
+    <div class="vault-search">
+        <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" />
     </div>
 
     <div class="vault-scroll-area">
-        <table class="table" style="width: 100%; border-collapse: collapse;">
-            <thead style="position: sticky; top: 0; z-index: 1; background-color: var(--card-bg);">
+        <table class="table vault-table">
+            <thead>
                 <tr>
-                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Name</th>
-                    <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid var(--border-color);">Actions</th>
+                    <th>Name</th>
+                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (VaultItemV2 item in FilteredItems)
                 {
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 0.75rem;">
+                    <tr>
+                        <td>
                             <span class="vault-item-name">
                                 @if (item.Type == VaultItemTypeV2.StaticKey)
                                 {
@@ -44,8 +44,8 @@
                                 @item.Name
                             </span>
                         </td>
-                        <td style="padding: 0.75rem; text-align: right;">
-                            <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                        <td class="text-right">
+                            <div class="vault-actions-group">
                                 <CopyButton CssClass="vault-item-action-btn" TextProvider="() => GetItemValueAsync(item)" />
                                 <button class="button secondary vault-item-action-btn" @onclick="() => EditItem(item)" title="Edit item">
                                     <img src="icons/edit-dark.svg" width="14" height="14" alt="Edit" />
@@ -57,7 +57,7 @@
                 @if (FilteredItems.Any() == false)
                 {
                     <tr>
-                        <td colspan="2" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                        <td colspan="2" class="vault-empty-row">
                             No items found.
                         </td>
                     </tr>

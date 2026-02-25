@@ -8,17 +8,17 @@
 
 @if (_isLoading)
 {
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column;">
+    <div class="page-centered">
         <div class="loading-spinner"></div>
-        <p style="margin-top: 1rem; color: var(--text-muted);">@_loadingMessage</p>
+        <p class="loading-message">@_loadingMessage</p>
     </div>
 }
 else if (string.IsNullOrWhiteSpace(_error) == false)
 {
-    <div style="display: flex; justify-content: center; align-items: center; height: 100vh; flex-direction: column; padding: 2rem; text-align: center;">
-        <h3 style="color: var(--danger-color);">Failed to Unlock</h3>
-        <p style="margin: 1rem 0;">@_error</p>
-        <div style="display: flex; gap: 1rem;">
+    <div class="vault-error">
+        <h3>Failed to Unlock</h3>
+        <p>@_error</p>
+        <div class="button-row">
             @if (State.ReadConnector?.CanRetryConnect == true)
             {
                 <button class="button primary" disabled="@_isRetrying" @onclick="RetryConnect">

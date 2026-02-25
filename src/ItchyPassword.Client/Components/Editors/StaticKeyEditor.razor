@@ -3,7 +3,7 @@
 @inject ICryptoService Crypto
 @inject ClientVaultState State
 
-<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+<div class="grid-2col">
     <div>
         <div class="form-group">
             <label>Public Salt</label>
@@ -36,21 +36,21 @@
             </select>
         </div>
 
-        <button type="button" class="button primary" style="width: 100%;" @onclick="GenerateAsync" disabled="@(_isGenerating || _publicPart.Length < MinPublicSaltLength || _length < MinLength)">
+        <button type="button" class="button primary button-block" @onclick="GenerateAsync" disabled="@(_isGenerating || _publicPart.Length < MinPublicSaltLength || _length < MinLength)">
             Generate Password
         </button>
 
         @if (string.IsNullOrWhiteSpace(_error) == false)
         {
-            <div class="alert danger" style="margin-top: 0.5rem;">@_error</div>
+            <div class="alert danger alert-inline-sm">@_error</div>
         }
     </div>
 
     <div>
         <div class="form-group">
             <label>Result</label>
-            <div style="display: flex; gap: 0.5rem; align-items: start;">
-                <input class="input" type="text" readonly value="@_result" style="flex: 1; margin-bottom: 0; min-height: 2.5rem;" />
+            <div class="input-with-action">
+                <input class="input" type="text" readonly value="@_result" />
                 <CopyButton Text="@_result" />
             </div>
         </div>
