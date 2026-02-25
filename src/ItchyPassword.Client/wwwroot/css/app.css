@@ -9,6 +9,7 @@
     --primary-hover: #2563eb;
     --danger-color: #ef4444; /* Red */
     --border-color: #333333;
+    --input-bg: #141414;
 
     /* Spacing */
     --spacing-xs: 0.25rem;
@@ -29,6 +30,7 @@
         --text-color: #1f2937;
         --text-muted: #6b7280;
         --border-color: #e5e7eb;
+        --input-bg: #f9fafb;
     }
 }
 
@@ -163,10 +165,55 @@ a:hover { text-decoration: underline; }
 }
 
 /* Forms */
-input[type="radio"],
-input[type="checkbox"] {
+input[type="radio"] {
     vertical-align: middle;
     margin: 0;
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
+/* Custom checkbox — native disabled+checked is invisible on some browsers */
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 0.85rem;
+    height: 0.85rem;
+    border: 1.5px solid #888;
+    border-radius: 2px;
+    background: transparent;
+    vertical-align: middle;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: #fff;
+    content: '✓';
+    font-weight: bold;
+}
+
+input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+input[type="checkbox"]:disabled:checked {
+    background: #143f7a;
+    border-color: #143f7a;
 }
 
 input, select, textarea {
@@ -176,7 +223,7 @@ input, select, textarea {
     margin-bottom: var(--spacing-md);
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
-    background-color: var(--card-bg);
+    background-color: var(--input-bg);
     color: var(--text-color);
     font-size: 1rem;
 }
@@ -359,13 +406,25 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
     border: 1px solid #3a3a3a;
     background-color: #252525;
     padding: 1rem;
-    margin: 1rem;
-    margin-top: 1.3rem;
+    margin: 0.3rem 0 1rem 0;
     border-radius: 8px;
 }
 
 .connector-settings {
     margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.connector-settings .form-group {
+    margin-bottom: 0;
+}
+
+.connector-settings .form-group input,
+.connector-settings .form-group select,
+.connector-settings .form-group textarea {
+    margin-bottom: 0;
 }
 
 .form-description {
@@ -373,6 +432,7 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
     font-size: 0.8em;
     color: var(--text-muted);
     margin-top: 0.25rem;
+    white-space: pre-line;
 }
 
 /* Vault item name with inline icon */
@@ -510,7 +570,7 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
 .input-with-action {
     display: flex;
     gap: 0.5rem;
-    align-items: start;
+    align-items: stretch;
 }
 
 .input-with-action .input,
@@ -761,6 +821,7 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
 
 .test-result {
     margin-left: 1rem;
+    white-space: pre-line;
 }
 
 .settings-actions {
@@ -915,6 +976,19 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
         min-height: 0;
         display: flex;
         flex-direction: column;
+    }
+
+    .page-container {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
     }
 
     .vault-card {

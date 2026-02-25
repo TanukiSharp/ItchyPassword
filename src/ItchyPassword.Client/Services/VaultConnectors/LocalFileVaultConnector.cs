@@ -8,16 +8,16 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// The file handle is persisted in IndexedDB so it survives page reloads.
 /// Only supported in Chromium-based browsers (Chrome, Edge, Opera).
 /// <para>
-/// Uses a two-phase connect flow to preserve the browser's transient user activation:
-/// 1. <see cref="PreConnectAsync"/> synchronously initiates the file picker or permission request.
-/// 2. <see cref="ConnectAsync"/> awaits the result via JS interop.
+/// Uses a two-phase access flow to preserve the browser's transient user activation:
+/// 1. <see cref="PreAccessAsync"/> synchronously initiates the file picker or permission request.
+/// 2. <see cref="AccessAsync"/> awaits the result via JS interop.
 /// </para>
 /// </summary>
 public class LocalFileVaultConnector : IVaultConnector
 {
     private readonly IJSRuntime _js;
 
-    private bool _connected;
+    private bool _hasAccess;
     private bool _hasStoredHandle;
 
     public LocalFileVaultConnector(IJSRuntime js)
@@ -50,23 +50,23 @@ public class LocalFileVaultConnector : IVaultConnector
     public IReadOnlyList<ConfigurationEntry> Configuration { get; } = [];
 
     /// <inheritdoc />
-    public bool CanRetryConnect
+    public bool CanRetryAccess
     {
         get
         {
-            return _hasStoredHandle && _connected == false;
+            return _hasStoredHandle && _hasAccess == false;
         }
     }
 
     /// <inheritdoc />
-    public string? ConnectFailureMessage { get; private set; }
+    public string? AccessFailureMessage { get; private set; }
 
     /// <inheritdoc />
     public bool IsConfigured
     {
         get
         {
-            return _connected || _hasStoredHandle;
+            return _hasAccess || _hasStoredHandle;
         }
     }
 
@@ -75,8 +75,8 @@ public class LocalFileVaultConnector : IVaultConnector
     {
         // Short-circuit if already loaded — this avoids an async yield on retry,
         // which would consume the browser's transient user activation before
-        // ConnectAsync gets a chance to use it.
-        if (_hasStoredHandle || _connected)
+        // AccessAsync gets a chance to use it.
+        if (_hasStoredHandle || _hasAccess)
         {
             return;
         }
@@ -94,10 +94,10 @@ public class LocalFileVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public async Task<bool> ConnectAsync()
+    public async Task<bool> AccessAsync()
     {
-        // Already connected this session.
-        if (_connected)
+        // Already accessed this session.
+        if (_hasAccess)
         {
             return true;
         }
@@ -107,34 +107,34 @@ public class LocalFileVaultConnector : IVaultConnector
         // user activation (from a click handler) is still active.
         if (_js is IJSInProcessRuntime jsInProcess)
         {
-            jsInProcess.Invoke<object?>("eval", "localFileInterop.initiateConnect()");
+            jsInProcess.Invoke<object?>("eval", "localFileInterop.initiateAccess()");
         }
 
         // Now await the async result.
-        string? fileName = await _js.InvokeAsync<string?>("localFileInterop.awaitConnect");
+        string? fileName = await _js.InvokeAsync<string?>("localFileInterop.awaitAccess");
 
         if (string.IsNullOrWhiteSpace(fileName))
         {
             if (_hasStoredHandle)
             {
-                ConnectFailureMessage = "The browser needs your permission to access the vault file. Click Retry to grant access.";
+                AccessFailureMessage = "The browser needs your permission to access the vault file. Click Retry to grant access.";
             }
 
             return false;
         }
 
-        ConnectFailureMessage = null;
+        AccessFailureMessage = null;
 
-        _connected = true;
+        _hasAccess = true;
         return true;
     }
 
     /// <inheritdoc />
     public async Task<string> LoadVaultAsync()
     {
-        if (_connected == false)
+        if (_hasAccess == false)
         {
-            throw new InvalidOperationException("No file selected. Use Connect to pick a file first.");
+            throw new InvalidOperationException("No file selected. Use Access to pick a file first.");
         }
 
         string? content = await _js.InvokeAsync<string?>("localFileInterop.readFile");
@@ -144,9 +144,9 @@ public class LocalFileVaultConnector : IVaultConnector
     /// <inheritdoc />
     public async Task SaveVaultAsync(string content)
     {
-        if (_connected == false)
+        if (_hasAccess == false)
         {
-            throw new InvalidOperationException("No file selected. Use Connect to pick a file first.");
+            throw new InvalidOperationException("No file selected. Use Access to pick a file first.");
         }
 
         bool success = await _js.InvokeAsync<bool>("localFileInterop.writeFile", content);

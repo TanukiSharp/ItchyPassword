@@ -14,8 +14,8 @@
                 <option value="statickey">Static keys only</option>
                 <option value="secret">Secrets only</option>
             </select>
-            <button class="button secondary" @onclick="LockVault">Lock Workspace</button>
-            <button class="button primary" @onclick="CreateNew">New Item</button>
+            <button class="button secondary" @onclick="LockVault" title="Clears the master key and unloads all vault data.">Lock vault</button>
+            <button class="button primary" @onclick="CreateNew" title="Create a new vault item.">New Item</button>
         </div>
     </div>
 

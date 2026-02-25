@@ -32,7 +32,13 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// The access and refresh tokens are encrypted with the master key and persisted in localStorage.
 /// </para>
 /// </summary>
-public class GoogleDriveVaultConnector : IVaultConnector
+public class GoogleDriveVaultConnector(
+    HttpClient http,
+    LocalStorageService storage,
+    ICryptoService crypto,
+    ClientVaultState state,
+    IJSRuntime js
+) : IVaultConnector
 {
     // Google OAuth Client ID and Secret for ItchyPassword web app.
     // These are safe to embed in a public SPA — Google requires them for the
@@ -59,26 +65,17 @@ public class GoogleDriveVaultConnector : IVaultConnector
     private const string AccessTokenStorageKey = "itchypassword_gdrive_access_token";
     private const string RefreshTokenStorageKey = "itchypassword_gdrive_refresh_token";
 
-    private readonly HttpClient _http;
-    private readonly LocalStorageService _storage;
-    private readonly ICryptoService _crypto;
-    private readonly ClientVaultState _state;
-    private readonly IJSRuntime _js;
+    private readonly HttpClient _http = http;
+    private readonly LocalStorageService _storage = storage;
+    private readonly ICryptoService _crypto = crypto;
+    private readonly ClientVaultState _state = state;
+    private readonly IJSRuntime _js = js;
 
     private bool _configLoaded;
     private string? _cachedFileId;
     private string? _resolvedFolderId;
     private string _accessToken = string.Empty;
     private string _refreshToken = string.Empty;
-
-    public GoogleDriveVaultConnector(HttpClient http, LocalStorageService storage, ICryptoService crypto, ClientVaultState state, IJSRuntime js)
-    {
-        _http = http;
-        _storage = storage;
-        _crypto = crypto;
-        _state = state;
-        _js = js;
-    }
 
     /// <inheritdoc />
     public Guid Id { get; } = Guid.Parse("b7d4c22a-0498-4c12-a1f4-5f80e9a5c8e2");
@@ -108,7 +105,11 @@ public class GoogleDriveVaultConnector : IVaultConnector
         {
             Key = StorageModeKey,
             Label = "Storage mode",
-            Description = "Choose where the vault file is stored in Google Drive.", // TODO: Explain pros and cons of App data and User data.
+            Description = """
+                Choose where the vault file is stored in Google Drive.
+                - App data is hidden from the user and only accessible by ItchyPassword, it keeps your Drive clean but the file cannot be manually managed.
+                - User data stores the vault in a visible folder you choose, making it easy to find, but the user can accidentally break it.
+                """,
             Kind = ConfigurationEntryKind.Dropdown,
             DefaultValue = "appdata",
             StorageKey = "itchypassword_gdrive_storage_mode",
@@ -122,7 +123,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
         {
             Key = FolderIdKey,
             Label = "Folder",
-            Description = "Enter a folder name (e.g. \"ItchyPassword\"), a path (e.g. \"MyData/Vaults\"), or a Drive folder ID. Created automatically if it doesn't exist.",
+            Description = "Enter a folder name (e.g. \"ItchyPassword\") or a path (e.g. \"MyData/Vaults\"). Created automatically if it does not exist.",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "ItchyPassword",
             StorageKey = "itchypassword_gdrive_folder_id",
@@ -137,14 +138,14 @@ public class GoogleDriveVaultConnector : IVaultConnector
     {
         get
         {
-            // Authentication happens at connect time.
+            // Authentication happens at access time.
             // Only user-visible entries with conditional visibility need checking.
             return VaultConnectorHelper.AreRequiredEntriesFilled(Configuration);
         }
     }
 
     /// <inheritdoc />
-    public bool CanRetryConnect
+    public bool CanRetryAccess
     {
         get
         {
@@ -155,7 +156,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public string? ConnectFailureMessage { get; private set; }
+    public string? AccessFailureMessage { get; private set; }
 
     /// <inheritdoc />
     public async Task LoadConfigurationAsync()
@@ -188,9 +189,9 @@ public class GoogleDriveVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public async Task<bool> ConnectAsync()
+    public async Task<bool> AccessAsync()
     {
-        ConnectFailureMessage = null;
+        AccessFailureMessage = null;
 
         // Ensure configuration (StorageMode, FolderId) is loaded before we
         // potentially call SaveConfigurationAsync (which would overwrite with defaults).
@@ -235,6 +236,10 @@ public class GoogleDriveVaultConnector : IVaultConnector
             Console.WriteLine("[GoogleDrive] Refresh token did not produce a valid token. Clearing.");
             _accessToken = string.Empty;
             _refreshToken = string.Empty;
+            AccessFailureMessage = """
+                Google did not grant the required permissions.
+                Please revoke ItchyPassword at https://myaccount.google.com/permissions and try again.
+                """;
             await SaveConfigurationAsync();
         }
 
@@ -265,7 +270,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
 
         if (string.IsNullOrWhiteSpace(resultJson))
         {
-            ConnectFailureMessage = "Google sign-in was cancelled or failed. Click Retry to try again.";
+            AccessFailureMessage = "Google sign-in was cancelled or failed. Click Retry to try again.";
             return false;
         }
 
@@ -273,14 +278,14 @@ public class GoogleDriveVaultConnector : IVaultConnector
 
         if (callbackResult is null || string.IsNullOrWhiteSpace(callbackResult.Code))
         {
-            ConnectFailureMessage = "Google sign-in returned invalid data. Click Retry to try again.";
+            AccessFailureMessage = "Google sign-in returned invalid data. Click Retry to try again.";
             return false;
         }
 
         // Validate state to prevent CSRF attacks.
         if (callbackResult.State != state)
         {
-            ConnectFailureMessage = "Google sign-in state mismatch (possible CSRF). Click Retry to try again.";
+            AccessFailureMessage = "Google sign-in state mismatch (possible CSRF). Click Retry to try again.";
             return false;
         }
 
@@ -289,7 +294,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
 
         if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
         {
-            ConnectFailureMessage = "Failed to exchange authorization code for access token. Click Retry to try again.";
+            AccessFailureMessage = "Failed to exchange authorization code for access token. Click Retry to try again.";
             return false;
         }
 
@@ -300,8 +305,10 @@ public class GoogleDriveVaultConnector : IVaultConnector
         // Validate the freshly obtained token has the required scopes.
         if (await ValidateTokenAsync(_accessToken) == false)
         {
-            ConnectFailureMessage = "Google did not grant the required permissions. " +
-                "Please revoke ItchyPassword at https://myaccount.google.com/permissions and try again.";
+            AccessFailureMessage = """
+                Google did not grant the required permissions.
+                Please revoke ItchyPassword at https://myaccount.google.com/permissions and try again.
+            """;
             _accessToken = string.Empty;
             return false;
         }
@@ -346,8 +353,8 @@ public class GoogleDriveVaultConnector : IVaultConnector
     /// <inheritdoc />
     public async Task SaveVaultAsync(string content)
     {
-        // Ensure configuration is loaded. Write connectors may not have
-        // been explicitly loaded or connected before save is called.
+        // Ensure configuration is loaded. Writer connectors may not have
+        // been explicitly loaded or accessed before save is called.
         await LoadConfigurationAsync();
 
         string accessToken = await GetOrRefreshAccessTokenAsync();
@@ -608,7 +615,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
     /// Returns the current access token, or attempts to refresh it using the stored
     /// refresh token. Does NOT trigger interactive sign-in (which requires a user gesture).
     /// Used by <see cref="LoadVaultAsync"/> and <see cref="SaveVaultAsync"/> to support
-    /// write connectors that may not have been explicitly connected via <see cref="ConnectAsync"/>.
+    /// writer connectors that may not have been explicitly accessed via <see cref="AccessAsync"/>.
     /// </summary>
     private async Task<string> GetOrRefreshAccessTokenAsync()
     {
@@ -633,7 +640,7 @@ public class GoogleDriveVaultConnector : IVaultConnector
         }
 
         throw new InvalidOperationException(
-            "No valid Google Drive access token. Please use 'Test Connection' in Settings to sign in.");
+            "No valid Google Drive access token. Please use 'Test access' in Settings to sign in.");
     }
 
     private string GetStorageMode()

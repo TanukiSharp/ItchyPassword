@@ -19,9 +19,9 @@ else if (string.IsNullOrWhiteSpace(_error) == false)
         <h3>Failed to Unlock</h3>
         <p>@_error</p>
         <div class="button-row">
-            @if (State.ReadConnector?.CanRetryConnect == true)
+            @if (State.ReadConnector?.CanRetryAccess == true)
             {
-                <button class="button primary" disabled="@_isRetrying" @onclick="RetryConnect">
+                <button class="button primary" disabled="@_isRetrying" @onclick="RetryAccess">
                     @(_isRetrying ? "Retrying..." : "Retry")
                 </button>
             }
@@ -57,13 +57,13 @@ else if (State.IsUnlocked)
     }
 
     /// <summary>
-    /// Attempts the full unlock flow (connect + load vault).
+    /// Attempts the full unlock flow (access + load vault).
     /// </summary>
     private async Task AttemptUnlockAsync()
     {
         _isLoading = true;
         _error = string.Empty;
-        _loadingMessage = "Unlocking vault...";
+        _loadingMessage = "Accessing vault...";
         StateHasChanged();
 
         try
@@ -105,10 +105,10 @@ else if (State.IsUnlocked)
     /// <summary>
     /// Retries the unlock flow with a fresh user gesture.
     /// AttemptUnlockAsync calls VaultUnlockService.UnlockAsync, which in turn calls
-    /// LoadConfigurationAsync (short-circuits on retry) then ConnectAsync (synchronous
+    /// LoadConfigurationAsync (short-circuits on retry) then AccessAsync (synchronous
     /// preamble preserves the gesture). No special pre-call needed.
     /// </summary>
-    private async Task RetryConnect()
+    private async Task RetryAccess()
     {
         if (State.ReadConnector is null)
         {

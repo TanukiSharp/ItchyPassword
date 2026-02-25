@@ -6,72 +6,78 @@
 @inject ClientVaultState State
 @inject NavigationManager Nav
 
-<div class="page-container card-body">
-    <div class="page-intro">
-        <h2>Static Key</h2>
-        <p>Generate passwords deterministically using only your <strong>master key</strong> and a public part.</p>
+<PageTitle>Static Key Generator</PageTitle>
+
+<h1>Static Key</h1>
+
+<div class="card page-container">
+    <div class="card-header">
+        <h2>Generator</h2>
+        <p class="text-muted">Generate passwords deterministically using only your <strong>master key</strong> and a public part.</p>
     </div>
 
-    @if (State.HasMasterKey == false)
-    {
-        <div class="alert warning">
-            You must enter your Master Key first.
-            <button class="button small secondary" @onclick="GoToLogin">Enter Master Key</button>
-        </div>
-    }
-    else
-    {
-        <div>
-            <div class="form-group">
-                <label for="publicPart">Public part</label>
-                <input class="input" id="publicPart" type="text" value="@publicPart" @oninput="OnPublicPartInput" placeholder="e.g. google.com" required autofocus />
-            </div>
-
-            <details>
-                <summary class="details-summary">Options</summary>
-                <div class="options-panel">
-                    <div class="form-group">
-                        <label>Alphabet</label>
-                        <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
-                    </div>
-
-                    <div class="form-group">
-                        <label>Length</label>
-                        <input class="input" type="number" value="@length" @oninput="OnLengthInput" min="4" max="128" />
-                    </div>
-
-                    <label>Crypto version</label>
-                    <select class="input" value="@cryptoVersion" @onchange="OnCryptoVersionChange">
-                        <option value="v2">v2</option>
-                        <option value="v1">v1 (Legacy)</option>
-                    </select>
-
-                    <label>Encoding</label>
-                    <select class="input" value="@encoding" @onchange="OnEncodingChange">
-                        <option value="v2">v2</option>
-                        <option value="v1">v1 (Legacy)</option>
-                    </select>
-                </div>
-            </details>
-        </div>
-
-        @if (string.IsNullOrWhiteSpace(result) == false)
+    <div class="card-body">
+        @if (State.HasMasterKey == false)
         {
-            <div class="form-group result-section">
-                <label>Result</label>
-                <div class="input-with-action">
-                   <input class="input result-input" type="text" readonly value="@result" id="resultBox" />
-
-                   <CopyButton Text="@result" />
-                </div>
+            <div class="alert warning">
+                You must enter your Master Key first.
+                <button class="button small secondary" @onclick="GoToLogin">Enter Master Key</button>
             </div>
         }
-
-        @if (string.IsNullOrWhiteSpace(error) == false)
+        else
         {
-             <div class="alert danger alert-inline">@error</div>
+            <div>
+                <div class="form-group">
+                    <label for="publicPart">Public part</label>
+                    <input class="input" id="publicPart" type="text" value="@publicPart" @oninput="OnPublicPartInput" placeholder="e.g. google.com" required autofocus />
+                </div>
+
+                <details>
+                    <summary class="details-summary">Options</summary>
+                    <div class="options-panel">
+                        <div class="form-group">
+                            <label>Alphabet</label>
+                            <input class="input" type="text" value="@alphabet" @oninput="OnAlphabetInput" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Length</label>
+                            <input class="input" type="number" value="@length" @oninput="OnLengthInput" min="4" max="128" />
+                        </div>
+
+                        <label>Crypto version</label>
+                        <select class="input" value="@cryptoVersion" @onchange="OnCryptoVersionChange">
+                            <option value="v2">v2</option>
+                            <option value="v1">v1 (Legacy)</option>
+                        </select>
+
+                        <label>Encoding</label>
+                        <select class="input" value="@encoding" @onchange="OnEncodingChange">
+                            <option value="v2">v2</option>
+                            <option value="v1">v1 (Legacy)</option>
+                        </select>
+                    </div>
+                </details>
+            </div>
+
+            @if (string.IsNullOrWhiteSpace(result) == false)
+            {
+                <div class="form-group result-section">
+                    <label>Result</label>
+                    <div class="input-with-action">
+                       <input class="input result-input" type="text" readonly value="@result" id="resultBox" />
+
+                       <CopyButton Text="@result" />
+                    </div>
+                </div>
+            }
+
+            @if (string.IsNullOrWhiteSpace(error) == false)
+            {
+                 <div class="alert danger alert-inline">@error</div>
+            }
         }
-    }
+    </div>
 </div>
 
 @code {

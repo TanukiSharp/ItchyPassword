@@ -4,9 +4,9 @@
  * The file handle is persisted in IndexedDB so it survives page reloads.
  * Only supported in Chromium-based browsers (Chrome, Edge, Opera).
  *
- * Two-phase connect flow (to preserve browser user gesture):
- * 1. initiateConnect() — called synchronously from C# (IJSInProcessRuntime) to start the picker/permission.
- * 2. awaitConnect()    — called from C# ConnectAsync, awaits the result.
+ * Two-phase access flow (to preserve browser user gesture):
+ * 1. initiateAccess() — called synchronously from C# (IJSInProcessRuntime) to start the picker/permission.
+ * 2. awaitAccess()    — called from C# AccessAsync, awaits the result.
  */
 window.localFileInterop = {
     /** @type {FileSystemFileHandle|null} */
@@ -15,8 +15,8 @@ window.localFileInterop = {
     /** @type {boolean} Whether _handle was restored from IndexedDB and still needs permission. */
     _needsPermission: false,
 
-    /** @type {Promise<string|null>|null} Pending connect result set by initiateConnect(). */
-    _connectPromise: null,
+    /** @type {Promise<string|null>|null} Pending access result set by initiateAccess(). */
+    _accessPromise: null,
 
     _dbName: 'itchypassword_localfile',
     _storeName: 'fileHandles',
@@ -75,7 +75,7 @@ window.localFileInterop = {
      *
      * Uses queryPermission() to check if the user previously granted persistent access
      * ("allow every time"). If so, _needsPermission is set to false and the subsequent
-     * initiateConnect() call will resolve instantly without any prompt.
+     * initiateAccess() call will resolve instantly without any prompt.
      *
      * @returns {Promise<boolean>} True if a handle was restored.
      */
@@ -108,30 +108,30 @@ window.localFileInterop = {
     },
 
     /**
-     * Initiates the connect flow.
+     * Initiates the access flow.
      * Called synchronously from C# (IJSInProcessRuntime) to preserve the browser's
      * transient user activation for showOpenFilePicker / requestPermission.
      *
      * If the user previously chose "allow every time", queryPermission() in restoreHandle()
      * already set _needsPermission to false, so this resolves instantly.
      *
-     * Sets _connectPromise which is consumed by awaitConnect().
+     * Sets _accessPromise which is consumed by awaitAccess().
      */
-    initiateConnect() {
+    initiateAccess() {
         if (typeof window.showOpenFilePicker !== 'function') {
-            this._connectPromise = Promise.resolve(null);
+            this._accessPromise = Promise.resolve(null);
             return;
         }
 
-        // Already connected this session — resolve immediately.
+        // Already accessed this session — resolve immediately.
         if (this._handle && !this._needsPermission) {
-            this._connectPromise = Promise.resolve(this._handle.name);
+            this._accessPromise = Promise.resolve(this._handle.name);
             return;
         }
 
         // Handle restored from IndexedDB but permission not yet granted — request it (needs gesture).
         if (this._handle && this._needsPermission) {
-            this._connectPromise = this._handle.requestPermission({ mode: 'readwrite' })
+            this._accessPromise = this._handle.requestPermission({ mode: 'readwrite' })
                 .then(result => {
                     if (result === 'granted') {
                         this._needsPermission = false;
@@ -151,7 +151,7 @@ window.localFileInterop = {
         }
 
         // No handle — open the file picker (needs gesture).
-        this._connectPromise = window.showOpenFilePicker({
+        this._accessPromise = window.showOpenFilePicker({
             types: [{ description: 'JSON files', accept: { 'application/json': ['.json'] } }],
             multiple: false
         }).then(([handle]) => {
@@ -162,17 +162,17 @@ window.localFileInterop = {
     },
 
     /**
-     * Awaits the result of a previously initiated connect.
-     * Called from C# ConnectAsync after initiateConnect() was triggered.
-     * @returns {Promise<string|null>} The file name, or null if connection failed.
+     * Awaits the result of a previously initiated access.
+     * Called from C# AccessAsync after initiateAccess() was triggered.
+     * @returns {Promise<string|null>} The file name, or null if access failed.
      */
-    async awaitConnect() {
-        if (this._connectPromise === null) {
+    async awaitAccess() {
+        if (this._accessPromise === null) {
             return null;
         }
 
-        const result = await this._connectPromise;
-        this._connectPromise = null;
+        const result = await this._accessPromise;
+        this._accessPromise = null;
         return result;
     },
 

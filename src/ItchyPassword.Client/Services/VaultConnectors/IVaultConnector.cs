@@ -28,7 +28,7 @@ public interface IVaultConnector
     bool IsConfigured { get; }
 
     /// <summary>
-    /// Attempts to connect to the vault storage provider using the current configuration.
+    /// Attempts to access the vault storage provider using the current configuration.
     /// <para>
     /// Connectors that rely on browser APIs requiring a transient user activation
     /// (e.g. File System Access API) should perform the gesture-dependent operation
@@ -36,8 +36,8 @@ public interface IVaultConnector
     /// browser gesture simply by calling this method on the click call-stack.
     /// </para>
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result contains true if the connection was successful; otherwise, false.</returns>
-    Task<bool> ConnectAsync();
+    /// <returns>A task that represents the asynchronous operation. The task result contains true if the access was successful; otherwise, false.</returns>
+    Task<bool> AccessAsync();
 
     /// <summary>
     /// Loads the vault content from the storage provider.
@@ -67,10 +67,10 @@ public interface IVaultConnector
     Task SaveConfigurationAsync();
 
     /// <summary>
-    /// Gets a value indicating whether a failed connection can be retried with a fresh user gesture.
+    /// Gets a value indicating whether a failed access attempt can be retried with a fresh user gesture.
     /// Connectors that rely on browser APIs requiring transient user activation should return <c>true</c>.
     /// </summary>
-    bool CanRetryConnect
+    bool CanRetryAccess
     {
         get
         {
@@ -79,10 +79,10 @@ public interface IVaultConnector
     }
 
     /// <summary>
-    /// Gets a connector-specific error message set after <see cref="ConnectAsync"/> returns <c>false</c>.
+    /// Gets a connector-specific error message set after <see cref="AccessAsync"/> returns <c>false</c>.
     /// When non-null, this message is shown to the user instead of the generic fallback.
     /// </summary>
-    string? ConnectFailureMessage
+    string? AccessFailureMessage
     {
         get
         {

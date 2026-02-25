@@ -117,7 +117,7 @@ public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, 
     }
 
     /// <inheritdoc />
-    public async Task<bool> ConnectAsync()
+    public async Task<bool> AccessAsync()
     {
         if (IsConfigured == false)
         {

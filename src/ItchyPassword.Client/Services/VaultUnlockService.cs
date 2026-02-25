@@ -38,12 +38,12 @@ public class VaultUnlockService(ClientVaultState state, VaultMigrationService va
 
         try
         {
-            bool isConnected = await state.ReadConnector.ConnectAsync();
+            bool hasAccess = await state.ReadConnector.AccessAsync();
 
-            if (isConnected == false)
+            if (hasAccess == false)
             {
-                 string errorMessage = state.ReadConnector.ConnectFailureMessage
-                     ?? $"Could not connect to {state.ReadConnector.Name}.";
+                 string errorMessage = state.ReadConnector.AccessFailureMessage
+                     ?? $"Could not access {state.ReadConnector.Name}.";
                  return (false, errorMessage);
             }
         }

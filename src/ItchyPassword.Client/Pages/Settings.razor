@@ -32,7 +32,7 @@
                             <input type="radio" name="readSource" checked="@(State.ActiveReaderId == connector.Id)" @onchange="@(() => SetReader(connector))" /> Read
                         </label>
                         <label title="Write to this source" class="inline-label">
-                            <input type="checkbox" checked="@State.IsWriter(connector.Id)" disabled="@(State.IsWriter(connector.Id) && State.WriteConnectors.Count() == 1)" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
+                            <input type="checkbox" checked="@State.IsWriter(connector.Id)" disabled="@(State.IsWriter(connector.Id) && (State.ActiveReaderId == connector.Id || State.WriteConnectors.Count() == 1))" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
                         </label>
                     </div>
                 </div>
@@ -46,7 +46,7 @@
                     <VaultConnectorSettings Connector="connector" />
 
                     <div class="connector-test">
-                        <button class="button secondary small" @onclick="@(() => TestConnection(connector))">Test Connection</button>
+                        <button class="button secondary small" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
                         @if (testResults.TryGetValue(connector, out (bool? Success, string Message) result))
                         {
                             <span class="@(result.Success is null ? "" : result.Success.Value ? "text-success" : "text-danger") test-result">
@@ -113,6 +113,13 @@
     {
         State.ActiveReaderId = connector.Id;
         await State.SaveActiveReaderAsync();
+
+        // Automatically enable as a writer when selected for read.
+        if (State.IsWriter(connector.Id) == false)
+        {
+            State.SetWriter(connector.Id, true);
+            await State.SaveWritersAsync();
+        }
     }
 
     private async Task SetWriter(IVaultConnector connector, bool enabled)
@@ -121,17 +128,17 @@
         await State.SaveWritersAsync();
     }
 
-    private async Task TestConnection(IVaultConnector connector)
+    private async Task TestAccessAsync(IVaultConnector connector)
     {
-        // Call ConnectAsync before any await to let the connector's synchronous
+        // Call AccessAsync before any await to let the connector's synchronous
         // preamble run on the click call-stack (preserving the browser gesture).
-        Task<bool> connectTask = connector.ConnectAsync();
+        Task<bool> accessTask = connector.AccessAsync();
 
         testResults[connector] = (null, "Testing...");
         StateHasChanged();
 
-        bool success = await connectTask;
-        testResults[connector] = (success, success ? "Connected successfully." : "Connection failed.");
+        bool success = await accessTask;
+        testResults[connector] = (success, success ? "Access granted." : "Access denied.");
         StateHasChanged();
     }
 
@@ -144,23 +151,23 @@
             return;
         }
 
-        // Call ConnectAsync before any await to let the connector's synchronous
+        // Call AccessAsync before any await to let the connector's synchronous
         // preamble run on the click call-stack (preserving the browser gesture).
-        Task<bool> connectTask = State.ReadConnector.ConnectAsync();
+        Task<bool> accessTask = State.ReadConnector.AccessAsync();
 
         isUnlocking = true;
-        actionMessage = "Connecting to unlock...";
+        actionMessage = "Accessing vault...";
         isActionError = false;
         redirectMessage = string.Empty;
         StateHasChanged();
 
         try
         {
-            bool isConnected = await connectTask;
+            bool hasAccess = await accessTask;
 
-            if (isConnected == false)
+            if (hasAccess == false)
             {
-                actionMessage = $"Failed to connect to {State.ReadConnector.Name}.";
+                actionMessage = $"Failed to access {State.ReadConnector.Name}.";
                 isActionError = true;
                 return;
             }
