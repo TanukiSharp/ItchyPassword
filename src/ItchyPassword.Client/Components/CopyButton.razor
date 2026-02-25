@@ -1,10 +1,9 @@
 @inject ClipboardService Clipboard
 
-<button class="button secondary" type="button"
+<button class="button secondary @CssClass" type="button"
         @onclick="CopyAsync"
-        disabled="@(string.IsNullOrWhiteSpace(Text))"
-        title="@Tooltip"
-        style="margin-bottom: 0; width: 2.5rem; height: 2.5rem; aspect-ratio: 1; padding: 0; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+        disabled="@IsDisabled"
+        title="@Tooltip">
     @if (_state == CopyState.Success)
     {
         <img src="icons/check.svg" width="16" height="16" alt="Success" />
@@ -20,29 +19,66 @@
 </button>
 
 @code {
+    /// <summary>
+    /// Static text to copy. Used when <see cref="TextProvider"/> is not set.
+    /// </summary>
     [Parameter]
     public string? Text { get; set; }
 
-    private enum CopyState { Idle, Success, Error }
+    /// <summary>
+    /// Async function that produces the text to copy. Takes priority over <see cref="Text"/> when set.
+    /// </summary>
+    [Parameter]
+    public Func<Task<string>>? TextProvider { get; set; }
+
+    /// <summary>
+    /// Optional additional CSS class(es) to apply to the button.
+    /// </summary>
+    [Parameter]
+    public string? CssClass { get; set; }
+
+    private enum CopyState { Idle, Busy, Success, Error }
     private CopyState _state = CopyState.Idle;
+
+    private bool IsDisabled => _state == CopyState.Busy
+        || (TextProvider is null && string.IsNullOrWhiteSpace(Text));
 
     private string Tooltip => _state switch
     {
         CopyState.Success => "Copied!",
         CopyState.Error => "Failed to copy",
+        CopyState.Busy => "Copying...",
         _ => "Copy to clipboard"
     };
 
     private async Task CopyAsync()
     {
-        if (string.IsNullOrWhiteSpace(Text))
+        if (_state == CopyState.Busy)
         {
             return;
         }
 
+        _state = CopyState.Busy;
+        StateHasChanged();
+
         try
         {
-            await Clipboard.CopyTextAsync(Text);
+            string text;
+
+            if (TextProvider is not null)
+            {
+                text = await TextProvider();
+            }
+            else if (string.IsNullOrWhiteSpace(Text) == false)
+            {
+                text = Text;
+            }
+            else
+            {
+                return;
+            }
+
+            await Clipboard.CopyTextAsync(text);
             _state = CopyState.Success;
         }
         catch

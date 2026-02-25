@@ -187,6 +187,33 @@ input:focus, select:focus, textarea:focus {
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
 }
 
+/* Hide browser-native password reveal button. */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
+.master-key-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.master-key-toggle:hover {
+    color: var(--text-color);
+    background: none;
+}
+
 label {
     display: block;
     margin-bottom: var(--spacing-xs);
@@ -349,6 +376,20 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
 }
 
 /* Vault item name with inline icon */
+.vault-card {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 2rem);
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.vault-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
 .vault-item-name {
     display: inline-flex;
     align-items: center;
@@ -374,6 +415,16 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
     font-size: 0.85rem;
     color: var(--text-muted);
     white-space: nowrap;
+}
+
+.vault-item-action-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
 }
 
 /* Mobile Responsiveness */
@@ -402,10 +453,25 @@ tr:hover td { background-color: rgba(255,255,255,0.05); }
             transform: translateX(0);
         }
 
+    .app-layout {
+        height: 100vh;
+        height: 100dvh;
+    }
+
     .main-content {
         padding-top: var(--spacing-md);
         width: 100%;
         margin-top: 0;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .vault-card {
+        flex: 1;
+        min-height: 0;
+        height: auto;
     }
 
     .close-sidebar-btn {

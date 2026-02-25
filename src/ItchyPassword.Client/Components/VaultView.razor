@@ -4,7 +4,7 @@
 @inject NavigationManager Nav
 @inject LocalStorageService Storage
 
-<div class="card" style="display: flex; flex-direction: column; height: calc(100vh - 2rem); margin-bottom: 0; overflow: hidden;">
+<div class="card vault-card">
     <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
         <h3 style="margin: 0;">Vault Items</h3>
         <div style="display: flex; gap: 0.5rem; align-items: center;">
@@ -23,12 +23,11 @@
         <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" style="margin-bottom: 0;" />
     </div>
 
-    <div style="flex: 1; overflow-y: auto; min-height: 0;">
+    <div class="vault-scroll-area">
         <table class="table" style="width: 100%; border-collapse: collapse;">
             <thead style="position: sticky; top: 0; z-index: 1; background-color: var(--card-bg);">
                 <tr>
                     <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Name</th>
-                    <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid var(--border-color);">Modified</th>
                     <th style="padding: 0.75rem; text-align: right; border-bottom: 2px solid var(--border-color);">Actions</th>
                 </tr>
             </thead>
@@ -45,16 +44,20 @@
                                 @item.Name
                             </span>
                         </td>
-                        <td style="padding: 0.75rem;">@item.LastModified.ToString("yyyy-MM-dd HH:mm:ss")</td>
                         <td style="padding: 0.75rem; text-align: right;">
-                            <button class="button secondary" @onclick="() => EditItem(item)">Edit</button>
+                            <div style="display: inline-flex; gap: 0.35rem; align-items: center;">
+                                <CopyButton CssClass="vault-item-action-btn" TextProvider="() => GetItemValueAsync(item)" />
+                                <button class="button secondary vault-item-action-btn" @onclick="() => EditItem(item)" title="Edit item">
+                                    <img src="icons/edit-dark.svg" width="14" height="14" alt="Edit" />
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 }
                 @if (FilteredItems.Any() == false)
                 {
                     <tr>
-                        <td colspan="3" style="padding: 2rem; text-align: center; color: var(--text-muted);">
+                        <td colspan="2" style="padding: 2rem; text-align: center; color: var(--text-muted);">
                             No items found.
                         </td>
                     </tr>
@@ -137,5 +140,82 @@
     private void EditItem(VaultItemV2 item)
     {
         Nav.NavigateTo($"edit/{item.Id:N}");
+    }
+
+    /// <summary>
+    /// Decrypts a secret or generates a static key password and returns the plaintext value.
+    /// </summary>
+    private Task<string> GetItemValueAsync(VaultItemV2 item)
+    {
+        return item.Type switch
+        {
+            VaultItemTypeV2.Secret => DecryptSecretAsync(item),
+            VaultItemTypeV2.StaticKey => GenerateStaticKeyAsync(item),
+            _ => throw new NotSupportedException($"Unsupported item type: {item.Type}")
+        };
+    }
+
+    private async Task<string> DecryptSecretAsync(VaultItemV2 item)
+    {
+        if (item.SecretData is null || string.IsNullOrWhiteSpace(item.SecretData.Cipher))
+        {
+            throw new InvalidOperationException("No secret data to decrypt.");
+        }
+
+        SecretDataV2 data = item.SecretData;
+        byte[] encryptedBytes = DecodeString(data.Cipher, data.Encoding);
+        byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
+
+        byte[] decryptedBytes = data.CryptoVersion switch
+        {
+            3 => await Crypto.DecryptV3Async(encryptedBytes, passwordBytes),
+            _ => throw new NotSupportedException($"Cipher version {data.CryptoVersion} is not supported.")
+        };
+
+        return System.Text.Encoding.UTF8.GetString(decryptedBytes);
+    }
+
+    private async Task<string> GenerateStaticKeyAsync(VaultItemV2 item)
+    {
+        if (item.StaticKeyData is null)
+        {
+            throw new InvalidOperationException("No static key data.");
+        }
+
+        StaticKeyDataV2 keyData = item.StaticKeyData;
+        byte[] privatePart = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
+        byte[] publicPart = System.Text.Encoding.UTF8.GetBytes(keyData.PublicPart);
+
+        byte[] rawBytes = keyData.CryptoVersion switch
+        {
+            1 => await Crypto.GeneratePasswordV1Async(privatePart, publicPart),
+            2 => await Crypto.GeneratePasswordV2Async(privatePart, publicPart),
+            _ => throw new NotSupportedException($"Crypto version {keyData.CryptoVersion} is not supported.")
+        };
+
+        string result = keyData.EncodingVersion switch
+        {
+            1 => BaseN.EncodeOneWay(rawBytes, keyData.Alphabet),
+            2 => BaseN.Encode(rawBytes, keyData.Alphabet),
+            _ => throw new NotSupportedException($"Encoding version {keyData.EncodingVersion} is not supported.")
+        };
+
+        if (result.Length > keyData.Length)
+        {
+            result = result[..keyData.Length];
+        }
+
+        return result;
+    }
+
+    private static byte[] DecodeString(string data, string encoding)
+    {
+        return encoding switch
+        {
+            "base58" => Base58.Decode(data),
+            "base62" => BaseN.Decode(data, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
+            "base64" => Convert.FromBase64String(data),
+            _ => Base58.Decode(data)
+        };
     }
 }

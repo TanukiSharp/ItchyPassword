@@ -76,6 +76,11 @@ public class VaultItemV2
 
     public List<MetadataEntryV2>? Metadata { get; set; }
 
+    /// <summary>
+    /// The date and time the item was created. Immutable after initial creation.
+    /// </summary>
+    public required DateTimeOffset CreatedAt { get; init; }
+
     public required DateTimeOffset LastModified { get; set; }
 }
 

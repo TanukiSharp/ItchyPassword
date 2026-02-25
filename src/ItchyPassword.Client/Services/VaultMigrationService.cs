@@ -98,12 +98,19 @@ public class VaultMigrationService(ICryptoService crypto)
                 pubPartNode?.GetValueKind() == JsonValueKind.String &&
                 pubPartNode.ToString().Length >= 4)
             {
+                DateTimeOffset legacyDate = DateTimeOffset.UtcNow;
+                if (passObj.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out legacyDate))
+                {
+                    // Use the original datetime from the legacy vault.
+                }
+
                 var item = new VaultItemV2
                 {
                     Id = Guid.NewGuid(),
                     Name = string.IsNullOrWhiteSpace(parentPath) ? name : $"{parentPath} / {name}",
                     Type = VaultItemTypeV2.StaticKey,
-                    LastModified = DateTime.UtcNow
+                    CreatedAt = legacyDate,
+                    LastModified = legacyDate
                 };
 
                 int version = ExtractValue($"p: {item.Name}", passObj, "version", 2, analyseMode);
@@ -118,11 +125,6 @@ public class VaultMigrationService(ICryptoService crypto)
                     Alphabet = alphabet,
                     EncodingVersion = 1,
                 });
-
-                if (passObj.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
-                {
-                    item.LastModified = date;
-                }
 
                 // Handle customKeys inside password object.
                 if (passObj.TryGetPropertyValue("customKeys", out JsonNode? ck) && ck is JsonObject ckObj)
@@ -178,12 +180,19 @@ public class VaultMigrationService(ICryptoService crypto)
 
                         string itemName = string.IsNullOrWhiteSpace(cipherKvp.Key) ? name : $"{name} / {cipherKvp.Key}";
 
+                        DateTimeOffset legacyCipherDate = DateTimeOffset.UtcNow;
+                        if (cipherDetail.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out legacyCipherDate))
+                        {
+                            // Use the original datetime from the legacy vault.
+                        }
+
                         var item = new VaultItemV2
                         {
                             Id = Guid.NewGuid(),
                             Name = string.IsNullOrWhiteSpace(parentPath) ? itemName : $"{parentPath} / {itemName}",
                             Type = VaultItemTypeV2.Secret,
-                            LastModified = DateTime.UtcNow
+                            CreatedAt = legacyCipherDate,
+                            LastModified = legacyCipherDate
                         };
 
                         string cipher = ExtractValue($"c: {item.Name}", cipherDetail, "value", string.Empty, analyseMode);
@@ -196,10 +205,6 @@ public class VaultMigrationService(ICryptoService crypto)
                             CryptoVersion = cipherCryptoVersion,
                             Encoding = encoding
                         });
-                        if (cipherDetail.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out DateTimeOffset date))
-                        {
-                            item.LastModified = date;
-                        }
                         if (cipherDetail.TryGetPropertyValue("customKeys", out JsonNode? ck) && ck is JsonObject ckObj)
                         {
                             foreach (KeyValuePair<string, JsonNode?> k in ckObj)

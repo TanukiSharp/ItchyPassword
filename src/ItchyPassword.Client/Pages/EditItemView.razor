@@ -15,6 +15,8 @@ else
     <div class="card" style="max-width: 800px; margin: 0 auto;">
         <div class="card-header">
             <h3 style="margin: 0;">Edit @_item.Name</h3>
+            <span class="text-muted" style="font-size: 0.8rem;">Created: @_item.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
+            <span class="text-muted" style="font-size: 0.8rem;">Last modified: @_item.LastModified.ToString("yyyy-MM-dd HH:mm:ss") UTC</span>
         </div>
 
         <div style="padding: 1rem;">
