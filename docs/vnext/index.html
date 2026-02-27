@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>ItchyPassword</title>
+    <base href="/" />
+
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+
+    <!-- Crypto Service -->
+    <script src="js/crypto.js"></script>
+    <!-- Local File Vault Connector (File System Access API) -->
+    <script src="js/localFile.js"></script>
+    <!-- Google Drive Vault Connector (OAuth popup interop) -->
+    <script src="js/googleDrive.js"></script>
+</head>
+
+<body>
+    <div id="app">
+        <div class="app-loading">
+            <div class="app-loading-spinner"></div>
+            <p class="app-loading-text">Loading...</p>
+        </div>
+    </div>
+
+    <div id="blazor-error-ui">
+        An unhandled error has occurred.
+        <a href="." class="reload">Reload</a>
+        <span class="dismiss">🗙</span>
+    </div>
+    <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
+</body>
+
+</html>

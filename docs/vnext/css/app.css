@@ -1,0 +1,1044 @@
+:root {
+    /* Colors - Dark Mode Default */
+    --bg-color: #121212;
+    --card-bg: #1e1e1e;
+    --secondary-bg: #2d2d2d;
+    --text-color: #e0e0e0;
+    --text-muted: #a0a0a0;
+    --primary-color: #3b82f6; /* Blue */
+    --primary-hover: #2563eb;
+    --danger-color: #ef4444; /* Red */
+    --border-color: #333333;
+    --input-bg: #141414;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 2rem;
+
+    /* Layout */
+    --sidebar-width: 250px;
+    --border-radius: 4px;
+}
+
+@media (prefers-color-scheme: light) {
+    :root {
+        --bg-color: #f3f4f6;
+        --card-bg: #ffffff;
+        --secondary-bg: #e5e7eb;
+        --text-color: #1f2937;
+        --text-muted: #6b7280;
+        --border-color: #e5e7eb;
+        --input-bg: #f9fafb;
+    }
+}
+
+/* App loading indicator - shown while Blazor WASM initializes. */
+.app-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    gap: 1rem;
+}
+
+.app-loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid var(--border-color, #333);
+    border-top-color: var(--primary-color, #3b82f6);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.app-loading-text {
+    color: var(--text-muted, #a0a0a0);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 0.9rem;
+    margin: 0;
+}
+
+/* Reset & Base */
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    line-height: 1.5;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    margin-top: 0;
+    margin-bottom: var(--spacing-md);
+    font-weight: 600;
+}
+h1 { font-size: 2rem; }
+h2 { font-size: 1.5rem; }
+
+a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+a:hover { text-decoration: underline; }
+
+/* Grid & Layout System */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--spacing-md);
+}
+
+.grid {
+    display: grid;
+    gap: var(--spacing-md);
+}
+
+/* App Layout */
+.app-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--card-bg);
+    border-right: 1px solid var(--border-color);
+    padding: var(--spacing-md);
+    flex-shrink: 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+    transition: transform 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar nav {
+    flex-grow: 1;
+}
+
+.sidebar-version {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    padding-top: var(--spacing-sm);
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+}
+
+.main-content {
+    flex-grow: 1;
+    padding: var(--spacing-md);
+    width: 100%;
+}
+
+/* Navigation */
+.sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.sidebar nav li { margin-bottom: var(--spacing-sm); }
+.sidebar nav a {
+    display: block;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+}
+.sidebar nav span {
+    display: block;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    opacity: 0.5;
+}
+.sidebar nav a:hover, .sidebar nav a.active {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+/* Forms */
+input[type="radio"] {
+    vertical-align: middle;
+    margin: 0;
+    width: 0.95rem;
+    height: 0.95rem;
+}
+
+/* Custom checkbox — native disabled+checked is invisible on some browsers */
+input[type="checkbox"] {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 0.85rem;
+    height: 0.85rem;
+    border: 1.5px solid #888;
+    border-radius: 2px;
+    background: transparent;
+    vertical-align: middle;
+    margin: 0;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+}
+
+input[type="checkbox"]:checked {
+    background: #3b82f6;
+    border-color: #3b82f6;
+}
+
+input[type="checkbox"]:checked::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: #fff;
+    content: '✓';
+    font-weight: bold;
+}
+
+input[type="checkbox"]:disabled {
+    cursor: not-allowed;
+}
+
+input[type="checkbox"]:disabled:checked {
+    background: #143f7a;
+    border-color: #143f7a;
+}
+
+input, select, textarea {
+    display: block;
+    width: 100%;
+    padding: var(--spacing-sm);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background-color: var(--input-bg);
+    color: var(--text-color);
+    font-size: 1rem;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--primary-color);
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+}
+
+/* Hide browser-native password reveal button. */
+input::-ms-reveal,
+input::-ms-clear {
+    display: none;
+}
+
+.master-key-toggle {
+    position: absolute;
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.master-key-toggle:hover {
+    color: var(--text-color);
+    background: none;
+}
+
+label {
+    display: block;
+    margin-bottom: var(--spacing-xs);
+    font-weight: 500;
+    color: var(--text-muted);
+}
+
+/* Buttons */
+button, .button, input[type="submit"] {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px solid transparent;
+    border-radius: var(--border-radius);
+    background-color: var(--primary-color);
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.2s;
+    text-decoration: none;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+button:hover, .button:hover { background-color: var(--primary-hover); }
+button:active, .button:active { transform: translateY(1px); }
+button:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+
+/* Secondary Variant */
+button.secondary, .button.secondary {
+    background-color: var(--secondary-bg);
+    border-color: #555;
+    color: var(--text-color);
+}
+button.secondary:hover { background-color: #3a3a3a; }
+
+/* Danger Variant */
+button.danger, .button.danger {
+    background-color: var(--danger-color);
+    color: white;
+}
+
+/* Alerts */
+.alert {
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+    border: 1px solid transparent;
+}
+.alert.danger {
+    background-color: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+.alert.warn {
+    background-color: rgba(245, 158, 11, 0.1);
+    border-color: rgba(245, 158, 11, 0.2);
+    color: #fcd34d;
+}
+
+/* Text utilities */
+.text-danger {
+    color: var(--danger-color);
+}
+.text-success {
+    color: #22c55e;
+}
+.text-muted {
+    color: var(--text-muted);
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing-md);
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+th, td {
+    padding: var(--spacing-md);
+    text-align: left;
+    border-bottom: 1px solid var(--border-color);
+}
+th { font-weight: 600; color: var(--text-muted); background-color: rgba(255,255,255,0.02); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background-color: rgba(255,255,255,0.05); }
+
+/* Cards */
+.card {
+    background-color: var(--card-bg);
+    border-radius: var(--border-radius);
+    margin-bottom: var(--spacing-md);
+    border: 1px solid var(--border-color);
+    overflow: hidden;
+}
+.card-header {
+    background-color: rgba(255,255,255,0.02);
+    padding: var(--spacing-md);
+    border-bottom: 1px solid var(--border-color);
+}
+
+/* Mobile Toggle Bar */
+.mobile-toggle-bar {
+    display: none;
+    align-items: center;
+    padding: 1rem;
+    background-color: var(--secondary-bg);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.hamburger-btn {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0;
+}
+
+.close-sidebar-btn {
+    display: none;
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0,0,0,0.5);
+    z-index: 900;
+    display: none;
+}
+
+.connector-card {
+    border: 1px solid #3a3a3a;
+    background-color: #252525;
+    padding: 1rem;
+    margin: 0.3rem 0 1rem 0;
+    border-radius: 8px;
+}
+
+.connector-settings {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+}
+
+.connector-settings .form-group {
+    margin-bottom: 0;
+}
+
+.connector-settings .form-group input,
+.connector-settings .form-group select,
+.connector-settings .form-group textarea {
+    margin-bottom: 0;
+}
+
+.form-description {
+    display: block;
+    font-size: 0.8em;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+    white-space: pre-line;
+}
+
+/* Vault item name with inline icon */
+.vault-card {
+    display: flex;
+    flex-direction: column;
+    height: calc(100vh - 2rem);
+    margin-bottom: 0;
+    overflow: hidden;
+}
+
+.vault-scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.vault-item-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.vault-icon-key {
+    color: #f59e0b;
+    flex-shrink: 0;
+}
+
+/* Vault display filter dropdown */
+.vault-filter-select {
+    display: inline-block;
+    width: auto;
+    min-width: 10rem;
+    margin-bottom: 0;
+    padding: 0.35rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.vault-item-count {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+.vault-item-action-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* ── Page Layouts ────────────────────────────────────────────────── */
+
+.page-centered {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+}
+
+.page-container {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.card-body {
+    padding: 1rem;
+}
+
+/* ── Headings ────────────────────────────────────────────────────── */
+
+.heading-flush {
+    margin: 0;
+}
+
+/* ── Section Dividers ────────────────────────────────────────────── */
+
+.section-divider {
+    margin: 1.5rem 0;
+    border: 0;
+    border-top: 1px solid var(--border-color);
+}
+
+.section-divider-dashed {
+    border: 0;
+    border-top: 1px dashed var(--border-color);
+    margin: 0.5rem 0 1rem 0;
+}
+
+/* ── Buttons ─────────────────────────────────────────────────────── */
+
+.button-block {
+    width: 100%;
+}
+
+.button-row {
+    display: flex;
+    gap: 1rem;
+}
+
+.icon-btn {
+    width: 2.5rem;
+    height: 2.5rem;
+    aspect-ratio: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+/* ── Forms ────────────────────────────────────────────────────────── */
+
+.form-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+}
+
+.inline-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    cursor: pointer;
+    font-weight: normal;
+    white-space: nowrap;
+}
+
+.section-label {
+    font-weight: 600;
+    margin-bottom: 0;
+}
+
+.input-with-action {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.input-with-action .input,
+.input-with-action textarea.input {
+    flex: 1;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+/* ── Alerts ──────────────────────────────────────────────────────── */
+
+.alert-inline {
+    margin-top: 1rem;
+}
+
+.alert-inline-sm {
+    margin-top: 0.5rem;
+}
+
+.alert .button {
+    margin-top: 0.5rem;
+}
+
+/* ── Text Alignment ──────────────────────────────────────────────── */
+
+.text-right {
+    text-align: right;
+}
+
+/* ── Grids ───────────────────────────────────────────────────────── */
+
+.grid-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+.grid-3col {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+}
+
+/* ── Details / Summary ───────────────────────────────────────────── */
+
+.details-summary {
+    cursor: pointer;
+    user-select: none;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+}
+
+.connector-card .details-summary {
+    font-size: 0.9em;
+    margin-bottom: 0.5rem;
+}
+
+/* ── Timestamps ──────────────────────────────────────────────────── */
+
+.timestamp {
+    font-size: 0.8rem;
+}
+
+/* ── Master Key Page ─────────────────────────────────────────────── */
+
+.master-key-overlay {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    cursor: default;
+}
+
+.master-key-panel {
+    width: 100%;
+    max-width: 400px;
+    text-align: center;
+}
+
+.master-key-panel h2 {
+    margin-bottom: 2rem;
+}
+
+.master-key-panel .form-group {
+    text-align: left;
+}
+
+.master-key-input-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.master-key-input-wrapper {
+    position: relative;
+    flex: 1;
+}
+
+.master-key-input {
+    margin-bottom: 0;
+    padding-right: 2.5rem;
+}
+
+.char-count {
+    color: var(--text-muted);
+    font-size: 0.9em;
+    min-width: 1.5em;
+    text-align: right;
+}
+
+.master-key-submit {
+    width: 100%;
+    margin-top: 1rem;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────────────── */
+
+.mobile-title {
+    font-weight: bold;
+    margin-left: 1rem;
+}
+
+.sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.sidebar-header h2 {
+    margin-top: 5px;
+}
+
+/* ── Vault Page (loading / error states) ─────────────────────────── */
+
+.loading-message {
+    margin-top: 1rem;
+    color: var(--text-muted);
+}
+
+.vault-error {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    flex-direction: column;
+    padding: 2rem;
+    text-align: center;
+}
+
+.vault-error h3 {
+    color: var(--danger-color);
+}
+
+.vault-error p {
+    margin: 1rem 0;
+}
+
+/* ── Vault Table ─────────────────────────────────────────────────── */
+
+.vault-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+.vault-header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.vault-search {
+    margin-bottom: 1rem;
+    flex-shrink: 0;
+}
+
+.vault-search .input {
+    margin-bottom: 0;
+}
+
+.vault-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.vault-table thead {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background-color: var(--card-bg);
+}
+
+.vault-table th,
+.vault-table td {
+    padding: 0.75rem;
+}
+
+.vault-table th {
+    text-align: left;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.vault-table tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.vault-actions-group {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+}
+
+.vault-empty-row {
+    padding: 2rem;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+/* ── Settings Page ───────────────────────────────────────────────── */
+
+.settings-alert {
+    max-width: 800px;
+    margin: 0 auto 1rem auto;
+}
+
+.connector-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.connector-options {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.connector-description {
+    margin-top: 0;
+}
+
+.connector-test {
+    margin-top: 1rem;
+}
+
+.test-result {
+    margin-left: 1rem;
+    white-space: pre-line;
+}
+
+.settings-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+/* ── Static Key Generator Page ───────────────────────────────────── */
+
+.page-intro {
+    margin-bottom: 2rem;
+}
+
+.page-intro h2,
+.page-intro p {
+    margin: 0;
+}
+
+.page-intro p {
+    color: var(--text-muted);
+}
+
+.options-panel {
+    padding: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    margin-bottom: 1rem;
+}
+
+.result-section {
+    margin-top: 2rem;
+}
+
+.result-input {
+    font-family: monospace;
+    font-size: 1.1em;
+    letter-spacing: 0.05em;
+    flex-grow: 1;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+/* ── SecretEditor ────────────────────────────────────────────────── */
+
+.editor-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.mode-selector {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.symbol-input-group {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.symbol-input-group .input {
+    flex: 1;
+    min-width: 0;
+    margin-bottom: 0;
+}
+
+.symbol-reset-btn {
+    flex-shrink: 0;
+    padding: 0.35rem 0.5rem;
+    line-height: normal;
+}
+
+.secret-textarea {
+    flex: 1;
+    font-family: monospace;
+    resize: vertical;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+/* ── MetadataEditor ──────────────────────────────────────────────── */
+
+.metadata-editor {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.metadata-row {
+    display: flex;
+    gap: 0.5rem;
+    align-items: start;
+}
+
+.metadata-key {
+    flex: 1;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+.metadata-value {
+    flex: 2;
+    margin-bottom: 0;
+    min-height: 2.5rem;
+}
+
+.metadata-add-btn {
+    align-self: flex-start;
+}
+
+/* Mobile Responsiveness */
+@media (max-width: 768px) {
+    .app-layout {
+        flex-direction: column;
+    }
+
+    .mobile-toggle-bar {
+        display: flex;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+        width: 85%;
+        max-width: 300px;
+        border-right: 1px solid var(--border-color);
+    }
+
+        .sidebar.open {
+            transform: translateX(0);
+        }
+
+    .app-layout {
+        height: 100vh;
+        height: 100dvh;
+    }
+
+    .main-content {
+        padding-top: var(--spacing-md);
+        width: 100%;
+        margin-top: 0;
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .page-container {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .card-body {
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+    .vault-card {
+        flex: 1;
+        min-height: 0;
+        height: auto;
+    }
+
+    .close-sidebar-btn {
+        display: block;
+    }
+
+    .sidebar-overlay.active { /* Use .active if needed, but simple block does it */
+        display: block;
+    }
+}
+
+
+/* Loading Spinner */
+.loading-spinner {
+    border: 4px solid rgba(255, 255, 255, 0.1);
+    border-left-color: var(--primary-color);
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Blazor error UI - hidden by default, shown by the framework on unhandled exceptions. */
+#blazor-error-ui {
+    background: lightyellow;
+    bottom: 0;
+    box-shadow: 0 -1px 2px rgba(0, 0, 0, 0.2);
+    display: none;
+    left: 0;
+    padding: 0.6rem 1.25rem 0.7rem 1.25rem;
+    position: fixed;
+    width: 100%;
+    z-index: 1000;
+    color: #333;
+}
+
+#blazor-error-ui .dismiss {
+    cursor: pointer;
+    position: absolute;
+    right: 0.75rem;
+    top: 0.5rem;
+}

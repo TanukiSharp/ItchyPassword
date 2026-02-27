@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>OAuth Callback</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #1e1e1e;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <p>Signing in&hellip;</p>
+    <script>
+        // Reads the authorization code from the URL query string and sends it
+        // back to the opener window via postMessage, then closes itself.
+        (function () {
+            const params = new URLSearchParams(window.location.search);
+            const code = params.get('code');
+            const state = params.get('state');
+            const error = params.get('error');
+
+            if (window.opener) {
+                window.opener.postMessage({
+                    type: 'google-auth-callback',
+                    code: code,
+                    state: state,
+                    error: error,
+                }, window.location.origin);
+            }
+
+            window.close();
+        })();
+    </script>
+</body>
+</html>
