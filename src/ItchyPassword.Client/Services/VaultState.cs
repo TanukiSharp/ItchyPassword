@@ -8,16 +8,19 @@ using System.Runtime.CompilerServices;
 namespace ItchyPassword.Client.Services;
 
 /// <summary>
-/// Manages the state of the client vault.
+/// Manages the state of the vault.
 /// </summary>
-public class ClientVaultState : INotifyPropertyChanged
+public class VaultState : INotifyPropertyChanged
 {
-    private const string ActiveReaderStorageKey = "itchypassword_active_reader_vault_connector";
+    private const string ReaderStorageKey = "itchypassword_reader_vault_connector";
     private const string WriterIdsStorageKey = "itchypassword_writer_vault_connectors";
 
     private readonly LocalStorageService _storage;
-    private bool _initialized;
 
+    private bool _isInitialized;
+    private string _masterKey = string.Empty;
+    private Guid _readerId;
+    private readonly HashSet<Guid> _writerIds = [];
     private VaultV2? _vault;
 
     /// <summary>
@@ -39,8 +42,6 @@ public class ClientVaultState : INotifyPropertyChanged
             }
         }
     }
-
-    private string _masterKey = string.Empty;
 
     /// <summary>
     /// Gets or sets the master key used to decrypt the vault.
@@ -74,38 +75,34 @@ public class ClientVaultState : INotifyPropertyChanged
     /// </summary>
     public string SearchQuery { get; set; } = string.Empty;
 
-    private Guid _activeReaderId;
-
     /// <summary>
     /// Gets or sets the ID of the connector used for reading the vault.
     /// </summary>
-    public Guid ActiveReaderId
+    public Guid ReaderId
     {
         get
         {
-            return _activeReaderId;
+            return _readerId;
         }
         set
         {
-            if (_activeReaderId != value)
+            if (_readerId != value)
             {
-                _activeReaderId = value;
+                _readerId = value;
                 OnPropertyChanged();
                 OnPropertyChanged(nameof(ReadConnector));
             }
         }
     }
 
-    private readonly HashSet<Guid> _writerIds = [];
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="ClientVaultState"/> class.
+    /// Initializes a new instance of the <see cref="VaultState"/> class.
     /// </summary>
     /// <param name="http">The HTTP client used by connectors.</param>
     /// <param name="storage">The storage service used by connectors.</param>
     /// <param name="crypto">The crypto service used by connectors for encrypting/decrypting secrets.</param>
     /// <param name="js">The JS runtime used by connectors that need browser API interop.</param>
-    public ClientVaultState(HttpClient http, LocalStorageService storage, ICryptoService crypto, IJSRuntime js)
+    public VaultState(HttpClient http, LocalStorageService storage, ICryptoService crypto, IJSRuntime js)
     {
         _storage = storage;
 
@@ -118,7 +115,7 @@ public class ClientVaultState : INotifyPropertyChanged
         Connectors.Add(lf);
 
         // Default to the first connector; InitializeAsync will override with the saved preference.
-        ActiveReaderId = gh.Id;
+        ReaderId = gh.Id;
         SetWriter(gh.Id, true);
         SetWriter(gd.Id, true);
     }
@@ -129,24 +126,24 @@ public class ClientVaultState : INotifyPropertyChanged
     /// </summary>
     public async Task InitializeAsync()
     {
-        if (_initialized)
+        if (_isInitialized)
         {
             return;
         }
 
-        _initialized = true;
+        _isInitialized = true;
 
-        string? savedId = await _storage.GetItemAsync(ActiveReaderStorageKey);
+        string? savedId = await _storage.GetItemAsync(ReaderStorageKey);
 
         if (Guid.TryParse(savedId, out Guid id) && Connectors.Any(c => c.Id == id))
         {
-            ActiveReaderId = id;
+            ReaderId = id;
         }
         else
         {
             // No saved preference (or stale ID) — persist the default so it's
             // available on the next launch without requiring a trip to Settings.
-            await SaveActiveReaderAsync();
+            await SaveReaderAsync();
         }
 
         string? savedWriters = await _storage.GetItemAsync(WriterIdsStorageKey);
@@ -172,11 +169,11 @@ public class ClientVaultState : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Persists the active reader selection to local storage.
+    /// Persists the reader selection to local storage.
     /// </summary>
-    public async Task SaveActiveReaderAsync()
+    public async Task SaveReaderAsync()
     {
-        await _storage.SetItemAsync(ActiveReaderStorageKey, ActiveReaderId.ToString());
+        await _storage.SetItemAsync(ReaderStorageKey, ReaderId.ToString());
     }
 
     /// <summary>
@@ -195,7 +192,7 @@ public class ClientVaultState : INotifyPropertyChanged
     {
         get
         {
-            return Connectors.FirstOrDefault(c => c.Id == ActiveReaderId);
+            return Connectors.FirstOrDefault(c => c.Id == ReaderId);
         }
     }
 
@@ -224,10 +221,10 @@ public class ClientVaultState : INotifyPropertyChanged
     /// Enables or disables a connector for writing.
     /// </summary>
     /// <param name="id">The ID of the connector.</param>
-    /// <param name="enabled">True to enable, false to disable.</param>
-    public void SetWriter(Guid id, bool enabled)
+    /// <param name="isEnabled">True to enable, false to disable.</param>
+    public void SetWriter(Guid id, bool isEnabled)
     {
-        if (enabled)
+        if (isEnabled)
         {
             if (_writerIds.Add(id))
             {

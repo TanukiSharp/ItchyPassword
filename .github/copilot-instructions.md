@@ -6,7 +6,7 @@ description: Comprehensive guide for AI coding agents working on ItchyPassword.
 
 ## Project Overview
 ItchyPassword is a privacy-first, offline-capable password manager built with **Blazor WebAssembly**.
-- **Core Philosophy**: The Master Key is *never* stored (not even encrypted). It persists in memory (`ClientVaultState`) only while the tab is open.
+- **Core Philosophy**: The Master Key is *never* stored (not even encrypted). It persists in memory (`VaultState`) only while the tab is open.
 - **Architecture**:
   - `src/ItchyPassword.Client`: Main Blazor WASM application.
   - `src/ItchyPassword.Core`: Shared logic, models, and cryptography.
@@ -15,8 +15,8 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 
 ## Architectural Patterns
 
-### State Management (`ClientVaultState`)
-- **Central Hub**: `ClientVaultState` manages the active `Vault`, the in-memory `MasterKey`, and the list of `VaultConnectors`.
+### State Management (`VaultState`)
+- **Central Hub**: `VaultState` manages the active `Vault`, the in-memory `MasterKey`, and the list of `VaultConnectors`.
 - **Reactivity**: Uses `INotifyPropertyChanged` to update UI components when state changes (e.g., locking/unlocking).
 - **Persistence**: State itself is transient. Configuration is persisted via `LocalStorageService`, but secrets are not. If something secret is stored (token) it is encrypted with the user's master key.
 
@@ -28,7 +28,7 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 ### Cryptography
 - **Service**: `ICryptoService` (in Core) abstracts encryption primitives.
 - **Implementation**: Uses browser `SubtleCrypto` (via JS interop if needed) or .NET standard crypto libraries compatible with WASM.
-- **Flow**: `VaultService` orchestrates the decryption of the vault blob using the key from `ClientVaultState`.
+- **Flow**: `VaultService` orchestrates the decryption of the vault blob using the key from `VaultState`.
 
 ## Developer Workflows
 
@@ -45,7 +45,7 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 1. **`/` (Index)**: Checks if unlocked. If not, shows `MasterKeyView`.
 2. **Master Key**:
     - User inputs Master Key.
-    - Key is stored in `ClientVaultState`.
+    - Key is stored in `VaultState`.
     - If no connectors configured -> Redirect to `/settings`.
     - If connectors configured -> Redirect to `/vault` on success, show error on failure.
 3. **`/settings`**: Configure vault connectors.
@@ -54,14 +54,14 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 ## Coding Conventions
 
 ### Blazor Components
-- **Dependency Injection**: Inject services (`ClientVaultState`, `NavigationManager`, etc.) at the top of `.razor` files.
+- **Dependency Injection**: Inject services (`VaultState`, `NavigationManager`, etc.) at the top of `.razor` files.
 - **Async Interactions**: Prefer `async Task` for UI event handlers (e.g., `UnlockAsync`).
 - **Styles**: Use standard CSS or the project's custom variables (`var(--text-muted)`).
-- **Notifications**: Updates to `ClientVaultState` should trigger UI refreshes automatically via binding or `StateHasChanged` if needed (though `INotifyPropertyChanged` logic in components is preferred if implemented).
+- **Notifications**: Updates to `VaultState` should trigger UI refreshes automatically via binding or `StateHasChanged` if needed (though `INotifyPropertyChanged` logic in components is preferred if implemented).
 
 ### Security Rules
 - **NO LOGGING**: Never log the Master Key or decrypted secrets to console or storage.
-- **Memory Only**: Secrets exist only in `ClientVaultState` and are wiped on refresh.
+- **Memory Only**: Secrets exist only in `VaultState` and are wiped on refresh.
 
 ### File Structure
 - `Components/`: Reusable UI parts (`MasterKeyView`, `VaultConnectorSettings`).

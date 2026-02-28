@@ -1,7 +1,7 @@
 @page "/"
 @layout ItchyPassword.Client.Layout.EmptyLayout
 @implements IDisposable
-@inject ClientVaultState State
+@inject VaultState State
 @inject NavigationManager Nav
 
 @if (State.IsUnlocked == false)

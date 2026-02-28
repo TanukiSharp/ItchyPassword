@@ -1,7 +1,6 @@
-using ItchyPassword.Core.Helpers;
+using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;

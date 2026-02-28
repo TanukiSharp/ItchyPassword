@@ -36,7 +36,7 @@ public class GoogleDriveVaultConnector(
     HttpClient http,
     LocalStorageService storage,
     ICryptoService crypto,
-    ClientVaultState state,
+    VaultState state,
     IJSRuntime js
 ) : IVaultConnector
 {
@@ -68,7 +68,7 @@ public class GoogleDriveVaultConnector(
     private readonly HttpClient _http = http;
     private readonly LocalStorageService _storage = storage;
     private readonly ICryptoService _crypto = crypto;
-    private readonly ClientVaultState _state = state;
+    private readonly VaultState _state = state;
     private readonly IJSRuntime _js = js;
 
     private bool _configLoaded;

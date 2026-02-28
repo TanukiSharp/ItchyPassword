@@ -3,7 +3,7 @@ using ItchyPassword.Core.Services;
 
 namespace ItchyPassword.Client.Services;
 
-public class VaultUnlockService(ClientVaultState state, VaultMigrationService vaultMigrationService)
+public class VaultUnlockService(VaultState state, VaultMigrationService vaultMigrationService)
 {
     /// <summary>
     /// Attempts to unlock the vault using the master key stored in state.
@@ -71,8 +71,7 @@ public class VaultUnlockService(ClientVaultState state, VaultMigrationService va
                     if (VaultMigrationService.IsLegacyVault(content))
                     {
                         onStatusChanged?.Invoke("Migrating vault...");
-                        var migrationProgress = new Progress<double>(percent =>
-                            onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
+                        var migrationProgress = new Progress<double>(percent => onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
                         vault = await vaultMigrationService.MigrateAsync(content, state.MasterKey, migrationProgress);
                     }
                     else

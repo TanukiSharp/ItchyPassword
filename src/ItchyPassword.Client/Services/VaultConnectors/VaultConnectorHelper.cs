@@ -1,4 +1,4 @@
-using ItchyPassword.Core.Helpers;
+using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using System.Text;

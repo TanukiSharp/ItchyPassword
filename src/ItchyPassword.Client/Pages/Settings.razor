@@ -3,7 +3,7 @@
 @using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components
 @using System.Web
-@inject ClientVaultState State
+@inject VaultState State
 @inject NavigationManager Nav
 
 <PageTitle>Settings</PageTitle>
@@ -29,10 +29,10 @@
                     <h3 class="heading-flush">@connector.Name</h3>
                     <div class="connector-options">
                         <label title="Read from this source" class="inline-label">
-                            <input type="radio" name="readSource" checked="@(State.ActiveReaderId == connector.Id)" @onchange="@(() => SetReader(connector))" /> Read
+                            <input type="radio" name="readSource" checked="@(State.ReaderId == connector.Id)" @onchange="@(() => SetReader(connector))" /> Read
                         </label>
                         <label title="Write to this source" class="inline-label">
-                            <input type="checkbox" checked="@State.IsWriter(connector.Id)" disabled="@(State.IsWriter(connector.Id) && (State.ActiveReaderId == connector.Id || State.WriteConnectors.Count() == 1))" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
+                            <input type="checkbox" checked="@State.IsWriter(connector.Id)" disabled="@(State.IsWriter(connector.Id) && (State.ReaderId == connector.Id || State.WriteConnectors.Count() == 1))" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
                         </label>
                     </div>
                 </div>
@@ -111,8 +111,8 @@
 
     private async Task SetReader(IVaultConnector connector)
     {
-        State.ActiveReaderId = connector.Id;
-        await State.SaveActiveReaderAsync();
+        State.ReaderId = connector.Id;
+        await State.SaveReaderAsync();
 
         // Automatically enable as a writer when selected for read.
         if (State.IsWriter(connector.Id) == false)

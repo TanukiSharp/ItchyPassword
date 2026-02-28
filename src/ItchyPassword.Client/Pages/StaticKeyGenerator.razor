@@ -1,9 +1,9 @@
 @page "/static-key"
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Core.Services
-@using ItchyPassword.Core.Helpers
+@using ItchyPassword.Core.Encoding
 @inject ICryptoService Crypto
-@inject ClientVaultState State
+@inject VaultState State
 @inject NavigationManager Nav
 
 <PageTitle>Static Key Generator</PageTitle>

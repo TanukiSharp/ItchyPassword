@@ -1,4 +1,4 @@
-namespace ItchyPassword.Core.Helpers;
+namespace ItchyPassword.Core.Encoding;
 
 public static class Base58
 {
