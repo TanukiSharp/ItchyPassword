@@ -62,7 +62,7 @@
 
     private void Submit()
     {
-        MasterKeyProvider.MasterKey = masterKey;
+        MasterKeyProvider.MasterKey = System.Text.Encoding.UTF8.GetBytes(masterKey);
         Nav.NavigateTo("/vault");
     }
 }

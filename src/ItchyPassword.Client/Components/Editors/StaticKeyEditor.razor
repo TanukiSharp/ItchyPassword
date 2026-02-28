@@ -62,7 +62,7 @@
     public required VaultItemV2 Item { get; init; }
 
     private string _publicPart = string.Empty;
-    private string _alphabet = VaultMigrationService.DefaultAlphabet;
+    private string _alphabet = StaticKeyDataV2.DefaultAlphabet;
     private int _length = DefaultLength;
     private int _cryptoVersion = 2;
     private int _encodingVersion = 2;
@@ -107,14 +107,14 @@
             if (_cryptoVersion == 1)
             {
                 rawBytes = await Crypto.GeneratePasswordV1Async(
-                    System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey),
+                    MasterKeyProvider.MasterKey,
                     System.Text.Encoding.UTF8.GetBytes(_publicPart)
                 );
             }
             else if (_cryptoVersion == 2)
             {
                 rawBytes = await Crypto.GeneratePasswordV2Async(
-                    System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey),
+                    MasterKeyProvider.MasterKey,
                     System.Text.Encoding.UTF8.GetBytes(_publicPart)
                 );
             }
@@ -138,7 +138,7 @@
 
             if (_result.Length > _length)
             {
-                _result = _result.Substring(0, _length);
+                _result = _result[.._length];
             }
 
             Item.SetData(new StaticKeyDataV2

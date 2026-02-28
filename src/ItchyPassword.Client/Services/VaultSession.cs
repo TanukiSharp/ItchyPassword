@@ -1,5 +1,6 @@
 using ItchyPassword.Client.Services.VaultConnectors;
 using ItchyPassword.Core.Models;
+using ItchyPassword.Core.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -9,6 +10,8 @@ namespace ItchyPassword.Client.Services;
 /// Manages the current vault session: the loaded vault data, connector
 /// preferences (reader / writers), and the <see cref="IsUnlocked"/> flag
 /// that the UI uses for navigation guards and conditional rendering.
+/// Provides symmetric <see cref="UnlockAsync"/> and <see cref="SaveVaultAsync"/>
+/// methods so the vault lifecycle is managed in one place.
 /// </summary>
 public class VaultSession : INotifyPropertyChanged
 {
@@ -16,6 +19,7 @@ public class VaultSession : INotifyPropertyChanged
     private const string WriterIdsStorageKey = "itchypassword_writer_vault_connectors";
 
     private readonly IMasterKeyProvider _masterKeyProvider;
+    private readonly VaultMigrationService _migrationService;
     private readonly LocalStorageService _storage;
 
     private bool _isInitialized;
@@ -74,10 +78,12 @@ public class VaultSession : INotifyPropertyChanged
     /// <param name="masterKeyProvider">The provider for the in-memory master key.</param>
     /// <param name="connectors">The available vault connectors, resolved from the DI container.</param>
     /// <param name="storage">The local storage service used for persisting preferences.</param>
-    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, LocalStorageService storage)
+    /// <param name="migrationService">The service used to migrate legacy vault formats.</param>
+    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, LocalStorageService storage, VaultMigrationService migrationService)
     {
         _masterKeyProvider = masterKeyProvider;
         _storage = storage;
+        _migrationService = migrationService;
 
         Connectors.AddRange(connectors);
 
@@ -222,6 +228,122 @@ public class VaultSession : INotifyPropertyChanged
                 OnPropertyChanged(nameof(WriteConnectors));
             }
         }
+    }
+
+    /// <summary>
+    /// Attempts to unlock the vault using the master key from the provider.
+    /// Loads the vault from the active read connector, migrating legacy formats if necessary.
+    /// </summary>
+    /// <param name="onStatusChanged">Optional callback invoked with progress messages (e.g. during migration).</param>
+    /// <returns>A tuple indicating success and an error message if failed.</returns>
+    public async Task<(bool Success, string Error)> UnlockAsync(Action<string>? onStatusChanged = null)
+    {
+        if (_masterKeyProvider.HasMasterKey == false)
+        {
+            return (false, "Master key not provided.");
+        }
+
+        if (ReadConnector is null)
+        {
+            return (false, "No active vault connector selected.");
+        }
+
+        try
+        {
+            await ReadConnector.LoadConfigurationAsync();
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+
+        if (ReadConnector.IsConfigured == false)
+        {
+            return (false, "Connector not configured.");
+        }
+
+        try
+        {
+            bool hasAccess = await ReadConnector.AccessAsync();
+
+            if (hasAccess == false)
+            {
+                string errorMessage = ReadConnector.AccessFailureMessage
+                    ?? $"Could not access {ReadConnector.Name}.";
+                return (false, errorMessage);
+            }
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+
+        try
+        {
+            string content = await ReadConnector.LoadVaultAsync();
+
+            if (string.IsNullOrWhiteSpace(content))
+            {
+                Vault = new VaultV2() { Version = 2, Items = [] };
+            }
+            else
+            {
+                VaultV2? vault = VaultDataService.DeserializeVault(content);
+
+                if (vault is null)
+                {
+                    if (VaultMigrationService.IsLegacyVault(content))
+                    {
+                        onStatusChanged?.Invoke("Migrating vault...");
+                        var migrationProgress = new Progress<double>(percent => onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
+                        vault = await _migrationService.MigrateAsync(content, _masterKeyProvider.MasterKey, migrationProgress);
+                    }
+                    else
+                    {
+                        return (false, "Unknown vault format or password incorrect.");
+                    }
+                }
+
+                Vault = vault ?? new VaultV2 { Version = 2, Items = [] };
+            }
+
+            return (true, string.Empty);
+        }
+        catch (Exception ex)
+        {
+            return (false, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Serializes the current vault and persists it to all enabled write connectors in parallel.
+    /// </summary>
+    /// <returns>
+    /// An array of results, one per write connector, each indicating success or the error message.
+    /// </returns>
+    public async Task<(IVaultConnector Connector, bool Success, string Error)[]> SaveVaultAsync()
+    {
+        if (Vault is null)
+        {
+            return [];
+        }
+
+        string json = VaultDataService.SerializeVault(Vault);
+
+        var tasks = WriteConnectors.Select(async c =>
+        {
+            try
+            {
+                await c.SaveVaultAsync(json);
+                return (Connector: c, Success: true, Error: string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return (Connector: c, Success: false, Error: ex.Message);
+            }
+        });
+
+        return await Task.WhenAll(tasks);
     }
 
     /// <summary>

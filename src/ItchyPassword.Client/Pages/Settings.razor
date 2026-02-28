@@ -90,7 +90,7 @@
 
     private bool isUnlocking = false;
 
-    private bool CanUnlock => string.IsNullOrWhiteSpace(MasterKeyProvider.MasterKey) == false;
+    private bool CanUnlock => MasterKeyProvider.HasMasterKey;
 
     protected override async Task OnInitializedAsync()
     {

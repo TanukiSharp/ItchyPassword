@@ -17,14 +17,13 @@ internal static class VaultConnectorHelper
     /// Encrypts a plaintext secret and returns a prefixed base58-encoded string.
     /// </summary>
     /// <param name="plaintext">The plaintext value to encrypt.</param>
-    /// <param name="masterKey">The master key used as encryption password.</param>
+    /// <param name="masterKey">The master key bytes used as encryption password.</param>
     /// <param name="crypto">The crypto service.</param>
     /// <returns>The encrypted, base58-encoded value with the "enc:" prefix.</returns>
-    public static async Task<string> EncryptAsync(string plaintext, string masterKey, ICryptoService crypto)
+    public static async Task<string> EncryptAsync(string plaintext, byte[] masterKey, ICryptoService crypto)
     {
         byte[] input = Encoding.UTF8.GetBytes(plaintext);
-        byte[] password = Encoding.UTF8.GetBytes(masterKey);
-        byte[] encrypted = await crypto.EncryptV3Async(input, password);
+        byte[] encrypted = await crypto.EncryptV3Async(input, masterKey);
         return EncryptedPrefix + Base58.Encode(encrypted);
     }
 
@@ -33,10 +32,10 @@ internal static class VaultConnectorHelper
     /// This provides backward compatibility with plaintext values stored before encryption was enabled.
     /// </summary>
     /// <param name="stored">The stored configuration value.</param>
-    /// <param name="masterKey">The master key used as decryption password.</param>
+    /// <param name="masterKey">The master key bytes used as decryption password.</param>
     /// <param name="crypto">The crypto service.</param>
     /// <returns>The decrypted plaintext value.</returns>
-    public static async Task<string> DecryptIfNeededAsync(string stored, string masterKey, ICryptoService crypto)
+    public static async Task<string> DecryptIfNeededAsync(string stored, byte[] masterKey, ICryptoService crypto)
     {
         if (stored.StartsWith(EncryptedPrefix, StringComparison.Ordinal) == false)
         {
@@ -45,8 +44,7 @@ internal static class VaultConnectorHelper
 
         string encoded = stored[EncryptedPrefix.Length..];
         byte[] encrypted = Base58.Decode(encoded);
-        byte[] password = Encoding.UTF8.GetBytes(masterKey);
-        byte[] decrypted = await crypto.DecryptV3Async(encrypted, password);
+        byte[] decrypted = await crypto.DecryptV3Async(encrypted, masterKey);
         return Encoding.UTF8.GetString(decrypted);
     }
 
@@ -56,12 +54,12 @@ internal static class VaultConnectorHelper
     /// </summary>
     /// <param name="entries">The configuration entries to load.</param>
     /// <param name="storage">The localStorage service.</param>
-    /// <param name="masterKey">The current master key, or <c>null</c> if unavailable.</param>
+    /// <param name="masterKey">The current master key bytes, or <c>null</c> if unavailable.</param>
     /// <param name="crypto">The crypto service for decryption.</param>
     public static async Task LoadEntriesAsync(
         IReadOnlyList<ConfigurationEntry> entries,
         LocalStorageService storage,
-        string? masterKey,
+        byte[]? masterKey,
         ICryptoService crypto)
     {
         foreach (ConfigurationEntry entry in entries)
@@ -78,7 +76,7 @@ internal static class VaultConnectorHelper
                 continue;
             }
 
-            if (entry.IsEncrypted && string.IsNullOrWhiteSpace(masterKey) == false)
+            if (entry.IsEncrypted && masterKey is { Length: > 0 })
             {
                 try
                 {
@@ -103,12 +101,12 @@ internal static class VaultConnectorHelper
     /// </summary>
     /// <param name="entries">The configuration entries to save.</param>
     /// <param name="storage">The localStorage service.</param>
-    /// <param name="masterKey">The current master key, or <c>null</c> if unavailable.</param>
+    /// <param name="masterKey">The current master key bytes, or <c>null</c> if unavailable.</param>
     /// <param name="crypto">The crypto service for encryption.</param>
     public static async Task SaveEntriesAsync(
         IReadOnlyList<ConfigurationEntry> entries,
         LocalStorageService storage,
-        string? masterKey,
+        byte[]? masterKey,
         ICryptoService crypto)
     {
         foreach (ConfigurationEntry entry in entries)
@@ -124,7 +122,7 @@ internal static class VaultConnectorHelper
             {
                 // Never write an encrypted entry in plaintext.
                 // Skip entirely when the master key is unavailable.
-                if (string.IsNullOrWhiteSpace(masterKey))
+                if (masterKey is not { Length: > 0 })
                 {
                     continue;
                 }

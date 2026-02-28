@@ -11,13 +11,13 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 builder.Services.AddScoped(sp => new HttpClient { BaseAddress = new Uri(builder.HostEnvironment.BaseAddress) });
 builder.Services.AddScoped<ICryptoService, CryptoService>();
+builder.Services.AddScoped<RandomBytePool>();
 builder.Services.AddScoped<LocalStorageService>();
 builder.Services.AddScoped<IMasterKeyProvider, MasterKeyProvider>();
 builder.Services.AddScoped<UiState>();
 builder.Services.AddScoped<VaultSession>();
 builder.Services.AddScoped<ClipboardService>();
 builder.Services.AddScoped<VaultMigrationService>();
-builder.Services.AddScoped<VaultUnlockService>();
 
 builder.Services.AddScoped<IVaultConnector, GitHubVaultConnector>();
 builder.Services.AddScoped<IVaultConnector, GoogleDriveVaultConnector>();

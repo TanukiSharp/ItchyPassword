@@ -4,7 +4,7 @@
 window.ItchyPassword = window.ItchyPassword || {};
 window.ItchyPassword.Crypto = {
     // Basic Key Derivation (PBKDF2 -> AES-GCM Key Bytes)
-    getDerivedBytes: async function (password, salt, iterations) {
+    _getDerivedBytes: async function (password, salt, iterations) {
         try {
             const baseKey = await window.crypto.subtle.importKey(
                 'raw',
@@ -44,7 +44,7 @@ window.ItchyPassword.Crypto = {
 
     _generatePassword: async function (privatePart, publicPart, hkdfPurpose, iterations) {
         // 1. Get Derived Key (PBKDF2 -> AES-GCM) with N iterations
-        const derivedKey = await this.getDerivedBytes(privatePart, publicPart, iterations);
+        const derivedKey = await this._getDerivedBytes(privatePart, publicPart, iterations);
 
         // 2. Import as HMAC key
         const hmacKey = await window.crypto.subtle.importKey(

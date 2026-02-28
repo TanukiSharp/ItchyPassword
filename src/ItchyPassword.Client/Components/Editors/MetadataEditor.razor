@@ -57,13 +57,13 @@
         }
 
         // TODO: ?? throw if master key is not available.
-        string masterKey = MasterKeyProvider.MasterKey ?? string.Empty;
+        byte[] masterKey = MasterKeyProvider.MasterKey;
 
         foreach (MetadataEntryV2 entry in Item.Metadata)
         {
             bool isEncrypted = entry.Value.StartsWith("enc:", StringComparison.Ordinal);
 
-            string decryptedValue = isEncrypted
+            string decryptedValue = isEncrypted && masterKey.Length > 0
                 ? await VaultConnectorHelper.DecryptIfNeededAsync(entry.Value, masterKey, Crypto)
                 : entry.Value;
 
@@ -97,14 +97,14 @@
             return true;
         }
 
-        string masterKey = MasterKeyProvider.MasterKey ?? string.Empty;
+        byte[] masterKey = MasterKeyProvider.MasterKey;
         var metadata = new List<MetadataEntryV2>(valid.Count);
 
         foreach (MetadataEntry entry in valid)
         {
             string storedValue;
 
-            if (entry.IsEncrypted && string.IsNullOrWhiteSpace(masterKey) == false)
+            if (entry.IsEncrypted && masterKey.Length > 0)
             {
                 // Reuse the original cipher if the value has not changed, to avoid diff noise.
                 bool valueUnchanged = entry.EncryptedValue is not null

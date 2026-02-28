@@ -1,9 +1,7 @@
 @page "/edit/{ItemId}"
 @using ItchyPassword.Client.Services
-@using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components.Editors
 @inject VaultSession Session
-@inject ICryptoService Crypto
 @inject NavigationManager Nav
 
 @if (_item is null)
@@ -77,13 +75,13 @@ else
 
     protected override void OnInitialized()
     {
-        if (Session.Vault is null || Guid.TryParse(ItemId, out Guid parsedId) == false)
+        if (Session.IsUnlocked == false || Guid.TryParse(ItemId, out Guid parsedId) == false)
         {
             Nav.NavigateTo("/");
             return;
         }
 
-        _item = Session.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
+        _item = Session.Vault!.Items.FirstOrDefault(i => i.Id == parsedId);
     }
 
     private async Task SaveAsync()
@@ -125,26 +123,8 @@ else
             // Update Timestamp
             _item.LastModified = DateTime.UtcNow;
 
-            // 1. Serialize entire vault
-            string json = VaultDataService.SerializeVault(Session.Vault);
-
-            // 2. Parallel save to all Write Connectors
-            var tasks = Session.WriteConnectors.Select(async c =>
-            {
-                try
-                {
-                    // Use connector's internal version tracking
-                    await c.SaveVaultAsync(json);
-                    return (Connector: c, Success: true, Error: "");
-                }
-                catch (Exception ex)
-                {
-                    return (Connector: c, Success: false, Error: ex.Message);
-                }
-            });
-
-            var results = await Task.WhenAll(tasks);
-
+            // Serialize entire vault and persist to all write connectors.
+            var results = await Session.SaveVaultAsync();
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)

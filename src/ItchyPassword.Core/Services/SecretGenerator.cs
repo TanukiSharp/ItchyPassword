@@ -69,7 +69,8 @@ public class SecretGenerationRules
 }
 
 /// <summary>
-/// Generates random secrets based on character class rules, using externally provided random bytes.
+/// Generates random secrets based on character class rules, using a <see cref="RandomBytePool"/>
+/// for cryptographically secure randomness with automatic re-fetching on exhaustion.
 /// </summary>
 public static class SecretGenerator
 {
@@ -78,64 +79,44 @@ public static class SecretGenerator
     public const string DigitChars = "0123456789";
 
     /// <summary>
-    /// Calculates the number of random bytes needed to generate a secret with the given rules.
-    /// Each character pick uses 2 bytes, and the Fisher-Yates shuffle uses 2 bytes per swap.
-    /// </summary>
-    public static int CalculateRequiredRandomBytes(int totalLength)
-    {
-        // 2 bytes per character selection + 2 bytes per shuffle swap + safety margin.
-        return (totalLength * 4) + 64;
-    }
-
-    /// <summary>
     /// Generates a random secret string that satisfies the given rules.
     /// </summary>
     /// <param name="rules">The generation rules specifying character class minimums.</param>
-    /// <param name="randomBytes">Cryptographically secure random bytes to use as entropy source.</param>
+    /// <param name="pool">The random byte pool used as entropy source.</param>
     /// <returns>A randomly generated secret string.</returns>
-    /// <exception cref="ArgumentException">When the rules are invalid or insufficient random bytes are provided.</exception>
-    public static string Generate(SecretGenerationRules rules, byte[] randomBytes)
+    /// <exception cref="ArgumentException">When the rules are invalid.</exception>
+    public static async Task<string> GenerateAsync(SecretGenerationRules rules, RandomBytePool pool)
     {
         if (rules.IsValid(out string? error) == false)
         {
             throw new ArgumentException(error);
         }
 
-        int requiredBytes = CalculateRequiredRandomBytes(rules.TotalLength);
-
-        if (randomBytes.Length < requiredBytes)
-        {
-            throw new ArgumentException(
-                $"Insufficient random bytes. Need at least {requiredBytes}, got {randomBytes.Length}."
-            );
-        }
-
         var result = new char[rules.TotalLength];
-        int byteIndex = 0;
         int charIndex = 0;
 
         // Fill minimum lowercase characters.
         for (int i = 0; i < rules.MinLowercase; i++)
         {
-            result[charIndex++] = PickChar(LowercaseChars, randomBytes, ref byteIndex);
+            result[charIndex++] = await PickCharAsync(LowercaseChars, pool);
         }
 
         // Fill minimum uppercase characters.
         for (int i = 0; i < rules.MinUppercase; i++)
         {
-            result[charIndex++] = PickChar(UppercaseChars, randomBytes, ref byteIndex);
+            result[charIndex++] = await PickCharAsync(UppercaseChars, pool);
         }
 
         // Fill minimum digit characters.
         for (int i = 0; i < rules.MinDigits; i++)
         {
-            result[charIndex++] = PickChar(DigitChars, randomBytes, ref byteIndex);
+            result[charIndex++] = await PickCharAsync(DigitChars, pool);
         }
 
         // Fill minimum symbol characters.
         for (int i = 0; i < rules.MinSymbols; i++)
         {
-            result[charIndex++] = PickChar(rules.SymbolAlphabet, randomBytes, ref byteIndex);
+            result[charIndex++] = await PickCharAsync(rules.SymbolAlphabet, pool);
         }
 
         // Build combined alphabet for remaining positions.
@@ -144,13 +125,13 @@ public static class SecretGenerator
         // Fill remaining positions with random characters from the combined alphabet.
         while (charIndex < rules.TotalLength)
         {
-            result[charIndex++] = PickChar(allChars, randomBytes, ref byteIndex);
+            result[charIndex++] = await PickCharAsync(allChars, pool);
         }
 
         // Fisher-Yates shuffle to randomize character positions.
         for (int i = result.Length - 1; i > 0; i--)
         {
-            int j = GetBoundedRandomIndex(i + 1, randomBytes, ref byteIndex);
+            int j = await GetBoundedRandomIndexAsync(i + 1, pool);
             (result[i], result[j]) = (result[j], result[i]);
         }
 
@@ -188,25 +169,34 @@ public static class SecretGenerator
         return combined;
     }
 
-    private static char PickChar(string alphabet, byte[] randomBytes, ref int byteIndex)
+    /// <summary>
+    /// Picks a character from the alphabet using rejection sampling to eliminate modulo bias.
+    /// </summary>
+    private static async Task<char> PickCharAsync(string alphabet, RandomBytePool pool)
     {
-        int value = ReadTwoBytes(randomBytes, ref byteIndex);
-        return alphabet[value % alphabet.Length];
-    }
-
-    private static int GetBoundedRandomIndex(int maxExclusive, byte[] randomBytes, ref int byteIndex)
-    {
-        int value = ReadTwoBytes(randomBytes, ref byteIndex);
-        return value % maxExclusive;
+        int index = await GetBoundedRandomIndexAsync(alphabet.Length, pool);
+        return alphabet[index];
     }
 
     /// <summary>
-    /// Reads two bytes from the random byte array and returns a 16-bit unsigned value.
+    /// Returns a uniformly distributed random index in [0, maxExclusive) using rejection sampling.
+    /// Reads 2 bytes at a time (16-bit value space) and rejects values that would cause modulo bias.
+    /// Fetches a fresh batch of random bytes when the current one is exhausted.
     /// </summary>
-    private static int ReadTwoBytes(byte[] randomBytes, ref int byteIndex)
+    private static async Task<int> GetBoundedRandomIndexAsync(int maxExclusive, RandomBytePool pool)
     {
-        int value = (randomBytes[byteIndex] << 8) | randomBytes[byteIndex + 1];
-        byteIndex += 2;
-        return value;
+        // The largest multiple of maxExclusive that fits in a 16-bit value.
+        // Values >= this threshold are rejected to eliminate modulo bias.
+        int threshold = (65536 / maxExclusive) * maxExclusive;
+
+        while (true)
+        {
+            int value = await pool.ReadTwoBytesAsync();
+
+            if (value < threshold)
+            {
+                return value % maxExclusive;
+            }
+        }
     }
 }

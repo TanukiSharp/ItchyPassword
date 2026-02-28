@@ -105,14 +105,14 @@ public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, 
     /// <inheritdoc />
     public async Task LoadConfigurationAsync()
     {
-        string? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
+        byte[]? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.LoadEntriesAsync(Configuration, storage, masterKey, crypto);
     }
 
     /// <inheritdoc />
     public async Task SaveConfigurationAsync()
     {
-        string? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
+        byte[]? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.SaveEntriesAsync(Configuration, storage, masterKey, crypto);
     }
 

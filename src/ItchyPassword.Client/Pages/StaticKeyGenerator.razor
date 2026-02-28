@@ -81,13 +81,13 @@
 </div>
 
 @code {
-    private string publicPart = "";
+    private string publicPart = string.Empty;
     private int length = 64;
-    private string alphabet = VaultMigrationService.DefaultAlphabet;
+    private string alphabet = StaticKeyDataV2.DefaultAlphabet;
     private string cryptoVersion = "v2";
     private string encoding = "v2";
-    private string result = "";
-    private string error = "";
+    private string result = string.Empty;
+    private string error = string.Empty;
 
     private void GoToLogin()
     {
@@ -96,7 +96,7 @@
 
     private async Task OnPublicPartInput(ChangeEventArgs e)
     {
-        publicPart = e.Value?.ToString() ?? "";
+        publicPart = e.Value?.ToString() ?? string.Empty;
         await GenerateAsync();
     }
 
@@ -111,7 +111,7 @@
 
     private async Task OnAlphabetInput(ChangeEventArgs e)
     {
-        alphabet = e.Value?.ToString() ?? "";
+        alphabet = e.Value?.ToString() ?? string.Empty;
         await GenerateAsync();
     }
 
@@ -137,21 +137,20 @@
 
         if (string.IsNullOrEmpty(publicPart))
         {
-            result = "";
+            result = string.Empty;
             return;
         }
 
         if (string.IsNullOrEmpty(alphabet) || alphabet.Length < 2)
         {
-            result = "";
+            result = string.Empty;
             return;
         }
 
-        error = "";
+        error = string.Empty;
 
         try
         {
-            byte[] mkBytes = System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey);
             byte[] partBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
 
             byte[] rawHashBytes;
@@ -160,11 +159,11 @@
 
             if (cryptoVersion == "v1")
             {
-                rawHashBytes = await Crypto.GeneratePasswordV1Async(mkBytes, partBytes);
+                rawHashBytes = await Crypto.GeneratePasswordV1Async(MasterKeyProvider.MasterKey, partBytes);
             }
             else // v2
             {
-                rawHashBytes = await Crypto.GeneratePasswordV2Async(mkBytes, partBytes);
+                rawHashBytes = await Crypto.GeneratePasswordV2Async(MasterKeyProvider.MasterKey, partBytes);
             }
 
             if (encoding == "v1")

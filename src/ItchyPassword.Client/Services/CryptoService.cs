@@ -12,13 +12,6 @@ public class CryptoService : ICryptoService
         _js = js;
     }
 
-    public async Task<string> GetDerivedBytesAsync(string password, string salt, int iterations)
-    {
-        return await _js.InvokeAsync<string>(
-            "ItchyPassword.Crypto.getDerivedBytes",
-            password, salt, iterations);
-    }
-
     public async Task<byte[]> EncryptV3Async(byte[] input, byte[] password)
     {
         return await _js.InvokeAsync<byte[]>(

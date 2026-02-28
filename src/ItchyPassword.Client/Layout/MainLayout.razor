@@ -57,7 +57,10 @@
 
     private void OnStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        StateHasChanged();
+        if (e.PropertyName is nameof(VaultSession.IsUnlocked))
+        {
+            StateHasChanged();
+        }
     }
 
     public void Dispose()

@@ -16,9 +16,13 @@ public class SecretDataV2
     /// <summary>
     /// The encrypted cipher text.
     /// </summary>
+    [JsonPropertyName("cipher")]
     public string Cipher { get; init; } = string.Empty;
 
+    [JsonPropertyName("cryptoVersion")]
     public int CryptoVersion { get; init; } = 3;
+
+    [JsonPropertyName("encoding")]
     public string Encoding { get; init; } = "base58";
 }
 
@@ -27,19 +31,36 @@ public class SecretDataV2
 /// </summary>
 public class StaticKeyDataV2
 {
+    /// <summary>
+    /// The full printable ASCII range used as the default alphabet for password generation.
+    /// </summary>
+    public const string DefaultAlphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
+
+    [JsonPropertyName("publicPart")]
     public required string PublicPart { get; init; }
+
+    [JsonPropertyName("alphabet")]
     public required string Alphabet { get; init; }
+
+    [JsonPropertyName("length")]
     public required int Length { get; init; }
+
+    [JsonPropertyName("cryptoVersion")]
     public required int CryptoVersion { get; init; }
+
+    [JsonPropertyName("encodingVersion")]
     public required int EncodingVersion { get; init; }
 }
 
 public class VaultItemV2
 {
+    [JsonPropertyName("id")]
     public required Guid Id { get; init; }
 
+    [JsonPropertyName("name")]
     public required string Name { get; set; }
 
+    [JsonPropertyName("type")]
     public required VaultItemTypeV2 Type { get; set; }
 
     /// <summary>
@@ -47,6 +68,7 @@ public class VaultItemV2
     /// Use <see cref="SetData(SecretDataV2)"/> to set.
     /// </summary>
     [JsonInclude]
+    [JsonPropertyName("secretData")]
     public SecretDataV2? SecretData { get; private set; }
 
     /// <summary>
@@ -54,6 +76,7 @@ public class VaultItemV2
     /// Use <see cref="SetData(StaticKeyDataV2)"/> to set.
     /// </summary>
     [JsonInclude]
+    [JsonPropertyName("staticKeyData")]
     public StaticKeyDataV2? StaticKeyData { get; private set; }
 
     /// <summary>
@@ -74,13 +97,16 @@ public class VaultItemV2
         SecretData = null;
     }
 
+    [JsonPropertyName("metadata")]
     public List<MetadataEntryV2>? Metadata { get; set; }
 
     /// <summary>
     /// The date and time the item was created. Immutable after initial creation.
     /// </summary>
+    [JsonPropertyName("createdAt")]
     public required DateTimeOffset CreatedAt { get; init; }
 
+    [JsonPropertyName("lastModified")]
     public required DateTimeOffset LastModified { get; set; }
 }
 
@@ -89,12 +115,18 @@ public class VaultItemV2
 /// </summary>
 public class MetadataEntryV2
 {
+    [JsonPropertyName("key")]
     public string Key { get; set; } = string.Empty;
+
+    [JsonPropertyName("value")]
     public string Value { get; set; } = string.Empty;
 }
 
 public class VaultV2
 {
+    [JsonPropertyName("version")]
     public required int Version { get; init; }
+
+    [JsonPropertyName("items")]
     public required List<VaultItemV2> Items { get; init; }
 }

@@ -10,7 +10,7 @@
     <div class="card-header vault-header">
         <h3 class="heading-flush">Vault Items</h3>
         <div class="vault-header-actions">
-            <span class="vault-item-count">@FilteredItems.Count() items</span>
+            <span class="vault-item-count">@FilteredItems.Count items</span>
             <select class="input vault-filter-select" value="@_displayFilter" @onchange="OnFilterChanged">
                 <option value="all">Show all</option>
                 <option value="statickey">Static keys only</option>
@@ -56,7 +56,7 @@
                         </td>
                     </tr>
                 }
-                @if (FilteredItems.Any() == false)
+                @if (FilteredItems.Count == 0)
                 {
                     <tr>
                         <td colspan="2" class="vault-empty-row">
@@ -97,17 +97,18 @@
 
     private void LockVault()
     {
-        MasterKeyProvider.MasterKey = "";
+        MasterKeyProvider.MasterKey = [];
+        Session.Vault = null;
         Nav.NavigateTo("/");
     }
 
-    private IEnumerable<VaultItemV2> FilteredItems
+    private List<VaultItemV2> FilteredItems
     {
         get
         {
             if (Session.Vault is null)
             {
-                return Enumerable.Empty<VaultItemV2>();
+                return [];
             }
 
             IEnumerable<VaultItemV2> items = Session.Vault.Items;
@@ -135,7 +136,7 @@
                 );
             }
 
-            return items;
+            return items.ToList();
         }
     }
 
@@ -166,11 +167,10 @@
 
         SecretDataV2 data = item.SecretData;
         byte[] encryptedBytes = DecodeString(data.Cipher, data.Encoding);
-        byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey);
 
         byte[] decryptedBytes = data.CryptoVersion switch
         {
-            3 => await Crypto.DecryptV3Async(encryptedBytes, passwordBytes),
+            3 => await Crypto.DecryptV3Async(encryptedBytes, MasterKeyProvider.MasterKey),
             _ => throw new NotSupportedException($"Cipher version {data.CryptoVersion} is not supported.")
         };
 
@@ -185,13 +185,12 @@
         }
 
         StaticKeyDataV2 keyData = item.StaticKeyData;
-        byte[] privatePart = System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey);
         byte[] publicPart = System.Text.Encoding.UTF8.GetBytes(keyData.PublicPart);
 
         byte[] rawBytes = keyData.CryptoVersion switch
         {
-            1 => await Crypto.GeneratePasswordV1Async(privatePart, publicPart),
-            2 => await Crypto.GeneratePasswordV2Async(privatePart, publicPart),
+            1 => await Crypto.GeneratePasswordV1Async(MasterKeyProvider.MasterKey, publicPart),
+            2 => await Crypto.GeneratePasswordV2Async(MasterKeyProvider.MasterKey, publicPart),
             _ => throw new NotSupportedException($"Crypto version {keyData.CryptoVersion} is not supported.")
         };
 

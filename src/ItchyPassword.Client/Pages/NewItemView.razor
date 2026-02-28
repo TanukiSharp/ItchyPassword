@@ -1,6 +1,5 @@
 @page "/item/new"
 @using ItchyPassword.Client.Services
-@using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components.Editors
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
@@ -120,7 +119,7 @@
         {
             item.SetData(new StaticKeyDataV2()
             {
-                Alphabet = VaultMigrationService.DefaultAlphabet,
+                Alphabet = StaticKeyDataV2.DefaultAlphabet,
                 EncodingVersion = 2,
                 CryptoVersion = 2,
                 Length = 64,
@@ -191,23 +190,7 @@
             }
 
             // Serialize the entire vault and persist to all write connectors.
-            string json = VaultDataService.SerializeVault(Session.Vault);
-
-            var tasks = Session.WriteConnectors.Select(async c =>
-            {
-                try
-                {
-                    await c.SaveVaultAsync(json);
-                    return (Connector: c, Success: true, Error: "");
-                }
-                catch (Exception ex)
-                {
-                    return (Connector: c, Success: false, Error: ex.Message);
-                }
-            });
-
-            var results = await Task.WhenAll(tasks);
-
+            var results = await Session.SaveVaultAsync();
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)

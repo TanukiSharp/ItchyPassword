@@ -167,7 +167,7 @@ public class GoogleDriveVaultConnector(
             return;
         }
 
-        string? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
+        byte[]? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.LoadEntriesAsync(Configuration, _storage, masterKey, _crypto);
 
         // Load tokens into private fields (not in Configuration, since that is UI-visible).
@@ -180,7 +180,7 @@ public class GoogleDriveVaultConnector(
     /// <inheritdoc />
     public async Task SaveConfigurationAsync()
     {
-        string? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
+        byte[]? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.SaveEntriesAsync(Configuration, _storage, masterKey, _crypto);
 
         // Persist tokens encrypted directly to localStorage (not via Configuration).
@@ -204,9 +204,8 @@ public class GoogleDriveVaultConnector(
             _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey);
             _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"[GoogleDrive] Failed to reload tokens from storage: {ex.Message}");
             _accessToken = string.Empty;
             _refreshToken = string.Empty;
         }
@@ -233,7 +232,6 @@ public class GoogleDriveVaultConnector(
             }
 
             // Refresh token produced a token without required scopes — discard it.
-            Console.WriteLine("[GoogleDrive] Refresh token did not produce a valid token. Clearing.");
             _accessToken = string.Empty;
             _refreshToken = string.Empty;
             AccessFailureMessage = """
@@ -300,8 +298,6 @@ public class GoogleDriveVaultConnector(
 
         _accessToken = tokenResponse.AccessToken;
 
-        Console.WriteLine($"[GoogleDrive] Token exchange returned scopes: '{tokenResponse.Scope}'");
-
         // Validate the freshly obtained token has the required scopes.
         if (await ValidateTokenAsync(_accessToken) == false)
         {
@@ -338,7 +334,6 @@ public class GoogleDriveVaultConnector(
         }
 
         _cachedFileId = fileId;
-        Console.WriteLine($"[GoogleDrive] FindVaultFileAsync returned fileId: '{fileId}' (length={fileId.Length})");
 
         // Download file content.
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{DriveApiBase}/files/{fileId}?alt=media");
@@ -359,27 +354,21 @@ public class GoogleDriveVaultConnector(
 
         string accessToken = await GetOrRefreshAccessTokenAsync();
 
-        Console.WriteLine($"[GoogleDrive] SaveVaultAsync: storageMode='{GetStorageMode()}', folderId='{VaultConnectorHelper.GetValue(Configuration, FolderIdKey)}'");
-        Console.WriteLine($"[GoogleDrive] SaveVaultAsync: _cachedFileId='{_cachedFileId}'");
-
         if (string.IsNullOrWhiteSpace(_cachedFileId))
         {
             // Try to find existing file first.
             _cachedFileId = await FindVaultFileAsync(accessToken);
-            Console.WriteLine($"[GoogleDrive] After FindVaultFileAsync: _cachedFileId='{_cachedFileId}'");
         }
 
         if (string.IsNullOrWhiteSpace(_cachedFileId))
         {
             // Create a new file.
             _cachedFileId = await CreateVaultFileAsync(accessToken, content);
-            Console.WriteLine($"[GoogleDrive] After CreateVaultFileAsync: _cachedFileId='{_cachedFileId}'");
         }
         else
         {
             try
             {
-                Console.WriteLine($"[GoogleDrive] Updating file with ID: '{_cachedFileId}' (length={_cachedFileId.Length})");
                 // Update existing file.
                 await UpdateVaultFileAsync(accessToken, _cachedFileId, content);
             }
@@ -486,7 +475,6 @@ public class GoogleDriveVaultConnector(
 
                 if (grantedScopes.Contains(requiredFragment, StringComparison.OrdinalIgnoreCase) == false)
                 {
-                    Console.WriteLine($"[GoogleDrive] Token missing required scope '{requiredFragment}'. Granted: '{grantedScopes}'");
                     return false;
                 }
             }
@@ -515,8 +503,6 @@ public class GoogleDriveVaultConnector(
             ? await GetResolvedFolderIdAsync(accessToken)
             : null;
 
-        Console.WriteLine($"[GoogleDrive] FindVaultFileAsync: storageMode='{storageMode}', resolvedFolderId='{folderId}'");
-
         string query = storageMode == "appdata"
             ? $"name = '{VaultFileName}' and 'appDataFolder' in parents and trashed = false"
             : $"name = '{VaultFileName}' and '{folderId}' in parents and trashed = false";
@@ -526,8 +512,6 @@ public class GoogleDriveVaultConnector(
         string encodedQuery = Uri.EscapeDataString(query);
         string url = $"{DriveApiBase}/files?q={encodedQuery}&spaces={spaces}&fields=files(id,name)&pageSize=1";
 
-        Console.WriteLine($"[GoogleDrive] FindVaultFileAsync URL: {url}");
-
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
@@ -535,13 +519,11 @@ public class GoogleDriveVaultConnector(
         await EnsureDriveSuccessAsync(response);
 
         string rawJson = await response.Content.ReadAsStringAsync();
-        Console.WriteLine($"[GoogleDrive] FindVaultFileAsync raw response: {rawJson}");
 
         DriveFileListResponse? result = JsonSerializer.Deserialize<DriveFileListResponse>(rawJson);
 
         if (result?.Files is { Count: > 0 } && string.IsNullOrWhiteSpace(result.Files[0].Id) == false)
         {
-            Console.WriteLine($"[GoogleDrive] FindVaultFileAsync found ID: '{result.Files[0].Id}'");
             return result.Files[0].Id;
         }
 
@@ -565,8 +547,6 @@ public class GoogleDriveVaultConnector(
 
         var metadata = new { name = VaultFileName, parents };
         string metadataJson = JsonSerializer.Serialize(metadata);
-
-        Console.WriteLine($"[GoogleDrive] CreateVaultFileAsync: metadata={metadataJson}");
 
         using var multipart = new MultipartContent("related");
         var metadataPart = new StringContent(metadataJson, Encoding.UTF8, "application/json");
@@ -628,7 +608,6 @@ public class GoogleDriveVaultConnector(
         // Attempt to refresh using the stored refresh token.
         if (string.IsNullOrWhiteSpace(_refreshToken) == false)
         {
-            Console.WriteLine("[GoogleDrive] Access token empty, attempting refresh...");
             string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken);
 
             if (string.IsNullOrWhiteSpace(refreshed) == false)
@@ -692,7 +671,6 @@ public class GoogleDriveVaultConnector(
 
         if (looksLikeId)
         {
-            Console.WriteLine($"[GoogleDrive] '{folderNameOrId}' looks like a Drive ID, using as-is.");
             return folderNameOrId;
         }
 
@@ -713,7 +691,6 @@ public class GoogleDriveVaultConnector(
             parentId = await FindOrCreateFolderAsync(accessToken, segment, parentId);
         }
 
-        Console.WriteLine($"[GoogleDrive] Resolved folder path '{folderNameOrId}' to ID: '{parentId}'");
         return parentId;
     }
 
@@ -722,9 +699,8 @@ public class GoogleDriveVaultConnector(
     /// </summary>
     private async Task<string> FindOrCreateFolderAsync(string accessToken, string folderName, string parentId)
     {
-        Console.WriteLine($"[GoogleDrive] Looking for folder '{folderName}' under parent '{parentId}'...");
-
-        string query = $"name = '{folderName}' and mimeType = 'application/vnd.google-apps.folder' and '{parentId}' in parents and trashed = false";
+        string escapedName = folderName.Replace("'", "\\'", StringComparison.Ordinal);
+        string query = $"name = '{escapedName}' and mimeType = 'application/vnd.google-apps.folder' and '{parentId}' in parents and trashed = false";
         string encodedQuery = Uri.EscapeDataString(query);
         string url = $"{DriveApiBase}/files?q={encodedQuery}&spaces=drive&fields=files(id,name)&pageSize=1";
 
@@ -739,13 +715,10 @@ public class GoogleDriveVaultConnector(
 
         if (result?.Files is { Count: > 0 } && string.IsNullOrWhiteSpace(result.Files[0].Id) == false)
         {
-            Console.WriteLine($"[GoogleDrive] Found folder '{folderName}' with ID: '{result.Files[0].Id}'");
             return result.Files[0].Id;
         }
 
         // Folder doesn't exist — create it under parentId.
-        Console.WriteLine($"[GoogleDrive] Folder '{folderName}' not found under '{parentId}', creating...");
-
         var metadata = new
         {
             name = folderName,
@@ -769,7 +742,6 @@ public class GoogleDriveVaultConnector(
             throw new InvalidOperationException($"Failed to create Google Drive folder '{folderName}' under parent '{parentId}'.");
         }
 
-        Console.WriteLine($"[GoogleDrive] Created folder '{folderName}' with ID: '{created.Id}'");
         return created.Id;
     }
 

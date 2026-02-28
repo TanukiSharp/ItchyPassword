@@ -4,7 +4,6 @@
 @using System.Web
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
-@inject VaultUnlockService UnlockService
 @inject NavigationManager Nav
 
 @if (_isLoading)
@@ -69,7 +68,7 @@ else if (Session.IsUnlocked)
 
         try
         {
-            (bool success, string? msg) = await UnlockService.UnlockAsync(status =>
+            (bool success, string? msg) = await Session.UnlockAsync(status =>
             {
                 InvokeAsync(() =>
                 {
@@ -105,7 +104,7 @@ else if (Session.IsUnlocked)
 
     /// <summary>
     /// Retries the unlock flow with a fresh user gesture.
-    /// AttemptUnlockAsync calls VaultUnlockService.UnlockAsync, which in turn calls
+    /// AttemptUnlockAsync calls Session.UnlockAsync, which in turn calls
     /// LoadConfigurationAsync (short-circuits on retry) then AccessAsync (synchronous
     /// preamble preserves the gesture). No special pre-call needed.
     /// </summary>
@@ -131,7 +130,7 @@ else if (Session.IsUnlocked)
 
     private void GoHome()
     {
-        MasterKeyProvider.MasterKey = string.Empty;
+        MasterKeyProvider.MasterKey = [];
         Session.Vault = null;
         Nav.NavigateTo("/");
     }

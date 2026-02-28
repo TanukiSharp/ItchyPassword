@@ -9,8 +9,6 @@ namespace ItchyPassword.Client.Services;
 
 public class VaultMigrationService(ICryptoService crypto)
 {
-    public const string DefaultAlphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-
     private static readonly HashSet<char> Base62Chars = new("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
     private const int DefaultLength = 64;
 
@@ -46,10 +44,10 @@ public class VaultMigrationService(ICryptoService crypto)
     /// <summary>
     /// Migrates a V1 vault string to a V2 Vault object, including password-to-cipher conversion.
     /// </summary>
-    public async Task<VaultV2> MigrateAsync(string jsonContent, string masterKey, IProgress<double>? progress = null)
+    public async Task<VaultV2> MigrateAsync(string jsonContent, byte[] masterKey, IProgress<double>? progress = null)
     {
         // 1. Structural Migration (JSON -> Vault Items)
-        VaultV2 vault = PerformStructuralMigration(analyseMode: true, jsonContent);
+        VaultV2 vault = PerformStructuralMigration(jsonContent);
 
         // 2. Content Migration (Password Recipes -> Encrypted Ciphers)
         await MigrateLegacyPasswordRecipesToCiphersAsync(vault, masterKey, progress);
@@ -57,7 +55,7 @@ public class VaultMigrationService(ICryptoService crypto)
         return vault;
     }
 
-    private static VaultV2 PerformStructuralMigration(bool analyseMode, string jsonContent)
+    private static VaultV2 PerformStructuralMigration(string jsonContent)
     {
         var vault = new VaultV2 { Version = 2, Items = [] };
 
@@ -71,20 +69,19 @@ public class VaultMigrationService(ICryptoService crypto)
                 {
                     if (kvp.Value is JsonObject childObj)
                     {
-                        TraverseV1Node(analyseMode, childObj, kvp.Key, string.Empty, vault.Items);
+                        TraverseV1Node(childObj, kvp.Key, string.Empty, vault.Items);
                     }
                 }
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            Console.WriteLine($"Structural Migration Failed: {ex.Message}");
         }
 
         return vault;
     }
 
-    private static void TraverseV1Node(bool analyseMode, JsonObject node, string name, string parentPath, List<VaultItemV2> items)
+    private static void TraverseV1Node(JsonObject node, string name, string parentPath, List<VaultItemV2> items)
     {
         bool processedPassword = false;
         bool processedCiphers = false;
@@ -112,9 +109,9 @@ public class VaultMigrationService(ICryptoService crypto)
                     LastModified = legacyDate
                 };
 
-                int version = ExtractValue($"p: {item.Name}", passObj, "version", 2, analyseMode);
-                int length = ExtractValue($"p: {item.Name}", passObj, "length", 64, analyseMode);
-                string alphabet = ExtractValue($"p: {item.Name}", passObj, "alphabet", DefaultAlphabet, analyseMode);
+                int version = ExtractValue($"p: {item.Name}", passObj, "version", 2);
+                int length = ExtractValue($"p: {item.Name}", passObj, "length", 64);
+                string alphabet = ExtractValue($"p: {item.Name}", passObj, "alphabet", StaticKeyDataV2.DefaultAlphabet);
 
                 item.SetData(new StaticKeyDataV2
                 {
@@ -141,10 +138,6 @@ public class VaultMigrationService(ICryptoService crypto)
 
                 items.Add(item);
                 processedPassword = true;
-            }
-            else if (analyseMode)
-            {
-                Console.WriteLine($"Node '{parentPath} / {name}' is an invalid password node.");
             }
         }
 
@@ -194,9 +187,9 @@ public class VaultMigrationService(ICryptoService crypto)
                             LastModified = legacyCipherDate
                         };
 
-                        string cipher = ExtractValue($"c: {item.Name}", cipherDetail, "value", string.Empty, analyseMode);
-                        int cipherCryptoVersion = ExtractValue($"c: {item.Name}", cipherDetail, "version", 3, analyseMode);
-                        string encoding = ExtractValue($"c: {item.Name}", cipherDetail, "encoding", "base62", analyseMode);
+                        string cipher = ExtractValue($"c: {item.Name}", cipherDetail, "value", string.Empty);
+                        int cipherCryptoVersion = ExtractValue($"c: {item.Name}", cipherDetail, "version", 3);
+                        string encoding = ExtractValue($"c: {item.Name}", cipherDetail, "encoding", "base62");
 
                         item.SetData(new SecretDataV2
                         {
@@ -238,14 +231,13 @@ public class VaultMigrationService(ICryptoService crypto)
 
             if (kvp.Value is JsonObject childNode)
             {
-                TraverseV1Node(analyseMode, childNode, kvp.Key, newPath, items);
+                TraverseV1Node(childNode, kvp.Key, newPath, items);
             }
         }
     }
 
-    private async Task MigrateLegacyPasswordRecipesToCiphersAsync(VaultV2 vault, string masterKey, IProgress<double>? progress = null)
+    private async Task MigrateLegacyPasswordRecipesToCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress = null)
     {
-        byte[] masterKeyBytes = Encoding.UTF8.GetBytes(masterKey);
 
         // Pre-filter items that need migration to avoid repeated checks in loop.
         List<VaultItemV2> itemsToMigrate = vault.Items.Where(item =>
@@ -272,7 +264,7 @@ public class VaultMigrationService(ICryptoService crypto)
                     continue;
                 }
 
-                string alphabet = string.IsNullOrWhiteSpace(skParams.Alphabet) ? DefaultAlphabet : skParams.Alphabet;
+                string alphabet = string.IsNullOrWhiteSpace(skParams.Alphabet) ? StaticKeyDataV2.DefaultAlphabet : skParams.Alphabet;
                 int length = skParams.Length > 0 ? skParams.Length : DefaultLength;
 
                 byte[] publicBytes = Encoding.UTF8.GetBytes(publicPart);
@@ -287,16 +279,7 @@ public class VaultMigrationService(ICryptoService crypto)
                     derivedBytes = await crypto.GeneratePasswordV2Async(masterKeyBytes, publicBytes, "Password");
                 }
 
-                string password;
-
-                if (skParams.EncodingVersion == 1)
-                {
-                    password = BaseN.EncodeOneWay(derivedBytes, alphabet);
-                }
-                else
-                {
-                    password = BaseN.Encode(derivedBytes, alphabet);
-                }
+                string password = BaseN.EncodeOneWay(derivedBytes, alphabet);
 
                 if (password.Length > length)
                 {
@@ -314,9 +297,8 @@ public class VaultMigrationService(ICryptoService crypto)
                     Encoding = "base58"
                 });
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"Failed to migrate item {item.Name}: {ex.Message}");
             }
             finally
             {
@@ -326,25 +308,15 @@ public class VaultMigrationService(ICryptoService crypto)
         }
     }
 
-    private static T ExtractValue<T>(string parentPath, JsonObject obj, string key, T defaultValue, bool analyseMode = false)
+    private static T ExtractValue<T>(string parentPath, JsonObject obj, string key, T defaultValue)
     {
         if (obj.TryGetPropertyValue(key, out JsonNode? valNode) == false)
         {
-            if (analyseMode)
-            {
-                string fullPath = string.IsNullOrWhiteSpace(parentPath) ? key : $"{parentPath} / {key}";
-                Console.WriteLine($"Key '{fullPath}' does not exist.");
-            }
             return defaultValue;
         }
 
         if (valNode is null)
         {
-            if (analyseMode)
-            {
-                string fullPath = string.IsNullOrWhiteSpace(parentPath) ? key : $"{parentPath} / {key}";
-                Console.WriteLine($"Key '{fullPath}' is null.");
-            }
             return defaultValue;
         }
 
@@ -352,11 +324,6 @@ public class VaultMigrationService(ICryptoService crypto)
 
         if (nullableValue is null)
         {
-            if (analyseMode)
-            {
-                string fullPath = string.IsNullOrWhiteSpace(parentPath) ? key : $"{parentPath} / {key}";
-                Console.WriteLine($"Key '{fullPath}' is not of expected type {typeof(T).FullName}.");
-            }
             return defaultValue;
         }
 
