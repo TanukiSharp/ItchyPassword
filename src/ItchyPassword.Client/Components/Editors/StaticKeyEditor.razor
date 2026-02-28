@@ -77,27 +77,16 @@
 
     protected override async Task OnInitializedAsync()
     {
-        // TODO: This is always set.
-        if (Item.StaticKeyData is StaticKeyDataV2 parameters)
-        {
-            _publicPart = parameters.PublicPart;
-            _encodingVersion = parameters.EncodingVersion;
+        StaticKeyDataV2 parameters = Item.StaticKeyData!;
 
-            if (string.IsNullOrEmpty(parameters.Alphabet) == false)
-            {
-                _alphabet = VaultMigrationService.DefaultAlphabet;
-            }
+        _publicPart = parameters.PublicPart;
+        _encodingVersion = parameters.EncodingVersion;
+        _length = parameters.Length;
+        _cryptoVersion = parameters.CryptoVersion;
 
-            _length = parameters.Length;
-            _cryptoVersion = parameters.CryptoVersion;
-        }
-        else
+        if (string.IsNullOrEmpty(parameters.Alphabet) == false)
         {
-            _publicPart = string.Empty;
-            _encodingVersion = 2;
-            _alphabet = VaultMigrationService.DefaultAlphabet;
-            _length = DefaultLength;
-            _cryptoVersion = 2;
+            _alphabet = parameters.Alphabet;
         }
 
         // Auto-generate if editing an existing item with a public part.

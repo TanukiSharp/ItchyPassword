@@ -39,9 +39,8 @@ public class VaultDataService
 
     public static string SerializeVault(VaultV2 vault)
     {
-        // TODO: Implement sorting logic here using JsonDocument/Node manipulation if standard serializer doesn't support property sorting.
-        // Or implement custom Converter.
-        // For now standard serialization.
+        // Sort items by Id for deterministic output across saves.
+        vault.Items.Sort((a, b) => a.Id.CompareTo(b.Id));
 
         return JsonSerializer.Serialize(vault, _saveOptions);
     }
