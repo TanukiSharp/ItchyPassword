@@ -2,7 +2,7 @@
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components.Editors
-@inject VaultState State
+@inject VaultSession Session
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 
@@ -77,18 +77,18 @@ else
 
     protected override void OnInitialized()
     {
-        if (State.Vault is null || Guid.TryParse(ItemId, out Guid parsedId) == false)
+        if (Session.Vault is null || Guid.TryParse(ItemId, out Guid parsedId) == false)
         {
             Nav.NavigateTo("/");
             return;
         }
 
-        _item = State.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
+        _item = Session.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
     }
 
     private async Task SaveAsync()
     {
-        if (State.Vault is null || _item is null)
+        if (Session.Vault is null || _item is null)
         {
             return;
         }
@@ -126,10 +126,10 @@ else
             _item.LastModified = DateTime.UtcNow;
 
             // 1. Serialize entire vault
-            string json = VaultDataService.SerializeVault(State.Vault);
+            string json = VaultDataService.SerializeVault(Session.Vault);
 
             // 2. Parallel save to all Write Connectors
-            var tasks = State.WriteConnectors.Select(async c =>
+            var tasks = Session.WriteConnectors.Select(async c =>
             {
                 try
                 {

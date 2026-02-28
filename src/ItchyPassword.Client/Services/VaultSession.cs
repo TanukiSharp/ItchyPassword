@@ -6,9 +6,11 @@ using System.Runtime.CompilerServices;
 namespace ItchyPassword.Client.Services;
 
 /// <summary>
-/// Manages the state of the vault.
+/// Manages the current vault session: the loaded vault data, connector
+/// preferences (reader / writers), and the <see cref="IsUnlocked"/> flag
+/// that the UI uses for navigation guards and conditional rendering.
 /// </summary>
-public class VaultState : INotifyPropertyChanged
+public class VaultSession : INotifyPropertyChanged
 {
     private const string ReaderStorageKey = "itchypassword_reader_vault_connector";
     private const string WriterIdsStorageKey = "itchypassword_writer_vault_connectors";
@@ -42,32 +44,9 @@ public class VaultState : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Gets or sets the master key used to decrypt the vault.
-    /// Delegates to the <see cref="IMasterKeyProvider"/> instance; property-changed
-    /// notifications are forwarded automatically.
-    /// </summary>
-    public string MasterKey
-    {
-        get
-        {
-            return _masterKeyProvider.MasterKey;
-        }
-        set
-        {
-            _masterKeyProvider.MasterKey = value;
-        }
-    }
-
-    /// <summary>
     /// Gets the list of available vault connectors.
     /// </summary>
     public List<IVaultConnector> Connectors { get; } = [];
-
-    /// <summary>
-    /// Gets or sets the search query used to filter vault items.
-    /// This is kept in-memory so it survives navigation between pages.
-    /// </summary>
-    public string SearchQuery { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the ID of the connector used for reading the vault.
@@ -90,25 +69,23 @@ public class VaultState : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="VaultState"/> class.
+    /// Initializes a new instance of the <see cref="VaultSession"/> class.
     /// </summary>
     /// <param name="masterKeyProvider">The provider for the in-memory master key.</param>
     /// <param name="connectors">The available vault connectors, resolved from the DI container.</param>
     /// <param name="storage">The local storage service used for persisting preferences.</param>
-    public VaultState(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, LocalStorageService storage)
+    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, LocalStorageService storage)
     {
         _masterKeyProvider = masterKeyProvider;
         _storage = storage;
 
         Connectors.AddRange(connectors);
 
-        // Forward master-key property changes so that UI bindings on VaultState still work.
+        // Forward master-key changes so IsUnlocked re-evaluates for UI subscribers.
         if (_masterKeyProvider is INotifyPropertyChanged notifiable)
         {
             notifiable.PropertyChanged += (_, _) =>
             {
-                OnPropertyChanged(nameof(MasterKey));
-                OnPropertyChanged(nameof(HasMasterKey));
                 OnPropertyChanged(nameof(IsUnlocked));
             };
         }
@@ -248,24 +225,13 @@ public class VaultState : INotifyPropertyChanged
     }
 
     /// <summary>
-    /// Gets a value indicating whether a master key has been set.
-    /// </summary>
-    public bool HasMasterKey
-    {
-        get
-        {
-            return string.IsNullOrWhiteSpace(MasterKey) == false;
-        }
-    }
-
-    /// <summary>
     /// Gets a value indicating whether the vault is unlocked (loaded and decrypted).
     /// </summary>
     public bool IsUnlocked
     {
         get
         {
-            return HasMasterKey && Vault is not null;
+            return _masterKeyProvider.HasMasterKey && Vault is not null;
         }
     }
 

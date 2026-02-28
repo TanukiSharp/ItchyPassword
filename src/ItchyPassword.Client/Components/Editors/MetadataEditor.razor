@@ -1,6 +1,6 @@
 @using ItchyPassword.Client.Services.VaultConnectors
 @inject ICryptoService Crypto
-@inject VaultState State
+@inject IMasterKeyProvider MasterKeyProvider
 
 <div class="metadata-editor">
     <label class="section-label">Metadata</label>
@@ -56,7 +56,8 @@
             return;
         }
 
-        string masterKey = State.MasterKey ?? string.Empty;
+        // TODO: ?? throw if master key is not available.
+        string masterKey = MasterKeyProvider.MasterKey ?? string.Empty;
 
         foreach (MetadataEntryV2 entry in Item.Metadata)
         {
@@ -96,7 +97,7 @@
             return true;
         }
 
-        string masterKey = State.MasterKey ?? string.Empty;
+        string masterKey = MasterKeyProvider.MasterKey ?? string.Empty;
         var metadata = new List<MetadataEntryV2>(valid.Count);
 
         foreach (MetadataEntry entry in valid)

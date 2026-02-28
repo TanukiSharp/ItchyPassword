@@ -3,7 +3,7 @@
 @using ItchyPassword.Core.Services
 @using ItchyPassword.Core.Encoding
 @inject ICryptoService Crypto
-@inject VaultState State
+@inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 
 <PageTitle>Static Key Generator</PageTitle>
@@ -17,7 +17,7 @@
     </div>
 
     <div class="card-body">
-        @if (State.HasMasterKey == false)
+        @if (MasterKeyProvider.HasMasterKey == false)
         {
             <div class="alert warning">
                 You must enter your Master Key first.
@@ -129,7 +129,7 @@
 
     private async Task GenerateAsync()
     {
-        if (State.HasMasterKey == false)
+        if (MasterKeyProvider.HasMasterKey == false)
         {
             error = "Master Key is missing. Please go back to login.";
             return;
@@ -151,7 +151,7 @@
 
         try
         {
-            byte[] mkBytes = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
+            byte[] mkBytes = System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey);
             byte[] partBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
 
             byte[] rawHashBytes;

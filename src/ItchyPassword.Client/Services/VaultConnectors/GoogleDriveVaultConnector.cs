@@ -36,7 +36,7 @@ public class GoogleDriveVaultConnector(
     HttpClient http,
     LocalStorageService storage,
     ICryptoService crypto,
-    VaultState state,
+    IMasterKeyProvider masterKeyProvider,
     IJSRuntime js
 ) : IVaultConnector
 {
@@ -68,7 +68,7 @@ public class GoogleDriveVaultConnector(
     private readonly HttpClient _http = http;
     private readonly LocalStorageService _storage = storage;
     private readonly ICryptoService _crypto = crypto;
-    private readonly VaultState _state = state;
+    private readonly IMasterKeyProvider _masterKeyProvider = masterKeyProvider;
     private readonly IJSRuntime _js = js;
 
     private bool _configLoaded;
@@ -167,7 +167,7 @@ public class GoogleDriveVaultConnector(
             return;
         }
 
-        string? masterKey = _state.HasMasterKey ? _state.MasterKey : null;
+        string? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.LoadEntriesAsync(Configuration, _storage, masterKey, _crypto);
 
         // Load tokens into private fields (not in Configuration, since that is UI-visible).
@@ -180,7 +180,7 @@ public class GoogleDriveVaultConnector(
     /// <inheritdoc />
     public async Task SaveConfigurationAsync()
     {
-        string? masterKey = _state.HasMasterKey ? _state.MasterKey : null;
+        string? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.SaveEntriesAsync(Configuration, _storage, masterKey, _crypto);
 
         // Persist tokens encrypted directly to localStorage (not via Configuration).
@@ -807,8 +807,8 @@ public class GoogleDriveVaultConnector(
 
         try
         {
-            return _state.HasMasterKey
-                ? await VaultConnectorHelper.DecryptIfNeededAsync(stored, _state.MasterKey, _crypto)
+            return _masterKeyProvider.HasMasterKey
+                ? await VaultConnectorHelper.DecryptIfNeededAsync(stored, _masterKeyProvider.MasterKey, _crypto)
                 : stored;
         }
         catch (Exception ex)
@@ -823,12 +823,12 @@ public class GoogleDriveVaultConnector(
     /// </summary>
     private async Task SaveEncryptedTokenAsync(string key, string value)
     {
-        if (string.IsNullOrWhiteSpace(value) || _state.HasMasterKey == false)
+        if (string.IsNullOrWhiteSpace(value) || _masterKeyProvider.HasMasterKey == false)
         {
             return;
         }
 
-        string encrypted = await VaultConnectorHelper.EncryptAsync(value, _state.MasterKey, _crypto);
+        string encrypted = await VaultConnectorHelper.EncryptAsync(value, _masterKeyProvider.MasterKey, _crypto);
         await _storage.SetItemAsync(key, encrypted);
     }
 

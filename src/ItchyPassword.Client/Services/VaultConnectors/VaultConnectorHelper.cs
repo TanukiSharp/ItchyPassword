@@ -120,11 +120,19 @@ internal static class VaultConnectorHelper
 
             string valueToStore = entry.Value;
 
-            if (entry.IsEncrypted
-                && string.IsNullOrWhiteSpace(masterKey) == false
-                && string.IsNullOrWhiteSpace(valueToStore) == false)
+            if (entry.IsEncrypted)
             {
-                valueToStore = await EncryptAsync(valueToStore, masterKey, crypto);
+                // Never write an encrypted entry in plaintext.
+                // Skip entirely when the master key is unavailable.
+                if (string.IsNullOrWhiteSpace(masterKey))
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(valueToStore) == false)
+                {
+                    valueToStore = await EncryptAsync(valueToStore, masterKey, crypto);
+                }
             }
 
             await storage.SetItemAsync(entry.StorageKey, valueToStore);

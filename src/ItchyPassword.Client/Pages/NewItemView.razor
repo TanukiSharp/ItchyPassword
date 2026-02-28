@@ -2,7 +2,8 @@
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components.Editors
-@inject VaultState State
+@inject VaultSession Session
+@inject IMasterKeyProvider MasterKeyProvider
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 
@@ -76,7 +77,7 @@
 
     protected override void OnInitialized()
     {
-        if (State.Vault is null || State.HasMasterKey == false)
+        if (Session.Vault is null || MasterKeyProvider.HasMasterKey == false)
         {
             Nav.NavigateTo("/");
             return;
@@ -132,7 +133,7 @@
 
     private async Task SaveAsync()
     {
-        if (State.Vault is null)
+        if (Session.Vault is null)
         {
             return;
         }
@@ -176,23 +177,23 @@
             _item.LastModified = DateTimeOffset.UtcNow;
 
             // Check if this item already exists in the vault (re-save scenario).
-            int existingIndex = State.Vault.Items.FindIndex(i => i.Id == _itemId);
+            int existingIndex = Session.Vault.Items.FindIndex(i => i.Id == _itemId);
 
             if (existingIndex >= 0)
             {
                 // Update the existing entry.
-                State.Vault.Items[existingIndex] = _item;
+                Session.Vault.Items[existingIndex] = _item;
             }
             else
             {
                 // Add as new entry.
-                State.Vault.Items.Add(_item);
+                Session.Vault.Items.Add(_item);
             }
 
             // Serialize the entire vault and persist to all write connectors.
-            string json = VaultDataService.SerializeVault(State.Vault);
+            string json = VaultDataService.SerializeVault(Session.Vault);
 
-            var tasks = State.WriteConnectors.Select(async c =>
+            var tasks = Session.WriteConnectors.Select(async c =>
             {
                 try
                 {
@@ -216,7 +217,7 @@
                 // If ALL connectors failed, rollback and stay on page.
                 if (results.All(r => r.Success == false))
                 {
-                    State.Vault.Items.Remove(_item);
+                    Session.Vault.Items.Remove(_item);
                     return;
                 }
             }
@@ -227,7 +228,7 @@
         {
             _error = $"Save failed: {ex.Message}";
             // Rollback on total failure.
-            State.Vault?.Items.Remove(_item);
+            Session.Vault?.Items.Remove(_item);
         }
         finally
         {

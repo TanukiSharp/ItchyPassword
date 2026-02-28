@@ -1,5 +1,7 @@
 @using ItchyPassword.Client.Services
-@inject VaultState State
+@inject VaultSession Session
+@inject IMasterKeyProvider MasterKeyProvider
+@inject UiState UiState
 @inject ICryptoService Crypto
 @inject NavigationManager Nav
 @inject LocalStorageService Storage
@@ -20,7 +22,7 @@
     </div>
 
     <div class="vault-search">
-        <input class="input" type="text" placeholder="Search items..." @bind="State.SearchQuery" @bind:event="oninput" />
+        <input class="input" type="text" placeholder="Search items..." @bind="UiState.SearchQuery" @bind:event="oninput" />
     </div>
 
     <div class="vault-scroll-area">
@@ -95,7 +97,7 @@
 
     private void LockVault()
     {
-        State.MasterKey = "";
+        MasterKeyProvider.MasterKey = "";
         Nav.NavigateTo("/");
     }
 
@@ -103,12 +105,12 @@
     {
         get
         {
-            if (State.Vault is null)
+            if (Session.Vault is null)
             {
                 return Enumerable.Empty<VaultItemV2>();
             }
 
-            IEnumerable<VaultItemV2> items = State.Vault.Items;
+            IEnumerable<VaultItemV2> items = Session.Vault.Items;
 
             // Apply type filter.
             if (_displayFilter == "statickey")
@@ -121,9 +123,9 @@
             }
 
             // Apply search filter.
-            if (string.IsNullOrWhiteSpace(State.SearchQuery) == false)
+            if (string.IsNullOrWhiteSpace(UiState.SearchQuery) == false)
             {
-                string query = State.SearchQuery;
+                string query = UiState.SearchQuery;
                 items = items.Where(i =>
                     i.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                     i.Metadata?.Any(m =>
@@ -164,7 +166,7 @@
 
         SecretDataV2 data = item.SecretData;
         byte[] encryptedBytes = DecodeString(data.Cipher, data.Encoding);
-        byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
+        byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey);
 
         byte[] decryptedBytes = data.CryptoVersion switch
         {
@@ -183,7 +185,7 @@
         }
 
         StaticKeyDataV2 keyData = item.StaticKeyData;
-        byte[] privatePart = System.Text.Encoding.UTF8.GetBytes(State.MasterKey);
+        byte[] privatePart = System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey);
         byte[] publicPart = System.Text.Encoding.UTF8.GetBytes(keyData.PublicPart);
 
         byte[] rawBytes = keyData.CryptoVersion switch

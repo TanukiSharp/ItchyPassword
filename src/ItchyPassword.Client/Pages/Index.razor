@@ -1,10 +1,10 @@
 @page "/"
 @layout ItchyPassword.Client.Layout.EmptyLayout
 @implements IDisposable
-@inject VaultState State
+@inject VaultSession Session
 @inject NavigationManager Nav
 
-@if (State.IsUnlocked == false)
+@if (Session.IsUnlocked == false)
 {
     // If not unlocked, check if configured. If not configured, go to Setup. Else simple Master Key view.
     // For now, let's render MasterKeyView (Simple) which can link to setup.
@@ -14,27 +14,24 @@
 @code {
     protected override void OnInitialized()
     {
-        if (State.IsUnlocked)
+        if (Session.IsUnlocked)
         {
             NavigateToCorrectPage();
         }
-        State.PropertyChanged += OnStateChanged;
+        Session.PropertyChanged += OnStateChanged;
     }
 
     private void OnStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
     {
-        if (e.PropertyName == nameof(State.IsUnlocked))
+        if (Session.IsUnlocked)
         {
-            if (State.IsUnlocked)
-            {
-                NavigateToCorrectPage();
-            }
+            NavigateToCorrectPage();
         }
     }
 
     private void NavigateToCorrectPage()
     {
-        if (State.Vault is not null)
+        if (Session.Vault is not null)
         {
             Nav.NavigateTo("/vault");
         }
@@ -46,6 +43,6 @@
 
     public void Dispose()
     {
-        State.PropertyChanged -= OnStateChanged;
+        Session.PropertyChanged -= OnStateChanged;
     }
 }

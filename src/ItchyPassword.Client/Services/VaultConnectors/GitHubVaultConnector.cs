@@ -15,8 +15,8 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// <param name="http">The HTTP client instance.</param>
 /// <param name="storage">The storage service instance.</param>
 /// <param name="crypto">The crypto service instance for encrypting/decrypting secrets.</param>
-/// <param name="state">The vault state providing the master key.</param>
-public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, ICryptoService crypto, VaultState state) : IVaultConnector
+/// <param name="masterKeyProvider">The provider for the in-memory master key.</param>
+public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, ICryptoService crypto, IMasterKeyProvider masterKeyProvider) : IVaultConnector
 {
     private const string RepositoryOwnerKey = "VaultRepositoryOwner";
     private const string RepositoryNameKey = "VaultRepositoryName";
@@ -105,14 +105,14 @@ public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, 
     /// <inheritdoc />
     public async Task LoadConfigurationAsync()
     {
-        string? masterKey = state.HasMasterKey ? state.MasterKey : null;
+        string? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.LoadEntriesAsync(Configuration, storage, masterKey, crypto);
     }
 
     /// <inheritdoc />
     public async Task SaveConfigurationAsync()
     {
-        string? masterKey = state.HasMasterKey ? state.MasterKey : null;
+        string? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.SaveEntriesAsync(Configuration, storage, masterKey, crypto);
     }
 

@@ -2,10 +2,11 @@
 @implements IDisposable
 @using ItchyPassword.Client.Services
 @inject NavigationManager Nav
-@inject VaultState State
+@inject VaultSession Session
+@inject IMasterKeyProvider MasterKeyProvider
 
 <div class="app-layout">
-    @if (State.HasMasterKey)
+    @if (MasterKeyProvider.HasMasterKey)
     {
         <div class="mobile-toggle-bar">
             <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
@@ -19,7 +20,7 @@
             </div>
             <nav>
                 <ul>
-                    @if (State.IsUnlocked)
+                    @if (Session.IsUnlocked)
                     {
                         <li><NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔓 Vault</NavLink></li>
                     }
@@ -51,7 +52,7 @@
 
     protected override void OnInitialized()
     {
-        State.PropertyChanged += OnStateChanged;
+        Session.PropertyChanged += OnStateChanged;
     }
 
     private void OnStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
@@ -61,7 +62,7 @@
 
     public void Dispose()
     {
-        State.PropertyChanged -= OnStateChanged;
+        Session.PropertyChanged -= OnStateChanged;
     }
 
     private void ToggleSidebar()

@@ -1,7 +1,7 @@
 @using ItchyPassword.Client.Services
 @implements IItemEditor
 @inject ICryptoService Crypto
-@inject VaultState State
+@inject IMasterKeyProvider MasterKeyProvider
 
 <div class="grid-2col">
     <div>
@@ -107,14 +107,14 @@
             if (_cryptoVersion == 1)
             {
                 rawBytes = await Crypto.GeneratePasswordV1Async(
-                    System.Text.Encoding.UTF8.GetBytes(State.MasterKey),
+                    System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey),
                     System.Text.Encoding.UTF8.GetBytes(_publicPart)
                 );
             }
             else if (_cryptoVersion == 2)
             {
                 rawBytes = await Crypto.GeneratePasswordV2Async(
-                    System.Text.Encoding.UTF8.GetBytes(State.MasterKey),
+                    System.Text.Encoding.UTF8.GetBytes(MasterKeyProvider.MasterKey),
                     System.Text.Encoding.UTF8.GetBytes(_publicPart)
                 );
             }

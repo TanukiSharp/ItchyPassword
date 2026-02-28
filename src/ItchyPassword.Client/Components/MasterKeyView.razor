@@ -1,5 +1,6 @@
 @using ItchyPassword.Client.Services
-@inject VaultState State
+@inject VaultSession Session
+@inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 
 <div @onclick="FocusMasterKeyAsync" class="master-key-overlay">
@@ -35,14 +36,14 @@
     protected override async Task OnInitializedAsync()
     {
         // Load the saved active reader preference from storage.
-        await State.InitializeAsync();
+        await Session.InitializeAsync();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await FocusMasterKeyAsync();
 
-        if (firstRender && State.HasMasterKey)
+        if (firstRender && MasterKeyProvider.HasMasterKey)
         {
             // Master key already in state (e.g. navigated back), go straight to vault.
             Nav.NavigateTo("/vault");
@@ -61,7 +62,7 @@
 
     private void Submit()
     {
-        State.MasterKey = masterKey;
+        MasterKeyProvider.MasterKey = masterKey;
         Nav.NavigateTo("/vault");
     }
 }

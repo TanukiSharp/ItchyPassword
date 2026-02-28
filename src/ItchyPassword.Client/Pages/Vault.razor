@@ -2,7 +2,8 @@
 @using ItchyPassword.Client.Components
 @using ItchyPassword.Client.Services
 @using System.Web
-@inject VaultState State
+@inject VaultSession Session
+@inject IMasterKeyProvider MasterKeyProvider
 @inject VaultUnlockService UnlockService
 @inject NavigationManager Nav
 
@@ -19,7 +20,7 @@ else if (string.IsNullOrWhiteSpace(_error) == false)
         <h3>Failed to Unlock</h3>
         <p>@_error</p>
         <div class="button-row">
-            @if (State.ReadConnector?.CanRetryAccess == true)
+            @if (Session.ReadConnector?.CanRetryAccess == true)
             {
                 <button class="button primary" disabled="@_isRetrying" @onclick="RetryAccess">
                     @(_isRetrying ? "Retrying..." : "Retry")
@@ -29,7 +30,7 @@ else if (string.IsNullOrWhiteSpace(_error) == false)
         </div>
     </div>
 }
-else if (State.IsUnlocked)
+else if (Session.IsUnlocked)
 {
     <VaultView />
 }
@@ -42,12 +43,12 @@ else if (State.IsUnlocked)
 
     protected override async Task OnInitializedAsync()
     {
-        if (State.IsUnlocked)
+        if (Session.IsUnlocked)
         {
             return;
         }
 
-        if (State.HasMasterKey == false)
+        if (MasterKeyProvider.HasMasterKey == false)
         {
             Nav.NavigateTo("/");
             return;
@@ -110,7 +111,7 @@ else if (State.IsUnlocked)
     /// </summary>
     private async Task RetryAccess()
     {
-        if (State.ReadConnector is null)
+        if (Session.ReadConnector is null)
         {
             return;
         }
@@ -130,8 +131,8 @@ else if (State.IsUnlocked)
 
     private void GoHome()
     {
-        State.MasterKey = string.Empty;
-        State.Vault = null;
+        MasterKeyProvider.MasterKey = string.Empty;
+        Session.Vault = null;
         Nav.NavigateTo("/");
     }
 }

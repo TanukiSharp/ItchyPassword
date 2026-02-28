@@ -3,7 +3,8 @@
 @using ItchyPassword.Client.Services.VaultConnectors
 @using ItchyPassword.Client.Components
 @using System.Web
-@inject VaultState State
+@inject VaultSession Session
+@inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 
 <PageTitle>Settings</PageTitle>
@@ -22,17 +23,17 @@
     </div>
 
     <div class="card-body">
-        @foreach (IVaultConnector connector in State.Connectors)
+        @foreach (IVaultConnector connector in Session.Connectors)
         {
             <div class="connector-card">
                 <div class="connector-header">
                     <h3 class="heading-flush">@connector.Name</h3>
                     <div class="connector-options">
                         <label title="Read from this source" class="inline-label">
-                            <input type="radio" name="readSource" checked="@(State.ReaderId == connector.Id)" @onchange="@(() => SetReader(connector))" /> Read
+                            <input type="radio" name="readSource" checked="@(Session.ReaderId == connector.Id)" @onchange="@(() => SetReader(connector))" /> Read
                         </label>
                         <label title="Write to this source" class="inline-label">
-                            <input type="checkbox" checked="@State.IsWriter(connector.Id)" disabled="@(State.IsWriter(connector.Id) && (State.ReaderId == connector.Id || State.WriteConnectors.Count() == 1))" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
+                            <input type="checkbox" checked="@Session.IsWriter(connector.Id)" disabled="@(Session.IsWriter(connector.Id) && (Session.ReaderId == connector.Id || Session.WriteConnectors.Count() == 1))" @onchange="@((ChangeEventArgs e) => SetWriter(connector, (bool)e.Value!))" /> Write
                         </label>
                     </div>
                 </div>
@@ -89,7 +90,7 @@
 
     private bool isUnlocking = false;
 
-    private bool CanUnlock => string.IsNullOrWhiteSpace(State.MasterKey) == false;
+    private bool CanUnlock => string.IsNullOrWhiteSpace(MasterKeyProvider.MasterKey) == false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -103,7 +104,7 @@
             redirectMessage = message;
         }
 
-        foreach (IVaultConnector connector in State.Connectors)
+        foreach (IVaultConnector connector in Session.Connectors)
         {
             await connector.LoadConfigurationAsync();
         }
@@ -111,21 +112,21 @@
 
     private async Task SetReader(IVaultConnector connector)
     {
-        State.ReaderId = connector.Id;
-        await State.SaveReaderAsync();
+        Session.ReaderId = connector.Id;
+        await Session.SaveReaderAsync();
 
         // Automatically enable as a writer when selected for read.
-        if (State.IsWriter(connector.Id) == false)
+        if (Session.IsWriter(connector.Id) == false)
         {
-            State.SetWriter(connector.Id, true);
-            await State.SaveWritersAsync();
+            Session.SetWriter(connector.Id, true);
+            await Session.SaveWritersAsync();
         }
     }
 
     private async Task SetWriter(IVaultConnector connector, bool enabled)
     {
-        State.SetWriter(connector.Id, enabled);
-        await State.SaveWritersAsync();
+        Session.SetWriter(connector.Id, enabled);
+        await Session.SaveWritersAsync();
     }
 
     private async Task TestAccessAsync(IVaultConnector connector)
@@ -144,7 +145,7 @@
 
     private async Task UnlockAndGo()
     {
-        if (State.ReadConnector is null || State.ReadConnector.IsConfigured == false)
+        if (Session.ReadConnector is null || Session.ReadConnector.IsConfigured == false)
         {
             actionMessage = "Please configure the selected vault connector reader first.";
             isActionError = true;
@@ -153,7 +154,7 @@
 
         // Call AccessAsync before any await to let the connector's synchronous
         // preamble run on the click call-stack (preserving the browser gesture).
-        Task<bool> accessTask = State.ReadConnector.AccessAsync();
+        Task<bool> accessTask = Session.ReadConnector.AccessAsync();
 
         isUnlocking = true;
         actionMessage = "Accessing vault...";
@@ -167,20 +168,20 @@
 
             if (hasAccess == false)
             {
-                actionMessage = $"Failed to access {State.ReadConnector.Name}.";
+                actionMessage = $"Failed to access {Session.ReadConnector.Name}.";
                 isActionError = true;
                 return;
             }
 
-            string content = await State.ReadConnector.LoadVaultAsync();
+            string content = await Session.ReadConnector.LoadVaultAsync();
 
             if (string.IsNullOrWhiteSpace(content))
             {
-                State.Vault = new ItchyPassword.Core.Models.VaultV2() { Version = 2, Items = [] };
+                Session.Vault = new ItchyPassword.Core.Models.VaultV2() { Version = 2, Items = [] };
             }
             else
             {
-                State.Vault = VaultDataService.DeserializeVault(content);
+                Session.Vault = VaultDataService.DeserializeVault(content);
             }
 
             Nav.NavigateTo("/vault");
