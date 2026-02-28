@@ -1,0 +1,45 @@
+<Project>
+
+  <!-- Inject git commit hash at build time -->
+  <Target Name="GenerateGitCommitHash" BeforeTargets="CoreCompile">
+    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+    </Exec>
+    <PropertyGroup>
+      <GitCommitHash Condition="'$(GitCommitHash)' == ''">unknown</GitCommitHash>
+    </PropertyGroup>
+    <WriteLinesToFile
+      File="$(IntermediateOutputPath)AppVersion.g.cs"
+      Lines="namespace ItchyPassword.Client%3B%0A%0Apublic static partial class AppVersion%0A{%0A    public const string GitCommitHash = &quot;$(GitCommitHash)&quot;%3B%0A}"
+      Overwrite="true"
+      Encoding="UTF-8" />
+    <ItemGroup>
+      <Compile Include="$(IntermediateOutputPath)AppVersion.g.cs" />
+    </ItemGroup>
+  </Target>
+
+  <Target Name="CleanBeforePublish" BeforeTargets="Build" Condition="'$(PublishDir)' != ''">
+    <RemoveDir Directories="$(PublishDir)" />
+    <Message Importance="high" Text="Cleaned publish output directory: $(PublishDir)" />
+  </Target>
+
+  <Target Name="CopyToDocsVNext" AfterTargets="Publish">
+    <PropertyGroup>
+      <DocsVNextDir>$(MSBuildThisFileDirectory)..\..\docs\vnext\</DocsVNextDir>
+      <PublishWwwrootDir>$(PublishDir)wwwroot\</PublishWwwrootDir>
+    </PropertyGroup>
+
+    <RemoveDir Directories="$(DocsVNextDir)" />
+
+    <ItemGroup>
+      <PublishFiles Include="$(PublishWwwrootDir)**\*" />
+    </ItemGroup>
+
+    <Warning Condition="'@(PublishFiles)' == ''" Text="No published web assets found at '$(PublishWwwrootDir)'; docs/vnext was not updated." />
+
+    <Copy Condition="'@(PublishFiles)' != ''" SourceFiles="@(PublishFiles)" DestinationFiles="@(PublishFiles->'$(DocsVNextDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+
+    <Message Importance="high" Text="Published assets copied to docs/vnext." />
+  </Target>
+
+</Project>
