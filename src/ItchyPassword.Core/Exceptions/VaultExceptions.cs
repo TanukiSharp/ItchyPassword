@@ -30,6 +30,21 @@ public class VaultAccessDeniedException : Exception
     }
 }
 
+public class VaultFormatException : Exception
+{
+    public VaultFormatException() : base("The vault format is invalid.")
+    {
+    }
+
+    public VaultFormatException(string message) : base(message)
+    {
+    }
+
+    public VaultFormatException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+}
+
 public class VaultDecryptionException : Exception
 {
     public VaultDecryptionException() : base("Failed to decrypt the vault. The Master Key may be incorrect.")

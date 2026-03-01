@@ -1,7 +1,8 @@
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Services
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
-@inject UiState UiState
+@inject IAppState AppState
 @inject IVaultCryptoService VaultCrypto
 @inject NavigationManager Nav
 @inject ILocalStorageService Storage
@@ -22,7 +23,7 @@
     </div>
 
     <div class="vault-search">
-        <input class="input" type="text" placeholder="Search items..." @bind="UiState.SearchQuery" @bind:event="oninput" />
+        <input class="input" type="text" placeholder="Search items..." @bind="AppState.SearchQuery" @bind:event="oninput" />
     </div>
 
     <div class="vault-scroll-area">
@@ -97,9 +98,7 @@
 
     private void LockVault()
     {
-        MasterKeyProvider.MasterKey = [];
-        Session.Vault = null;
-        Nav.NavigateTo("/");
+        AppState.Lock();
     }
 
     private List<VaultItemV2> FilteredItems
@@ -124,9 +123,9 @@
             }
 
             // Apply search filter.
-            if (string.IsNullOrWhiteSpace(UiState.SearchQuery) == false)
+            if (string.IsNullOrWhiteSpace(AppState.SearchQuery) == false)
             {
-                string query = UiState.SearchQuery;
+                string query = AppState.SearchQuery;
                 items = items.Where(i =>
                     i.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
                     i.Metadata?.Any(m =>

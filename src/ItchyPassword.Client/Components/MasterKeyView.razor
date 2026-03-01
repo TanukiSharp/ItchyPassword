@@ -1,6 +1,7 @@
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Services
 @inject VaultSession Session
-@inject IMasterKeyProvider MasterKeyProvider
+@inject IAppState AppState
 @inject NavigationManager Nav
 
 <div @onclick="FocusMasterKeyAsync" class="master-key-overlay">
@@ -42,12 +43,6 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         await FocusMasterKeyAsync();
-
-        if (firstRender && MasterKeyProvider.HasMasterKey)
-        {
-            // Master key already in state (e.g. navigated back), go straight to vault.
-            Nav.NavigateTo("/vault");
-        }
     }
 
     private async Task FocusMasterKeyAsync()
@@ -60,9 +55,9 @@
         _showPassword = !_showPassword;
     }
 
-    private void Submit()
+    private async Task Submit()
     {
-        MasterKeyProvider.MasterKey = System.Text.Encoding.UTF8.GetBytes(masterKey);
-        Nav.NavigateTo("/vault");
+        await AppState.UnlockAsync(System.Text.Encoding.UTF8.GetBytes(masterKey));
     }
 }
+

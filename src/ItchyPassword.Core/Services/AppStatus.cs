@@ -11,9 +11,16 @@ public enum AppStatus
     Locked,
 
     /// <summary>
-    /// Master key provided, currently attempting to load/decrypt the vault.
+    /// Master key provided, currently attempting to authenticate with the vault connector.
+    /// Menu should remain hidden during this phase to avoid flickering.
     /// </summary>
     Unlocking,
+
+    /// <summary>
+    /// Vault access granted, currently loading or migrating vault data.
+    /// Menu can be visible during this potentially long-running phase.
+    /// </summary>
+    LoadingVault,
 
     /// <summary>
     /// Vault is successfully loaded and decrypted.

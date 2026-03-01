@@ -1,9 +1,12 @@
 @page "/settings"
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Client.Services.VaultConnectors
+@using ItchyPassword.Core.Services
 @using ItchyPassword.Client.Components
 @using System.Web
+@implements IDisposable
 @inject VaultSession Session
+@inject IAppState AppState
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 
@@ -85,12 +88,24 @@
 @code {
     private Dictionary<IVaultConnector, (bool? Success, string Message)> testResults = new();
     private string redirectMessage = string.Empty;
-    private string actionMessage = string.Empty;
-    private bool isActionError = false;
 
-    private bool isUnlocking = false;
+    // Use AppState for status message in case unlocking fails here.
+    private string actionMessage => AppState.Status == AppStatus.Error ? AppState.StatusMessage : string.Empty;
+    private bool isActionError => AppState.Status == AppStatus.Error;
+
+    private bool isUnlocking => AppState.Status == AppStatus.Unlocking || AppState.Status == AppStatus.LoadingVault;
 
     private bool CanUnlock => MasterKeyProvider.HasMasterKey;
+
+    protected override void OnInitialized()
+    {
+        AppState.OnChange += StateHasChanged;
+    }
+
+    public void Dispose()
+    {
+        AppState.OnChange -= StateHasChanged;
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,55 +160,14 @@
 
     private async Task UnlockAndGo()
     {
-        if (Session.ReadConnector is null || Session.ReadConnector.IsConfigured == false)
-        {
-            actionMessage = "Please configure the selected vault connector reader first.";
-            isActionError = true;
-            return;
-        }
+        // Try to unlock via AppState.
+        // Note: AppState.RetryUnlockAsync calls Session.UnlockAsync.
+        // Session.UnlockAsync calls Connector.AccessAsync.
+        // For LocalFileVaultConnector (FileSystem Access API), AccessAsync must be called
+        // within the synchronous execution of the click handler (user activation).
+        // Since we pre-loaded configuration in OnInitializedAsync, Session.UnlockAsync
+        // should reach AccessAsync synchronously, preserving the activation.
 
-        // Call AccessAsync before any await to let the connector's synchronous
-        // preamble run on the click call-stack (preserving the browser gesture).
-        Task<bool> accessTask = Session.ReadConnector.AccessAsync();
-
-        isUnlocking = true;
-        actionMessage = "Accessing vault...";
-        isActionError = false;
-        redirectMessage = string.Empty;
-        StateHasChanged();
-
-        try
-        {
-            bool hasAccess = await accessTask;
-
-            if (hasAccess == false)
-            {
-                actionMessage = $"Failed to access {Session.ReadConnector.Name}.";
-                isActionError = true;
-                return;
-            }
-
-            string content = await Session.ReadConnector.LoadVaultAsync();
-
-            if (string.IsNullOrWhiteSpace(content))
-            {
-                Session.Vault = new ItchyPassword.Core.Models.VaultV2() { Version = 2, Items = [] };
-            }
-            else
-            {
-                Session.Vault = VaultDataService.DeserializeVault(content);
-            }
-
-            Nav.NavigateTo("/vault");
-        }
-        catch (Exception ex)
-        {
-            actionMessage = $"Error unlocking: {ex.Message}";
-            isActionError = true;
-        }
-        finally
-        {
-            isUnlocking = false;
-        }
+        await AppState.RetryUnlockAsync();
     }
 }

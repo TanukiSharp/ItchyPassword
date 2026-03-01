@@ -1,48 +1,37 @@
 @page "/"
 @layout ItchyPassword.Client.Layout.EmptyLayout
 @implements IDisposable
-@inject VaultSession Session
+@using ItchyPassword.Core.Services
+@inject IAppState AppState
 @inject NavigationManager Nav
 
-@if (Session.IsUnlocked == false)
+@if (AppState.Status == AppStatus.Locked)
 {
-    // If not unlocked, check if configured. If not configured, go to Setup. Else simple Master Key view.
-    // For now, let's render MasterKeyView (Simple) which can link to setup.
     <MasterKeyView />
 }
 
 @code {
     protected override void OnInitialized()
     {
-        if (Session.IsUnlocked)
-        {
-            NavigateToCorrectPage();
-        }
-        Session.PropertyChanged += OnStateChanged;
-    }
-
-    private void OnStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (Session.IsUnlocked)
-        {
-            NavigateToCorrectPage();
-        }
-    }
-
-    private void NavigateToCorrectPage()
-    {
-        if (Session.Vault is not null)
-        {
-            Nav.NavigateTo("/vault");
-        }
-        else
-        {
-            Nav.NavigateTo("/settings");
-        }
+        AppState.OnChange += StateHasChanged;
+        CheckRedirect();
     }
 
     public void Dispose()
     {
-        Session.PropertyChanged -= OnStateChanged;
+        AppState.OnChange -= StateHasChanged;
+    }
+
+    private void CheckRedirect()
+    {
+        if (AppState.Status == AppStatus.Unlocked || AppState.Status == AppStatus.Unlocking || AppState.Status == AppStatus.Error)
+        {
+            Nav.NavigateTo("/vault");
+        }
+        else if (AppState.Status == AppStatus.SetupRequired)
+        {
+            Nav.NavigateTo("/settings");
+        }
     }
 }
+

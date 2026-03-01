@@ -1,8 +1,10 @@
 @page "/edit/{ItemId}"
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Client.Components.Editors
+@using ItchyPassword.Core.Services
 @inject VaultSession Session
 @inject NavigationManager Nav
+@inject IAppState AppState
 
 @if (_item is null)
 {
@@ -75,13 +77,21 @@ else
 
     protected override void OnInitialized()
     {
-        if (Session.IsUnlocked == false || Guid.TryParse(ItemId, out Guid parsedId) == false)
+        if (AppState.Status != AppStatus.Unlocked)
         {
             Nav.NavigateTo("/");
             return;
         }
 
-        _item = Session.Vault!.Items.FirstOrDefault(i => i.Id == parsedId);
+        if (Guid.TryParse(ItemId, out Guid parsedId) == false)
+        {
+            return;
+        }
+
+        if (Session.Vault is not null)
+        {
+            _item = Session.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
+        }
     }
 
     private async Task SaveAsync()

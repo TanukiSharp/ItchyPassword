@@ -1,14 +1,15 @@
 ﻿@inherits LayoutComponentBase
 @implements IDisposable
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Services
 @using System.ComponentModel
+@inject IAppState AppState
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
-@inject UiState UiState
 
 <div class="app-layout">
-    @if (MasterKeyProvider.HasMasterKey && UiState.IsDecryptionError == false)
+    @if (IsSidebarVisible)
     {
         <div class="mobile-toggle-bar">
             <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
@@ -24,7 +25,7 @@
                 <ul>
                     <li>
                         <NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
-                            @(Session.IsUnlocked ? "🔓" : "🔒") Vault
+                            @(AppState.Status == AppStatus.Unlocked ? "🔓" : "🔒") Vault
                         </NavLink>
                     </li>
                     <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static Key</NavLink></li>
@@ -49,32 +50,19 @@
 @code {
     private bool sidebarOpen = false;
 
+    private bool IsSidebarVisible =>
+        AppState.Status == AppStatus.Unlocked ||
+        AppState.Status == AppStatus.SetupRequired ||
+        AppState.Status == AppStatus.LoadingVault;
+
     protected override void OnInitialized()
     {
-        Session.PropertyChanged += OnStateChanged;
-        UiState.PropertyChanged += OnUiStateChanged;
-    }
-
-    private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(VaultSession.IsUnlocked))
-        {
-            InvokeAsync(StateHasChanged);
-        }
-    }
-
-    private void OnUiStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName is nameof(UiState.IsDecryptionError))
-        {
-            InvokeAsync(StateHasChanged);
-        }
+        AppState.OnChange += StateHasChanged;
     }
 
     public void Dispose()
     {
-        Session.PropertyChanged -= OnStateChanged;
-        UiState.PropertyChanged -= OnUiStateChanged;
+        AppState.OnChange -= StateHasChanged;
     }
 
     private void ToggleSidebar()

@@ -1,178 +1,68 @@
 @page "/vault"
 @implements IDisposable
 @using ItchyPassword.Client.Components
-@using ItchyPassword.Client.Services
-@using ItchyPassword.Core.Exceptions
 @using ItchyPassword.Core.Services
-@using System.ComponentModel
-@using System.Web
-@inject VaultSession Session
-@inject IMasterKeyProvider MasterKeyProvider
+@inject IAppState AppState
 @inject NavigationManager Nav
-@inject UiState UiState
+@inject VaultSession Session
 
-@if (_isLoading)
+@if (AppState.Status == AppStatus.Unlocking || AppState.Status == AppStatus.LoadingVault)
 {
     <div class="page-centered">
         <div class="loading-spinner"></div>
-        <p class="loading-message">@_loadingMessage</p>
+        <p class="loading-message">@AppState.StatusMessage</p>
     </div>
 }
-else if (string.IsNullOrWhiteSpace(_error) == false)
+else if (AppState.Status == AppStatus.Error)
 {
     <div class="vault-error">
         <h3>Failed to Unlock</h3>
-        <p>@_error</p>
+        <p>@AppState.StatusMessage</p>
         <div class="button-row">
             @if (Session.ReadConnector?.CanRetryAccess == true)
             {
-                <button class="button primary" disabled="@_isRetrying" @onclick="RetryAccess">
-                    @(_isRetrying ? "Retrying..." : "Retry")
+                <button class="button primary" @onclick="RetryAccess">
+                    Retry
                 </button>
             }
             <button class="button secondary" @onclick="GoHome">Back to Login</button>
-            @if (_lastException is VaultConnectorNotConfiguredException)
-            {
-                <button class="button secondary" @onclick="GoToSettings">Configure</button>
-            }
+            <button class="button secondary" @onclick="GoToSettings">Configure</button>
         </div>
     </div>
 }
-else if (Session.IsUnlocked)
+else if (AppState.Status == AppStatus.Unlocked)
 {
     <VaultView />
 }
 
 @code {
-    private bool _isLoading = false;
-    private bool _isRetrying = false;
-    private string _error = string.Empty;
-    private Exception? _lastException;
-    private string _loadingMessage = "Unlocking vault...";
-
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        UiState.PropertyChanged += OnUiStateChanged;
+        AppState.OnChange += StateHasChanged;
 
-        if (Session.IsUnlocked)
-        {
-            return;
-        }
-
-        if (MasterKeyProvider.HasMasterKey == false)
+        if (AppState.Status == AppStatus.Locked)
         {
             Nav.NavigateTo("/");
-            return;
         }
-
-        await AttemptUnlockAsync();
     }
 
     public void Dispose()
     {
-        UiState.PropertyChanged -= OnUiStateChanged;
-        // If we are leaving the page, we no longer need to suppress the layout menu based on a local error.
-        UiState.IsDecryptionError = false;
+        AppState.OnChange -= StateHasChanged;
     }
 
-    private void OnUiStateChanged(object? sender, PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(UiState.UnlockStatus))
-        {
-            InvokeAsync(() =>
-            {
-                _loadingMessage = UiState.UnlockStatus;
-                StateHasChanged();
-            });
-        }
-    }
-
-    /// <summary>
-    /// Attempts the full unlock flow (access + load vault).
-    /// </summary>
-    private async Task AttemptUnlockAsync()
-    {
-        _isLoading = true;
-        _error = string.Empty;
-        _lastException = null;
-        UiState.IsDecryptionError = false;
-        _loadingMessage = string.IsNullOrWhiteSpace(UiState.UnlockStatus) ? "Accessing vault..." : UiState.UnlockStatus;
-        StateHasChanged();
-
-        try
-        {
-            if (UiState.UnlockTask is null)
-            {
-                UiState.UnlockStatus = "Accessing vault...";
-                UiState.UnlockTask = Session.UnlockAsync(status => UiState.UnlockStatus = status);
-            }
-
-            await UiState.UnlockTask;
-
-            _isLoading = false;
-        }
-        catch (Exception ex)
-        {
-            _isLoading = false;
-            _lastException = ex;
-            UiState.IsDecryptionError = true;
-
-            if (ex is VaultConnectorNotConfiguredException)
-            {
-                // Do not redirect blindly. If master key is wrong, decryption of config might fail silently or produce garbage,
-                // making IsConfigured false. Give user a chance to back out.
-                _error = "The selected vault connector configuration could not be loaded. This often happens if the Master Key is incorrect.";
-            }
-            else if (ex is VaultDecryptionException)
-            {
-                _error = "Failed to unlock vault configuration. Your Master Key is likely incorrect.";
-            }
-            else
-            {
-                _error = ex.Message;
-            }
-        }
-        finally
-        {
-            UiState.UnlockTask = null; // Clear on error
-        }
-    }
-
-    /// <summary>
-    /// Retries the unlock flow with a fresh user gesture.
-    /// AttemptUnlockAsync calls Session.UnlockAsync, which in turn calls
-    /// LoadConfigurationAsync (short-circuits on retry) then AccessAsync (synchronous
-    /// preamble preserves the gesture). No special pre-call needed.
-    /// </summary>
     private async Task RetryAccess()
     {
-        if (Session.ReadConnector is null)
-        {
-            return;
-        }
-
-        _isRetrying = true;
-        StateHasChanged();
-
-        try
-        {
-            await AttemptUnlockAsync();
-        }
-        finally
-        {
-            _isRetrying = false;
-        }
+        await AppState.RetryUnlockAsync();
     }
 
     private void GoHome()
     {
-        MasterKeyProvider.MasterKey = [];
-        Session.Vault = null;
-        Nav.NavigateTo("/");
+        AppState.Lock();
     }
 
     private void GoToSettings()
     {
-        Nav.NavigateTo("/settings");
+        AppState.Configure();
     }
 }
