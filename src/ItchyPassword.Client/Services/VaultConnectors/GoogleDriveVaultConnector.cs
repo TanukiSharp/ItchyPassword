@@ -1,3 +1,4 @@
+using ItchyPassword.Core.Connectors;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using Microsoft.JSInterop;
@@ -34,7 +35,7 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// </summary>
 public class GoogleDriveVaultConnector(
     HttpClient http,
-    LocalStorageService storage,
+    ILocalStorageService storage,
     ICryptoService crypto,
     IMasterKeyProvider masterKeyProvider,
     IJSRuntime js
@@ -66,7 +67,7 @@ public class GoogleDriveVaultConnector(
     private const string RefreshTokenStorageKey = "itchypassword_gdrive_refresh_token";
 
     private readonly HttpClient _http = http;
-    private readonly LocalStorageService _storage = storage;
+    private readonly ILocalStorageService _storage = storage;
     private readonly ICryptoService _crypto = crypto;
     private readonly IMasterKeyProvider _masterKeyProvider = masterKeyProvider;
     private readonly IJSRuntime _js = js;

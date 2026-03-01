@@ -1,6 +1,7 @@
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Services
 @implements IItemEditor
-@inject ICryptoService Crypto
+@inject IVaultCryptoService VaultCrypto
 @inject IMasterKeyProvider MasterKeyProvider
 
 <div class="grid-2col">
@@ -102,53 +103,23 @@
 
         try
         {
-            byte[] rawBytes;
-
-            if (_cryptoVersion == 1)
-            {
-                rawBytes = await Crypto.GeneratePasswordV1Async(
-                    MasterKeyProvider.MasterKey,
-                    System.Text.Encoding.UTF8.GetBytes(_publicPart)
-                );
-            }
-            else if (_cryptoVersion == 2)
-            {
-                rawBytes = await Crypto.GeneratePasswordV2Async(
-                    MasterKeyProvider.MasterKey,
-                    System.Text.Encoding.UTF8.GetBytes(_publicPart)
-                );
-            }
-            else
-            {
-                throw new InvalidOperationException($"Unsupported crypto version: {_cryptoVersion}.");
-            }
-
-            if (_encodingVersion == 1)
-            {
-                _result = BaseN.EncodeOneWay(rawBytes, _alphabet);
-            }
-            else if (_encodingVersion == 2)
-            {
-                _result = BaseN.Encode(rawBytes, _alphabet);
-            }
-            else
-            {
-                throw new InvalidOperationException($"Unsupported encoding version: {_encodingVersion}.");
-            }
-
-            if (_result.Length > _length)
-            {
-                _result = _result[.._length];
-            }
-
-            Item.SetData(new StaticKeyDataV2
+            var data = new StaticKeyDataV2
             {
                 PublicPart = _publicPart,
                 Alphabet = _alphabet,
                 Length = _length,
                 CryptoVersion = _cryptoVersion,
                 EncodingVersion = _encodingVersion,
-            });
+            };
+
+            _result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey);
+
+            // Sync updated config to the item
+            Item.SetData(data);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
         }
         finally
         {

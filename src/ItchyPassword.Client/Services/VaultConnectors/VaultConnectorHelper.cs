@@ -58,7 +58,7 @@ internal static class VaultConnectorHelper
     /// <param name="crypto">The crypto service for decryption.</param>
     public static async Task LoadEntriesAsync(
         IReadOnlyList<ConfigurationEntry> entries,
-        LocalStorageService storage,
+        ILocalStorageService storage,
         byte[]? masterKey,
         ICryptoService crypto)
     {
@@ -78,15 +78,9 @@ internal static class VaultConnectorHelper
 
             if (entry.IsEncrypted && masterKey is { Length: > 0 })
             {
-                try
-                {
-                    entry.Value = await DecryptIfNeededAsync(stored, masterKey, crypto);
-                }
-                catch
-                {
-                    // Decryption failed — leave value as-is (empty or default).
-                    // This can happen when the master key is incorrect.
-                }
+                // If decryption fails (VaultDecryptionException),
+                // it propagates up to the UI so we can prompt to recheck the Master Key.
+                entry.Value = await DecryptIfNeededAsync(stored, masterKey, crypto);
             }
             else
             {
@@ -105,7 +99,7 @@ internal static class VaultConnectorHelper
     /// <param name="crypto">The crypto service for encryption.</param>
     public static async Task SaveEntriesAsync(
         IReadOnlyList<ConfigurationEntry> entries,
-        LocalStorageService storage,
+        ILocalStorageService storage,
         byte[]? masterKey,
         ICryptoService crypto)
     {

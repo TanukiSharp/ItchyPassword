@@ -1,3 +1,4 @@
+using ItchyPassword.Core.Connectors;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using System.Net.Http.Json;
@@ -16,7 +17,7 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// <param name="storage">The storage service instance.</param>
 /// <param name="crypto">The crypto service instance for encrypting/decrypting secrets.</param>
 /// <param name="masterKeyProvider">The provider for the in-memory master key.</param>
-public class GitHubVaultConnector(HttpClient http, LocalStorageService storage, ICryptoService crypto, IMasterKeyProvider masterKeyProvider) : IVaultConnector
+public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage, ICryptoService crypto, IMasterKeyProvider masterKeyProvider) : IVaultConnector
 {
     private const string RepositoryOwnerKey = "VaultRepositoryOwner";
     private const string RepositoryNameKey = "VaultRepositoryName";

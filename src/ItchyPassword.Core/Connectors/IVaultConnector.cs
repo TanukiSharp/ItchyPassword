@@ -1,6 +1,6 @@
 using ItchyPassword.Core.Models;
 
-namespace ItchyPassword.Client.Services.VaultConnectors;
+namespace ItchyPassword.Core.Connectors;
 
 /// <summary>
 /// Defines a connector for a password vault storage provider.
@@ -70,25 +70,13 @@ public interface IVaultConnector
     /// Gets a value indicating whether a failed access attempt can be retried with a fresh user gesture.
     /// Connectors that rely on browser APIs requiring transient user activation should return <c>true</c>.
     /// </summary>
-    bool CanRetryAccess
-    {
-        get
-        {
-            return false;
-        }
-    }
+    bool CanRetryAccess => false;
 
     /// <summary>
     /// Gets a connector-specific error message set after <see cref="AccessAsync"/> returns <c>false</c>.
     /// When non-null, this message is shown to the user instead of the generic fallback.
     /// </summary>
-    string? AccessFailureMessage
-    {
-        get
-        {
-            return null;
-        }
-    }
+    string? AccessFailureMessage => null;
 
     /// <summary>
     /// Gets the configuration entries for the connector.

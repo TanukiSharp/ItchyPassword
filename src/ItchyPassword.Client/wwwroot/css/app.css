@@ -164,6 +164,34 @@ a:hover { text-decoration: underline; }
     text-decoration: none;
 }
 
+.sidebar-action-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: inherit;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+}
+
+.sidebar-action-btn:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color); /* Or danger color? Let's use primary for now to match links */
+    text-decoration: none;
+}
+
+.sidebar-divider {
+    height: 1px;
+    background-color: var(--border-color);
+    margin: var(--spacing-sm) 0;
+    opacity: 0.5;
+}
+
 /* Forms */
 input[type="radio"] {
     vertical-align: middle;

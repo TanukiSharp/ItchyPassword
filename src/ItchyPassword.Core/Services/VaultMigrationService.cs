@@ -1,11 +1,9 @@
 using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
-using ItchyPassword.Core.Services;
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
-namespace ItchyPassword.Client.Services;
+namespace ItchyPassword.Core.Services;
 
 public class VaultMigrationService(ICryptoService crypto)
 {
@@ -267,7 +265,7 @@ public class VaultMigrationService(ICryptoService crypto)
                 string alphabet = string.IsNullOrWhiteSpace(skParams.Alphabet) ? StaticKeyDataV2.DefaultAlphabet : skParams.Alphabet;
                 int length = skParams.Length > 0 ? skParams.Length : DefaultLength;
 
-                byte[] publicBytes = Encoding.UTF8.GetBytes(publicPart);
+                byte[] publicBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
                 byte[] derivedBytes;
 
                 if (cryptoVersion == 1)
@@ -286,7 +284,7 @@ public class VaultMigrationService(ICryptoService crypto)
                     password = password[..length];
                 }
 
-                byte[] passwordBytes = Encoding.UTF8.GetBytes(password);
+                byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
                 byte[] encryptedBlob = await crypto.EncryptV3Async(passwordBytes, masterKeyBytes);
 
                 item.Type = VaultItemTypeV2.Secret;

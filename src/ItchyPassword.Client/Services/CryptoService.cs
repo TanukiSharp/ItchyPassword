@@ -21,9 +21,17 @@ public class CryptoService : ICryptoService
 
     public async Task<byte[]> DecryptV3Async(byte[] input, byte[] password)
     {
-        return await _js.InvokeAsync<byte[]>(
-            "ItchyPassword.Crypto.decryptV3",
-            input, password);
+        try
+        {
+            return await _js.InvokeAsync<byte[]>(
+                "ItchyPassword.Crypto.decryptV3",
+                input, password);
+        }
+        catch (Exception ex) when (ex.Message.Contains("OperationError") || ex.Message.Contains("decrypt"))
+        {
+             // JS 'OperationError' usually means decryption failed (wrong key/tag).
+            throw new ItchyPassword.Core.Exceptions.VaultDecryptionException("Decryption failed.", ex);
+        }
     }
 
     public async Task<byte[]> GeneratePasswordV1Async(byte[] privatePart, byte[] publicPart)

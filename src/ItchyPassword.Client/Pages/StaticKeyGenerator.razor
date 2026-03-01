@@ -2,7 +2,7 @@
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Core.Services
 @using ItchyPassword.Core.Encoding
-@inject ICryptoService Crypto
+@inject IVaultCryptoService VaultCrypto
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 
@@ -151,38 +151,16 @@
 
         try
         {
-            byte[] partBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
+            var data = new ItchyPassword.Core.Models.StaticKeyDataV2
+            {
+                PublicPart = publicPart,
+                Alphabet = alphabet,
+                Length = length,
+                CryptoVersion = cryptoVersion == "v1" ? 1 : 2,
+                EncodingVersion = encoding == "v1" ? 1 : 2
+            };
 
-            byte[] rawHashBytes;
-
-            string encoded;
-
-            if (cryptoVersion == "v1")
-            {
-                rawHashBytes = await Crypto.GeneratePasswordV1Async(MasterKeyProvider.MasterKey, partBytes);
-            }
-            else // v2
-            {
-                rawHashBytes = await Crypto.GeneratePasswordV2Async(MasterKeyProvider.MasterKey, partBytes);
-            }
-
-            if (encoding == "v1")
-            {
-                encoded = BaseN.EncodeOneWay(rawHashBytes, alphabet);
-            }
-            else // v2
-            {
-                encoded = BaseN.Encode(rawHashBytes, alphabet);
-            }
-
-            if (encoded.Length > length)
-            {
-                result = encoded[..length];
-            }
-            else
-            {
-                result = encoded;
-            }
+            result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey);
         }
         catch (Exception ex)
         {

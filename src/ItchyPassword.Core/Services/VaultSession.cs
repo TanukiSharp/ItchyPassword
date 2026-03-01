@@ -1,10 +1,9 @@
-using ItchyPassword.Client.Services.VaultConnectors;
+using ItchyPassword.Core.Connectors;
 using ItchyPassword.Core.Models;
-using ItchyPassword.Core.Services;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace ItchyPassword.Client.Services;
+namespace ItchyPassword.Core.Services;
 
 /// <summary>
 /// Manages the current vault session: the loaded vault data, connector
@@ -20,7 +19,7 @@ public class VaultSession : INotifyPropertyChanged
 
     private readonly IMasterKeyProvider _masterKeyProvider;
     private readonly VaultMigrationService _migrationService;
-    private readonly LocalStorageService _storage;
+    private readonly ILocalStorageService _storage;
 
     private bool _isInitialized;
     private Guid _readerId;
@@ -79,7 +78,7 @@ public class VaultSession : INotifyPropertyChanged
     /// <param name="connectors">The available vault connectors, resolved from the DI container.</param>
     /// <param name="storage">The local storage service used for persisting preferences.</param>
     /// <param name="migrationService">The service used to migrate legacy vault formats.</param>
-    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, LocalStorageService storage, VaultMigrationService migrationService)
+    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, ILocalStorageService storage, VaultMigrationService migrationService)
     {
         _masterKeyProvider = masterKeyProvider;
         _storage = storage;
@@ -235,83 +234,61 @@ public class VaultSession : INotifyPropertyChanged
     /// Loads the vault from the active read connector, migrating legacy formats if necessary.
     /// </summary>
     /// <param name="onStatusChanged">Optional callback invoked with progress messages (e.g. during migration).</param>
-    /// <returns>A tuple indicating success and an error message if failed.</returns>
-    public async Task<(bool Success, string Error)> UnlockAsync(Action<string>? onStatusChanged = null)
+    /// <returns>A task that represents the asynchronous unlock operation.</returns>
+    /// <exception cref="InvalidOperationException">Thrown when authentication fails or configuration is missing.</exception>
+    public async Task UnlockAsync(Action<string>? onStatusChanged = null)
     {
         if (_masterKeyProvider.HasMasterKey == false)
         {
-            return (false, "Master key not provided.");
+            throw new InvalidOperationException("Master key not provided.");
         }
 
         if (ReadConnector is null)
         {
-            return (false, "No active vault connector selected.");
+            throw new InvalidOperationException("No active vault connector selected.");
         }
 
-        try
-        {
-            await ReadConnector.LoadConfigurationAsync();
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
+        await ReadConnector.LoadConfigurationAsync();
 
         if (ReadConnector.IsConfigured == false)
         {
-            return (false, "Connector not configured.");
+            throw new InvalidOperationException("Connector not configured.");
         }
 
-        try
-        {
-            bool hasAccess = await ReadConnector.AccessAsync();
+        bool hasAccess = await ReadConnector.AccessAsync();
 
-            if (hasAccess == false)
-            {
-                string errorMessage = ReadConnector.AccessFailureMessage
-                    ?? $"Could not access {ReadConnector.Name}.";
-                return (false, errorMessage);
-            }
-        }
-        catch (Exception ex)
+        if (hasAccess == false)
         {
-            return (false, ex.Message);
+            string errorMessage = ReadConnector.AccessFailureMessage
+                ?? $"Could not access {ReadConnector.Name}.";
+            throw new InvalidOperationException(errorMessage);
         }
 
-        try
+        string content = await ReadConnector.LoadVaultAsync();
+
+        if (string.IsNullOrWhiteSpace(content))
         {
-            string content = await ReadConnector.LoadVaultAsync();
+            Vault = new VaultV2() { Version = 2, Items = [] };
+        }
+        else
+        {
+            VaultV2? vault = VaultDataService.DeserializeVault(content);
 
-            if (string.IsNullOrWhiteSpace(content))
+            if (vault is null)
             {
-                Vault = new VaultV2() { Version = 2, Items = [] };
-            }
-            else
-            {
-                VaultV2? vault = VaultDataService.DeserializeVault(content);
-
-                if (vault is null)
+                if (VaultMigrationService.IsLegacyVault(content))
                 {
-                    if (VaultMigrationService.IsLegacyVault(content))
-                    {
-                        onStatusChanged?.Invoke("Migrating vault...");
-                        var migrationProgress = new Progress<double>(percent => onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
-                        vault = await _migrationService.MigrateAsync(content, _masterKeyProvider.MasterKey, migrationProgress);
-                    }
-                    else
-                    {
-                        return (false, "Unknown vault format or password incorrect.");
-                    }
+                    onStatusChanged?.Invoke("Migrating vault...");
+                    var migrationProgress = new Progress<double>(percent => onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
+                    vault = await _migrationService.MigrateAsync(content, _masterKeyProvider.MasterKey, migrationProgress);
                 }
-
-                Vault = vault ?? new VaultV2 { Version = 2, Items = [] };
+                else
+                {
+                    throw new InvalidOperationException("Unknown vault format or password incorrect.");
+                }
             }
 
-            return (true, string.Empty);
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
+            Vault = vault ?? new VaultV2 { Version = 2, Items = [] };
         }
     }
 

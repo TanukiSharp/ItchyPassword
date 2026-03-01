@@ -2,9 +2,9 @@
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
 @inject UiState UiState
-@inject ICryptoService Crypto
+@inject IVaultCryptoService VaultCrypto
 @inject NavigationManager Nav
-@inject LocalStorageService Storage
+@inject ILocalStorageService Storage
 
 <div class="card vault-card">
     <div class="card-header vault-header">
@@ -160,63 +160,21 @@
 
     private async Task<string> DecryptSecretAsync(VaultItemV2 item)
     {
-        if (item.SecretData is null || string.IsNullOrWhiteSpace(item.SecretData.Cipher))
+        if (item.SecretData is null)
         {
-            throw new InvalidOperationException("No secret data to decrypt.");
+            throw new InvalidOperationException("Invalid secret data.");
         }
 
-        SecretDataV2 data = item.SecretData;
-        byte[] encryptedBytes = DecodeString(data.Cipher, data.Encoding);
-
-        byte[] decryptedBytes = data.CryptoVersion switch
-        {
-            3 => await Crypto.DecryptV3Async(encryptedBytes, MasterKeyProvider.MasterKey),
-            _ => throw new NotSupportedException($"Cipher version {data.CryptoVersion} is not supported.")
-        };
-
-        return System.Text.Encoding.UTF8.GetString(decryptedBytes);
+        return await VaultCrypto.DecryptSecretAsync(item.SecretData, MasterKeyProvider.MasterKey);
     }
 
     private async Task<string> GenerateStaticKeyAsync(VaultItemV2 item)
     {
         if (item.StaticKeyData is null)
         {
-            throw new InvalidOperationException("No static key data.");
+            throw new InvalidOperationException("Invalid static key data.");
         }
 
-        StaticKeyDataV2 keyData = item.StaticKeyData;
-        byte[] publicPart = System.Text.Encoding.UTF8.GetBytes(keyData.PublicPart);
-
-        byte[] rawBytes = keyData.CryptoVersion switch
-        {
-            1 => await Crypto.GeneratePasswordV1Async(MasterKeyProvider.MasterKey, publicPart),
-            2 => await Crypto.GeneratePasswordV2Async(MasterKeyProvider.MasterKey, publicPart),
-            _ => throw new NotSupportedException($"Crypto version {keyData.CryptoVersion} is not supported.")
-        };
-
-        string result = keyData.EncodingVersion switch
-        {
-            1 => BaseN.EncodeOneWay(rawBytes, keyData.Alphabet),
-            2 => BaseN.Encode(rawBytes, keyData.Alphabet),
-            _ => throw new NotSupportedException($"Encoding version {keyData.EncodingVersion} is not supported.")
-        };
-
-        if (result.Length > keyData.Length)
-        {
-            result = result[..keyData.Length];
-        }
-
-        return result;
-    }
-
-    private static byte[] DecodeString(string data, string encoding)
-    {
-        return encoding switch
-        {
-            "base58" => Base58.Decode(data),
-            "base62" => BaseN.Decode(data, "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"),
-            "base64" => Convert.FromBase64String(data),
-            _ => Base58.Decode(data)
-        };
+        return await VaultCrypto.GenerateStaticKeyAsync(item.StaticKeyData, MasterKeyProvider.MasterKey);
     }
 }

@@ -1,8 +1,9 @@
+using ItchyPassword.Core.Services;
 using Microsoft.JSInterop;
 
 namespace ItchyPassword.Client.Services;
 
-public class LocalStorageService
+public class LocalStorageService : ILocalStorageService
 {
     private readonly IJSRuntime _js;
 

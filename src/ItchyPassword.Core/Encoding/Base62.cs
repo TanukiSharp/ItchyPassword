@@ -2,7 +2,7 @@ namespace ItchyPassword.Core.Encoding;
 
 public static class Base62
 {
-    private const string Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    public const string Alphabet = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     public static string Encode(byte[] input)
     {

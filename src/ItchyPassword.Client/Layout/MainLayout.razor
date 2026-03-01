@@ -1,12 +1,14 @@
 ﻿@inherits LayoutComponentBase
 @implements IDisposable
 @using ItchyPassword.Client.Services
-@inject NavigationManager Nav
+@using System.ComponentModel
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
+@inject NavigationManager Nav
+@inject UiState UiState
 
 <div class="app-layout">
-    @if (MasterKeyProvider.HasMasterKey)
+    @if (MasterKeyProvider.HasMasterKey && UiState.IsDecryptionError == false)
     {
         <div class="mobile-toggle-bar">
             <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
@@ -20,14 +22,11 @@
             </div>
             <nav>
                 <ul>
-                    @if (Session.IsUnlocked)
-                    {
-                        <li><NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔓 Vault</NavLink></li>
-                    }
-                    else
-                    {
-                        <li><span>🔒 Vault</span></li>
-                    }
+                    <li>
+                        <NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
+                            @(Session.IsUnlocked ? "🔓" : "🔒") Vault
+                        </NavLink>
+                    </li>
                     <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static Key</NavLink></li>
                     <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
                 </ul>
@@ -53,19 +52,29 @@
     protected override void OnInitialized()
     {
         Session.PropertyChanged += OnStateChanged;
+        UiState.PropertyChanged += OnUiStateChanged;
     }
 
-    private void OnStateChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+    private void OnStateChanged(object? sender, PropertyChangedEventArgs e)
     {
         if (e.PropertyName is nameof(VaultSession.IsUnlocked))
         {
-            StateHasChanged();
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnUiStateChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName is nameof(UiState.IsDecryptionError))
+        {
+            InvokeAsync(StateHasChanged);
         }
     }
 
     public void Dispose()
     {
         Session.PropertyChanged -= OnStateChanged;
+        UiState.PropertyChanged -= OnUiStateChanged;
     }
 
     private void ToggleSidebar()
