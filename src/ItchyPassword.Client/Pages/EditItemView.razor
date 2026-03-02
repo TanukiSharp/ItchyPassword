@@ -5,6 +5,7 @@
 @inject VaultSession Session
 @inject NavigationManager Nav
 @inject IAppState AppState
+@inject IJSRuntime JS
 
 @if (_item is null)
 {
@@ -50,6 +51,7 @@ else
                         @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
                     </button>
                     <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
+                    <button class="button danger" type="button" @onclick="DeleteAsync" disabled="@_isSaving" style="margin-left: auto;">Delete</button>
                 </div>
             </EditForm>
 
@@ -140,11 +142,8 @@ else
             if (failures.Count > 0)
             {
                 _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
-                // If ALL failed, don't navigate
-                if (results.All(r => r.Success == false))
-                {
-                    return;
-                }
+                // If ANY failed, stay on page to show error
+                return;
             }
 
             Nav.NavigateTo("/vault");
@@ -152,6 +151,63 @@ else
         catch (Exception ex)
         {
             _error = $"Save failed: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_item is null)
+        {
+            return;
+        }
+
+        if (Session.Vault is null)
+        {
+            return;
+        }
+
+        string? answer = await JS.InvokeAsync<string?>(identifier: "prompt", $"Type 'y' to confirm deleting '{_item.Name}':");
+
+        if (string.Equals(answer, "y", StringComparison.OrdinalIgnoreCase) == false)
+        {
+            return;
+        }
+
+        _isSaving = true;
+        _error = string.Empty;
+
+        try
+        {
+            Session.Vault.Items.Remove(_item);
+
+            // Serialize entire vault and persist to all write connectors.
+            var results = await Session.SaveVaultAsync();
+            var failures = results.Where(r => r.Success == false).ToList();
+
+            if (failures.Count > 0)
+            {
+                _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
+                // Attempt to revert memory state because persistence failed
+                Session.Vault.Items.Add(_item);
+                Session.Vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
+                return;
+            }
+
+            Nav.NavigateTo("/vault");
+        }
+        catch (Exception ex)
+        {
+            _error = $"Delete failed: {ex.Message}";
+            // Attempt to revert memory state
+            if (Session.Vault is not null && Session.Vault.Items.Contains(_item) == false)
+            {
+                Session.Vault.Items.Add(_item);
+                Session.Vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
+            }
         }
         finally
         {

@@ -1,6 +1,5 @@
-using System.Security.Cryptography;
-using System.Text;
 using ItchyPassword.Core.Services;
+using System.Security.Cryptography;
 
 namespace ItchyPassword.Core.Tests.Crypto;
 
@@ -53,7 +52,7 @@ public sealed class DotNetCryptoService : ICryptoService
         return Task.FromResult(result);
     }
 
-    public Task<byte[]> DecryptV3Async(byte[] input, byte[] password)
+    private Task<byte[]> DecryptAsync(byte[] input, byte[] password, int iterations)
     {
         // Layout: [nonce 12] [salt 16] [ciphertext...] [tag 16]
         if (input.Length < IvSize + SaltSize + TagSize)
@@ -69,7 +68,7 @@ public sealed class DotNetCryptoService : ICryptoService
         var key = Rfc2898DeriveBytes.Pbkdf2(
             password,
             salt,
-            IterationsContext,
+            iterations,
             HashAlgorithmName.SHA512,
             KeySize);
 
@@ -78,6 +77,16 @@ public sealed class DotNetCryptoService : ICryptoService
         aes.Decrypt(iv, ciphertext, tag, plaintext);
 
         return Task.FromResult(plaintext);
+    }
+
+    public async Task<byte[]> DecryptV2Async(byte[] input, byte[] password)
+    {
+        return await DecryptAsync(input, password, 100_000);
+    }
+
+    public async Task<byte[]> DecryptV3Async(byte[] input, byte[] password)
+    {
+        return await DecryptAsync(input, password, IterationsContext);
     }
 
     public Task<byte[]> GeneratePasswordV1Async(byte[] privatePart, byte[] publicPart)
@@ -93,7 +102,7 @@ public sealed class DotNetCryptoService : ICryptoService
             HashAlgorithmName.SHA512,
             KeySize);
 
-        var hmac = HMACSHA512.HashData(key, Encoding.UTF8.GetBytes("Password"));
+        var hmac = HMACSHA512.HashData(key, System.Text.Encoding.UTF8.GetBytes("Password"));
         return Task.FromResult(hmac);
     }
 
@@ -110,7 +119,7 @@ public sealed class DotNetCryptoService : ICryptoService
             HashAlgorithmName.SHA512,
             KeySize);
 
-        var hmac = HMACSHA512.HashData(key, Encoding.UTF8.GetBytes(purpose));
+        var hmac = HMACSHA512.HashData(key, System.Text.Encoding.UTF8.GetBytes(purpose));
         return Task.FromResult(hmac);
     }
 

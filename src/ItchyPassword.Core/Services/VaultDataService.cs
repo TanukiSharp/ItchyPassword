@@ -39,8 +39,8 @@ public class VaultDataService
 
     public static string SerializeVault(VaultV2 vault)
     {
-        // Sort items by Id for deterministic output across saves.
-        vault.Items.Sort((a, b) => a.Id.CompareTo(b.Id));
+        // Sort items by Name for deterministic output across saves.
+        vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
 
         return JsonSerializer.Serialize(vault, _saveOptions);
     }

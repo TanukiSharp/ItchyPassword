@@ -1,6 +1,7 @@
 @page "/item/new"
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Client.Components.Editors
+@using ItchyPassword.Core.Constants
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
@@ -112,17 +113,21 @@
 
         if (type == VaultItemTypeV2.Secret)
         {
-            item.SetData(new SecretDataV2());
+            item.SetData(new SecretDataV2()
+            {
+                CryptoVersion = SecretDataConstants.LatestCryptoVersion,
+                Encoding = SecretDataConstants.LatestEncoding,
+            });
         }
         else
         {
             item.SetData(new StaticKeyDataV2()
             {
-                Alphabet = StaticKeyDataV2.DefaultAlphabet,
-                EncodingVersion = 2,
-                CryptoVersion = 2,
-                Length = 64,
                 PublicPart = string.Empty,
+                Alphabet = StaticKeyDataConstants.DefaultAlphabet,
+                Length = StaticKeyDataConstants.DefaultLength,
+                CryptoVersion = StaticKeyDataConstants.LatestCryptoVersion,
+                EncodingVersion = StaticKeyDataConstants.LatestEncodingVersion,
             });
         }
 
@@ -186,6 +191,7 @@
             {
                 // Add as new entry.
                 Session.Vault.Items.Add(_item);
+                Session.Vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
             }
 
             // Serialize the entire vault and persist to all write connectors.
@@ -196,12 +202,13 @@
             {
                 _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
 
-                // If ALL connectors failed, rollback and stay on page.
+                // If ALL connectors failed, rollback. If SOME failed, stay on page but don't rollback.
                 if (results.All(r => r.Success == false))
                 {
                     Session.Vault.Items.Remove(_item);
-                    return;
                 }
+
+                return;
             }
 
             Nav.NavigateTo("/vault");

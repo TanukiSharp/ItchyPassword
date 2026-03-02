@@ -1,5 +1,6 @@
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Core.Services
+@using ItchyPassword.Core.Extensions
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
 @inject IAppState AppState
@@ -17,6 +18,9 @@
                 <option value="statickey">Static keys only</option>
                 <option value="secret">Secrets only</option>
             </select>
+            <button class="button icon-button secondary" @onclick="ReloadVaultAsync" title="Reload vault from storage." disabled="@_isReloading">
+                <img class="themed-icon" src="icons/reload-dark.svg" width="16" height="16" alt="Reload the vault." />
+            </button>
             <button class="button secondary" @onclick="LockVault" title="Clears the master key and unloads all vault data.">Lock vault</button>
             <button class="button primary" @onclick="CreateNew" title="Create a new vault item.">New Item</button>
         </div>
@@ -40,6 +44,10 @@
                     <tr>
                         <td>
                             <span class="vault-item-name">
+                                @if (item.IsLegacy())
+                                {
+                                    <span title="This item uses legacy settings. Edit and save to upgrade." style="cursor: help; margin-right: 4px;">⚠️</span>
+                                }
                                 @if (item.Type == VaultItemTypeV2.StaticKey)
                                 {
                                     <img class="vault-icon-key" src="icons/key-dark.svg" alt="Static key" width="14" height="14" />
@@ -51,7 +59,7 @@
                             <div class="vault-actions-group">
                                 <CopyButton CssClass="vault-item-action-btn" TextProvider="() => GetItemValueAsync(item)" />
                                 <button class="button secondary vault-item-action-btn" @onclick="() => EditItem(item)" title="Edit item">
-                                    <img src="icons/edit-dark.svg" width="14" height="14" alt="Edit" />
+                                    <img class="themed-icon" src="icons/edit-dark.svg" width="14" height="14" alt="Edit" />
                                 </button>
                             </div>
                         </td>
@@ -94,6 +102,22 @@
     private void CreateNew()
     {
         Nav.NavigateTo("item/new");
+    }
+
+    private bool _isReloading = false;
+
+    private async Task ReloadVaultAsync()
+    {
+        _isReloading = true;
+
+        try
+        {
+            await AppState.ReloadVaultAsync();
+        }
+        finally
+        {
+            _isReloading = false;
+        }
     }
 
     private void LockVault()

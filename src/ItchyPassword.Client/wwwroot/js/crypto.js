@@ -137,50 +137,61 @@ window.ItchyPassword.Crypto = {
         }
     },
 
+    _decrypt: async function (ciphertext, password, iterations) {
+        const input = ciphertext;
+
+        if (input.length < 28) throw new Error('Invalid ciphertext length');
+
+        const nonce = input.slice(0, 12);
+        const salt = input.slice(12, 28);
+        const encryptedData = input.slice(28);
+
+        // Derive key
+        const baseKey = await window.crypto.subtle.importKey(
+            'raw',
+            password,
+            { name: 'PBKDF2' },
+            false,
+            ['deriveKey']
+        );
+
+        const deriveParams = {
+            name: 'PBKDF2',
+            hash: 'SHA-512',
+            iterations: iterations,
+            salt: salt
+        };
+
+        const derivedKey = await window.crypto.subtle.deriveKey(
+            deriveParams,
+            baseKey,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['decrypt']
+        );
+
+        // Decrypt
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: nonce },
+            derivedKey,
+            encryptedData
+        );
+
+        return new Uint8Array(decrypted);
+    },
+
+    decryptV2: async function (ciphertext, password) {
+        try {
+            return await this._decrypt(ciphertext, password, 100000);
+        } catch (e) {
+            console.error('Decrypt V2 Error:', e);
+            throw e;
+        }
+    },
+
     decryptV3: async function (ciphertext, password) {
         try {
-            const input = ciphertext;
-            const iterations = 400000;
-
-            if (input.length < 28) throw new Error('Invalid ciphertext length');
-
-            const nonce = input.slice(0, 12);
-            const salt = input.slice(12, 28);
-            const encryptedData = input.slice(28);
-
-            // Derive key
-            const baseKey = await window.crypto.subtle.importKey(
-                'raw',
-                password,
-                { name: 'PBKDF2' },
-                false,
-                ['deriveKey']
-            );
-
-            const deriveParams = {
-                name: 'PBKDF2',
-                hash: 'SHA-512',
-                iterations: iterations,
-                salt: salt
-            };
-
-            const derivedKey = await window.crypto.subtle.deriveKey(
-                deriveParams,
-                baseKey,
-                { name: 'AES-GCM', length: 256 },
-                false,
-                ['decrypt']
-            );
-
-            // Decrypt
-            const decrypted = await window.crypto.subtle.decrypt(
-                { name: 'AES-GCM', iv: nonce },
-                derivedKey,
-                encryptedData
-            );
-
-            return new Uint8Array(decrypted);
-
+            return await this._decrypt(ciphertext, password, 400000);
         } catch (e) {
             console.error('Decrypt V3 Error:', e);
             throw e;

@@ -1,12 +1,9 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Threading.Tasks;
+using ItchyPassword.Core.Constants;
 using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using ItchyPassword.Core.Tests.Crypto;
-using Xunit;
-
+using System.Security.Cryptography;
 namespace ItchyPassword.Core.Tests.Services;
 
 public class VaultCryptoServiceTests
@@ -30,18 +27,17 @@ public class VaultCryptoServiceTests
 
         Assert.NotNull(result);
         Assert.False(string.IsNullOrWhiteSpace(result.Cipher));
-        Assert.Equal(3, result.CryptoVersion);
-        Assert.Equal("base58", result.Encoding);
+        Assert.Equal(SecretDataConstants.LatestCryptoVersion, result.CryptoVersion);
+        Assert.Equal(SecretDataConstants.LatestEncoding, result.Encoding);
     }
 
     [Fact]
-    public async Task EncryptSecretAsync_WithBase62_ReturnsCorrectEncoding()
+    public async Task EncryptSecretAsync_WithBase62_ThrowsNotSupportedException()
     {
         string plaintext = "Hello World";
-        var result = await _service.EncryptSecretAsync(plaintext, _masterKey, "base62");
 
-        Assert.Equal("base62", result.Encoding);
-        // Base62 alphabet specific check if needed, but integration test mostly.
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.EncryptSecretAsync(plaintext, _masterKey, "base62"));
     }
 
     [Fact]
@@ -103,8 +99,8 @@ public class VaultCryptoServiceTests
             PublicPart = "example.com",
             Length = 20,
             Alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
-            EncodingVersion = 2, // BaseN.Encode
-            CryptoVersion = 2    // HMAC-SHA512
+            EncodingVersion = StaticKeyDataConstants.LatestEncodingVersion,
+            CryptoVersion = StaticKeyDataConstants.LatestCryptoVersion,
         };
 
         string result1 = await _service.GenerateStaticKeyAsync(data, _masterKey);

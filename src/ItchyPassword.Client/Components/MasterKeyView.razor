@@ -15,7 +15,7 @@
                     <div class="master-key-input-wrapper">
                         <input @ref="_masterKeyInput" class="input master-key-input" type="@(_showPassword ? "text" : "password")" id="masterKey" @bind-value="masterKey" @bind-value:event="oninput" placeholder="Enter your master key" required autofocus />
                         <button type="button" class="master-key-toggle" @onclick="TogglePasswordVisibility" @onclick:stopPropagation title="@(_showPassword ? "Hide master key" : "Show master key")">
-                            <img src="icons/@(_showPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showPassword ? "Hide" : "Show")" />
+                            <img class="themed-icon" src="icons/@(_showPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showPassword ? "Hide" : "Show")" />
                         </button>
                     </div>
                     <span title="Character count" class="char-count">@masterKey.Length</span>

@@ -1,6 +1,5 @@
-using ItchyPassword.Core.Connectors;
-using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Exceptions;
+using ItchyPassword.Core.Models;
 
 namespace ItchyPassword.Core.Services;
 
@@ -225,7 +224,13 @@ public class VaultSession
                     // Successfully migrated. Save the new format immediately to avoid re-migration next time.
                     Vault = vault;
                     onStatusChanged?.Invoke("Saving migrated vault...");
-                    await SaveVaultAsync();
+                    var results = await SaveVaultAsync();
+
+                    var failures = results.Where(r => r.Success == false).ToList();
+                    if (failures.Count > 0)
+                    {
+                        throw new InvalidOperationException("Migration successful, but failed to save: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}")));
+                    }
                 }
                 else
                 {

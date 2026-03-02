@@ -1,6 +1,6 @@
 using ItchyPassword.Core.Models;
 
-namespace ItchyPassword.Core.Connectors;
+namespace ItchyPassword.Core.Services;
 
 /// <summary>
 /// Defines a connector for a password vault storage provider.

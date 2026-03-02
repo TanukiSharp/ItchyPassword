@@ -17,7 +17,7 @@
                     class="button @(_entries[index].IsEncrypted ? "primary" : "secondary") icon-btn"
                     @onclick="() => ToggleEncrypted(index)"
                     title="@(_entries[index].IsEncrypted ? "Value stored encrypted, click to store in plain text." : "Value stored as plain text, click to store encrypted.")">
-                <img src="icons/@(_entries[index].IsEncrypted ? "lock" : "unlock").svg"
+                <img class="themed-icon" src="icons/@(_entries[index].IsEncrypted ? "lock" : "unlock").svg"
                      alt="@(_entries[index].IsEncrypted ? "Encrypted" : "Plaintext")"
                      width="16" height="16" />
             </button>

@@ -1,3 +1,4 @@
+using ItchyPassword.Core.Constants;
 using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
 using System.Text.Json;
@@ -5,11 +6,8 @@ using System.Text.Json.Nodes;
 
 namespace ItchyPassword.Core.Services;
 
-public class VaultMigrationService(ICryptoService crypto)
+public class VaultMigrationService(IVaultCryptoService vaultCrypto)
 {
-    private static readonly HashSet<char> Base62Chars = new("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz");
-    private const int DefaultLength = 64;
-
     /// <summary>
     /// Checks if the provided JSON content looks like a Legacy V1 vault.
     /// </summary>
@@ -49,6 +47,9 @@ public class VaultMigrationService(ICryptoService crypto)
 
         // 2. Content Migration (Password Recipes -> Encrypted Ciphers)
         await MigrateLegacyPasswordRecipesToCiphersAsync(vault, masterKey, progress);
+        await MigrateLegacyCiphersAsync(vault, masterKey, progress);
+
+        vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
 
         return vault;
     }
@@ -107,9 +108,9 @@ public class VaultMigrationService(ICryptoService crypto)
                     LastModified = legacyDate
                 };
 
-                int version = ExtractValue($"p: {item.Name}", passObj, "version", 2);
-                int length = ExtractValue($"p: {item.Name}", passObj, "length", 64);
-                string alphabet = ExtractValue($"p: {item.Name}", passObj, "alphabet", StaticKeyDataV2.DefaultAlphabet);
+                int version = ExtractValue($"p: {item.Name}", passObj, "version", StaticKeyDataConstants.LatestCryptoVersion);
+                int length = ExtractValue($"p: {item.Name}", passObj, "length", StaticKeyDataConstants.DefaultLength);
+                string alphabet = ExtractValue($"p: {item.Name}", passObj, "alphabet", StaticKeyDataConstants.DefaultAlphabet);
 
                 item.SetData(new StaticKeyDataV2
                 {
@@ -186,7 +187,7 @@ public class VaultMigrationService(ICryptoService crypto)
                         };
 
                         string cipher = ExtractValue($"c: {item.Name}", cipherDetail, "value", string.Empty);
-                        int cipherCryptoVersion = ExtractValue($"c: {item.Name}", cipherDetail, "version", 3);
+                        int cipherCryptoVersion = ExtractValue($"c: {item.Name}", cipherDetail, "version", SecretDataConstants.LatestCryptoVersion);
                         string encoding = ExtractValue($"c: {item.Name}", cipherDetail, "encoding", "base62");
 
                         item.SetData(new SecretDataV2
@@ -236,14 +237,13 @@ public class VaultMigrationService(ICryptoService crypto)
 
     private async Task MigrateLegacyPasswordRecipesToCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress = null)
     {
-
         // Pre-filter items that need migration to avoid repeated checks in loop.
         List<VaultItemV2> itemsToMigrate = vault.Items.Where(item =>
             item.Type == VaultItemTypeV2.StaticKey &&
             item.StaticKeyData is not null &&
             string.IsNullOrWhiteSpace(item.StaticKeyData.PublicPart) == false &&
             item.StaticKeyData.PublicPart.Length > 20 &&
-            item.StaticKeyData.PublicPart.All(c => Base62Chars.Contains(c))
+            item.StaticKeyData.PublicPart.All(c => Base62.Alphabet.Contains(c))
         ).ToList();
 
         int total = itemsToMigrate.Count;
@@ -253,47 +253,49 @@ public class VaultMigrationService(ICryptoService crypto)
         {
             try
             {
-                StaticKeyDataV2 skParams = item.StaticKeyData!;
-                string publicPart = skParams.PublicPart;
-                int cryptoVersion = skParams.CryptoVersion;
-
-                if (cryptoVersion != 1 && cryptoVersion != 2)
-                {
-                    continue;
-                }
-
-                string alphabet = string.IsNullOrWhiteSpace(skParams.Alphabet) ? StaticKeyDataV2.DefaultAlphabet : skParams.Alphabet;
-                int length = skParams.Length > 0 ? skParams.Length : DefaultLength;
-
-                byte[] publicBytes = System.Text.Encoding.UTF8.GetBytes(publicPart);
-                byte[] derivedBytes;
-
-                if (cryptoVersion == 1)
-                {
-                    derivedBytes = await crypto.GeneratePasswordV1Async(masterKeyBytes, publicBytes);
-                }
-                else
-                {
-                    derivedBytes = await crypto.GeneratePasswordV2Async(masterKeyBytes, publicBytes, "Password");
-                }
-
-                string password = BaseN.EncodeOneWay(derivedBytes, alphabet);
-
-                if (password.Length > length)
-                {
-                    password = password[..length];
-                }
-
-                byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(password);
-                byte[] encryptedBlob = await crypto.EncryptV3Async(passwordBytes, masterKeyBytes);
+                string staticKey = await vaultCrypto.GenerateStaticKeyAsync(item.StaticKeyData!, masterKeyBytes);
+                SecretDataV2 secret = await vaultCrypto.EncryptSecretAsync(staticKey, masterKeyBytes, SecretDataConstants.LatestEncoding);
 
                 item.Type = VaultItemTypeV2.Secret;
-                item.SetData(new SecretDataV2
-                {
-                    Cipher = Base58.Encode(encryptedBlob),
-                    CryptoVersion = 3,
-                    Encoding = "base58"
-                });
+                item.SetData(secret);
+            }
+            catch (Exception)
+            {
+            }
+            finally
+            {
+                completed++;
+                progress?.Report(completed * 100.0 / total);
+            }
+        }
+    }
+
+    private async Task MigrateLegacyCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress = null)
+    {
+        // Pre-filter items that need migration to avoid repeated checks in loop.
+        List<VaultItemV2> itemsToMigrate = vault.Items.Where(item =>
+            item.Type == VaultItemTypeV2.Secret &&
+            item.SecretData is not null &&
+            string.IsNullOrWhiteSpace(item.SecretData.Cipher) == false &&
+            (item.SecretData.CryptoVersion != SecretDataConstants.LatestCryptoVersion || item.SecretData.Encoding != SecretDataConstants.LatestEncoding)
+        ).ToList();
+
+        int total = itemsToMigrate.Count;
+        int completed = 0;
+
+        foreach (VaultItemV2 item in itemsToMigrate)
+        {
+            try
+            {
+                SecretDataV2 secretData = item.SecretData!;
+                string cipher = secretData.Cipher;
+                int cryptoVersion = secretData.CryptoVersion;
+
+                string decryptedValue = await vaultCrypto.DecryptSecretAsync(secretData, masterKeyBytes);
+
+                secretData = await vaultCrypto.EncryptSecretAsync(decryptedValue, masterKeyBytes, SecretDataConstants.LatestEncoding);
+
+                item.SetData(secretData);
             }
             catch (Exception)
             {

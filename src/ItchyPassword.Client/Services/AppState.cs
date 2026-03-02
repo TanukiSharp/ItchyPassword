@@ -147,6 +147,14 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         _nav.NavigateTo("/");
     }
 
+    public async Task ReloadVaultAsync()
+    {
+        if (Status == AppStatus.Unlocked && _keyProvider.HasMasterKey)
+        {
+            await StartUnlockFlowAsync();
+        }
+    }
+
     public void Configure()
     {
         // User wants to go to settings, maybe from error screen

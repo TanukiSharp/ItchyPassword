@@ -1,0 +1,88 @@
+@using ItchyPassword.Core.Services
+@implements IDisposable
+
+<div class="totp-display">
+    @if (string.IsNullOrWhiteSpace(Secret))
+    {
+        <div class="alert info alert-inline-sm">No TOTP secret to display.</div>
+    }
+    else if (string.IsNullOrWhiteSpace(_error) == false)
+    {
+        <div class="alert danger alert-inline-sm">@_error</div>
+    }
+    else
+    {
+        <div class="totp-code-row">
+            <span class="totp-code">@FormatCode(_currentCode)</span>
+            <CopyButton Text="@_currentCode" />
+        </div>
+        <div class="totp-timer">
+            <div class="totp-timer-bar">
+                <div class="totp-timer-fill" style="width: @(_remainingSeconds * 100 / 30)%"></div>
+            </div>
+            <span class="totp-timer-text">@_remainingSeconds s</span>
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The Base32-encoded TOTP secret.
+    /// </summary>
+    [Parameter]
+    public required string Secret { get; set; }
+
+    private string _currentCode = string.Empty;
+    private int _remainingSeconds = 30;
+    private string _error = string.Empty;
+    private Timer? _timer;
+
+    protected override void OnInitialized()
+    {
+        Refresh();
+        _timer = new Timer(OnTick, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
+    }
+
+    private void OnTick(object? state)
+    {
+        InvokeAsync(() =>
+        {
+            Refresh();
+            StateHasChanged();
+        });
+    }
+
+    private void Refresh()
+    {
+        try
+        {
+            _currentCode = TotpGenerator.GenerateCode(Secret);
+            _remainingSeconds = TotpGenerator.GetRemainingSeconds();
+            _error = string.Empty;
+        }
+        catch (Exception ex)
+        {
+            _currentCode = string.Empty;
+            _remainingSeconds = 0;
+            _error = $"Invalid TOTP secret: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Formats a 6-digit code as "xxx xxx" for readability.
+    /// </summary>
+    private static string FormatCode(string code)
+    {
+        if (code.Length == 6)
+        {
+            return $"{code[..3]} {code[3..]}";
+        }
+
+        return code;
+    }
+
+    public void Dispose()
+    {
+        _timer?.Dispose();
+    }
+}

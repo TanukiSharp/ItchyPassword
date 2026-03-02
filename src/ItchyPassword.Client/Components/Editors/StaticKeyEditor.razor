@@ -1,4 +1,5 @@
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Constants
 @using ItchyPassword.Core.Services
 @implements IItemEditor
 @inject IVaultCryptoService VaultCrypto
@@ -7,8 +8,8 @@
 <div class="grid-2col">
     <div>
         <div class="form-group">
-            <label>Public Salt</label>
-            <input class="input" value="@_publicPart" @oninput="OnPublicPartInput" minlength="@MinPublicSaltLength" placeholder="@($"At least {MinPublicSaltLength} characters")" />
+            <label>Public Part</label>
+            <input class="input" value="@_publicPart" @oninput="OnPublicPartInput" minlength="@MinPublicPartLength" placeholder="@($"At least {MinPublicPartLength} characters")" />
         </div>
 
         <div class="form-group">
@@ -37,7 +38,7 @@
             </select>
         </div>
 
-        <button type="button" class="button primary button-block" @onclick="GenerateAsync" disabled="@(_isGenerating || _publicPart.Length < MinPublicSaltLength || _length < MinLength)">
+        <button type="button" class="button primary button-block" @onclick="GenerateAsync" disabled="@(_isGenerating || _publicPart.Length < MinPublicPartLength || _length < MinLength)">
             Generate Password
         </button>
 
@@ -63,18 +64,17 @@
     public required VaultItemV2 Item { get; init; }
 
     private string _publicPart = string.Empty;
-    private string _alphabet = StaticKeyDataV2.DefaultAlphabet;
-    private int _length = DefaultLength;
-    private int _cryptoVersion = 2;
-    private int _encodingVersion = 2;
+    private string _alphabet = StaticKeyDataConstants.DefaultAlphabet;
+    private int _length = StaticKeyDataConstants.DefaultLength;
+    private int _cryptoVersion = StaticKeyDataConstants.LatestCryptoVersion;
+    private int _encodingVersion = StaticKeyDataConstants.LatestEncodingVersion;
 
     private string _result = string.Empty;
     private bool _isGenerating = false;
     private string _error = string.Empty;
 
-    private const int MinPublicSaltLength = 8;
+    private const int MinPublicPartLength = 8;
     private const int MinLength = 8;
-    private const int DefaultLength = 64;
 
     protected override async Task OnInitializedAsync()
     {
@@ -135,9 +135,9 @@
     {
         _error = string.Empty;
 
-        if (_publicPart.Length < MinPublicSaltLength)
+        if (_publicPart.Length < MinPublicPartLength)
         {
-            _error = $"Public salt must be at least {MinPublicSaltLength} characters.";
+            _error = $"Public part must be at least {MinPublicPartLength} characters.";
             return false;
         }
 
@@ -162,7 +162,7 @@
     {
         if (int.TryParse(e.Value?.ToString(), out int cryptoVersion) == false)
         {
-            cryptoVersion = 2;
+            cryptoVersion = StaticKeyDataConstants.LatestCryptoVersion;
         }
         _cryptoVersion = cryptoVersion;
         _result = string.Empty;
@@ -173,7 +173,7 @@
     {
         if (int.TryParse(e.Value?.ToString(), out int encodingVersion) == false)
         {
-            encodingVersion = 2;
+            encodingVersion = StaticKeyDataConstants.LatestEncodingVersion;
         }
         _encodingVersion = encodingVersion;
         _result = string.Empty;
@@ -206,7 +206,7 @@
     /// </summary>
     private async Task TryAutoGenerateAsync()
     {
-        if (_publicPart.Length >= MinPublicSaltLength && _length >= MinLength && _alphabet.Length >= 2)
+        if (_publicPart.Length >= MinPublicPartLength && _length >= MinLength && _alphabet.Length >= 2)
         {
             await GenerateAsync();
         }

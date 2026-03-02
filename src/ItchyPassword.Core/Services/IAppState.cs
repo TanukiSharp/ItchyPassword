@@ -42,6 +42,11 @@ public interface IAppState
     Task RetryUnlockAsync();
 
     /// <summary>
+    /// Reloads the vault from the active read connector without requiring a new master key.
+    /// </summary>
+    Task ReloadVaultAsync();
+
+    /// <summary>
     /// Navigates to the configuration page if possible.
     /// </summary>
     void Configure();

@@ -1,3 +1,4 @@
+using ItchyPassword.Core.Constants;
 using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
 
@@ -16,9 +17,6 @@ public interface IVaultCryptoService
 /// </summary>
 public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoService
 {
-    private const string DefaultEncoding = "base58";
-    private const int DefaultCryptoVersion = 3;
-
     /// <summary>
     /// Decrypts a Secret-type vault item.
     /// </summary>
@@ -37,7 +35,8 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
 
         byte[] decryptedBytes = secretData.CryptoVersion switch
         {
-            3 => await cryptoService.DecryptV3Async(encryptedBytes, masterKey),
+            SecretDataConstants.LatestCryptoVersion => await cryptoService.DecryptV3Async(encryptedBytes, masterKey),
+            2 => await cryptoService.DecryptV2Async(encryptedBytes, masterKey),
             _ => throw new NotSupportedException($"Crypto version {secretData.CryptoVersion} is not supported.")
         };
 
@@ -47,7 +46,7 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
     /// <summary>
     /// Encrypts a plaintext string into a SecretDataV2 object.
     /// </summary>
-    public async Task<SecretDataV2> EncryptSecretAsync(string plaintext, byte[] masterKey, string encoding = DefaultEncoding)
+    public async Task<SecretDataV2> EncryptSecretAsync(string plaintext, byte[] masterKey, string encoding = SecretDataConstants.LatestEncoding)
     {
         if (string.IsNullOrEmpty(plaintext))
         {
@@ -66,7 +65,7 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
         return new SecretDataV2
         {
             Cipher = EncodeBytes(encrypted, encoding),
-            CryptoVersion = DefaultCryptoVersion,
+            CryptoVersion = SecretDataConstants.LatestCryptoVersion,
             Encoding = encoding
         };
     }
@@ -86,14 +85,14 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
         byte[] rawBytes = keyData.CryptoVersion switch
         {
             1 => await cryptoService.GeneratePasswordV1Async(masterKey, publicPart),
-            2 => await cryptoService.GeneratePasswordV2Async(masterKey, publicPart),
+            StaticKeyDataConstants.LatestCryptoVersion => await cryptoService.GeneratePasswordV2Async(masterKey, publicPart),
             _ => throw new NotSupportedException($"Crypto version {keyData.CryptoVersion} is not supported.")
         };
 
         string result = keyData.EncodingVersion switch
         {
             1 => BaseN.EncodeOneWay(rawBytes, keyData.Alphabet),
-            2 => BaseN.Encode(rawBytes, keyData.Alphabet),
+            StaticKeyDataConstants.LatestEncodingVersion => BaseN.Encode(rawBytes, keyData.Alphabet),
             _ => throw new NotSupportedException($"Encoding version {keyData.EncodingVersion} is not supported.")
         };
 
@@ -121,7 +120,7 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
         return encoding switch
         {
             "base58" => Base58.Decode(data),
-            "base62" => BaseN.Decode(data, Base62.Alphabet),
+            "base62" => Base62.Decode(data),
             "base64" => Convert.FromBase64String(data),
             _ => Base58.Decode(data)
         };

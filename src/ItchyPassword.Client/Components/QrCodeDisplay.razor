@@ -1,0 +1,92 @@
+@using QRCoder
+
+<div class="qrcode-container">
+    @if (string.IsNullOrWhiteSpace(Text))
+    {
+        <div class="alert info alert-inline-sm">No content to display as QR code.</div>
+    }
+    else
+    {
+        <div class="qrcode-controls">
+            <label class="qrcode-size-label">Size</label>
+            <input type="range" min="100" max="500" step="10" value="@_displaySize"
+                   @oninput="OnDisplaySizeChanged" class="qrcode-slider" />
+        </div>
+        <div class="qrcode-svg-wrapper" style="max-width: @(_displaySize)px; aspect-ratio: 1;">
+            @((MarkupString)_svg)
+        </div>
+    }
+</div>
+
+@code {
+    private string _text = string.Empty;
+    private string _svg = string.Empty;
+    private int _displaySize = 200;
+
+    [Parameter]
+    public required string Text { get; init; }
+
+    protected override void OnParametersSet()
+    {
+        if (string.Equals(_text, Text, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        _text = Text;
+        _svg = GenerateSvg(Text);
+    }
+
+    private void OnDisplaySizeChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int value))
+        {
+            _displaySize = value;
+        }
+    }
+
+    /// <summary>
+    /// Generates an SVG with 1-unit modules and a viewBox, so it can be scaled purely via CSS.
+    /// </summary>
+    private static string GenerateSvg(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+        {
+            return string.Empty;
+        }
+
+        using var generator = new QRCodeGenerator();
+        using QRCodeData data = generator.CreateQrCode(text, QRCodeGenerator.ECCLevel.M);
+
+        int moduleCount = data.ModuleMatrix.Count;
+        int quietZone = 2;
+        int size = moduleCount + quietZone * 2;
+
+        var sb = new System.Text.StringBuilder(4096);
+        sb.Append($"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {size} {size}\" width=\"100%\" height=\"100%\" shape-rendering=\"crispEdges\">");
+
+        // White background.
+        sb.Append($"<rect width=\"{size}\" height=\"{size}\" fill=\"#ffffff\"/>");
+
+        // Dark modules as a single compound path for performance.
+        sb.Append("<path d=\"");
+
+        for (int row = 0; row < moduleCount; row++)
+        {
+            for (int col = 0; col < moduleCount; col++)
+            {
+                if (data.ModuleMatrix[row][col])
+                {
+                    int x = col + quietZone;
+                    int y = row + quietZone;
+                    sb.Append($"M{x},{y}h1v1h-1z");
+                }
+            }
+        }
+
+        sb.Append("\" fill=\"#000000\"/>");
+        sb.Append("</svg>");
+
+        return sb.ToString();
+    }
+}

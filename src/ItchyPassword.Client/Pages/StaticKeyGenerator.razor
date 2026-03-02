@@ -1,5 +1,6 @@
 @page "/static-key"
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Constants
 @using ItchyPassword.Core.Services
 @using ItchyPassword.Core.Encoding
 @inject IVaultCryptoService VaultCrypto
@@ -83,7 +84,7 @@
 @code {
     private string publicPart = string.Empty;
     private int length = 64;
-    private string alphabet = StaticKeyDataV2.DefaultAlphabet;
+    private string alphabet = StaticKeyDataConstants.DefaultAlphabet;
     private string cryptoVersion = "v2";
     private string encoding = "v2";
     private string result = string.Empty;
@@ -156,8 +157,8 @@
                 PublicPart = publicPart,
                 Alphabet = alphabet,
                 Length = length,
-                CryptoVersion = cryptoVersion == "v1" ? 1 : 2,
-                EncodingVersion = encoding == "v1" ? 1 : 2
+                CryptoVersion = cryptoVersion == "v1" ? 1 : StaticKeyDataConstants.LatestCryptoVersion,
+                EncodingVersion = encoding == "v1" ? 1 : StaticKeyDataConstants.LatestEncodingVersion
             };
 
             result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey);

@@ -1,7 +1,6 @@
 using ItchyPassword.Client;
 using ItchyPassword.Client.Services;
 using ItchyPassword.Client.Services.VaultConnectors;
-using ItchyPassword.Core.Connectors;
 using ItchyPassword.Core.Services;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;

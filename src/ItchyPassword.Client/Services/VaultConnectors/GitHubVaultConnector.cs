@@ -1,4 +1,3 @@
-using ItchyPassword.Core.Connectors;
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using System.Net.Http.Json;
@@ -225,9 +224,14 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         public required string sha { get; init; }
     }
 
+    private class GitHubUpdateContentEntry
+    {
+        public required string sha { get; init; }
+    }
+
     private class GitHubUpdateResponse
     {
-        public required GitHubFileResponse content { get; init; }
+        public required GitHubUpdateContentEntry content { get; init; }
     }
 #pragma warning restore IDE1006 // Naming Styles
 }

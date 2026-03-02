@@ -20,10 +20,10 @@ public class SecretDataV2
     public string Cipher { get; init; } = string.Empty;
 
     [JsonPropertyName("cryptoVersion")]
-    public int CryptoVersion { get; init; } = 3;
+    public required int CryptoVersion { get; init; }
 
     [JsonPropertyName("encoding")]
-    public string Encoding { get; init; } = "base58";
+    public required string Encoding { get; init; }
 }
 
 /// <summary>
@@ -31,11 +31,6 @@ public class SecretDataV2
 /// </summary>
 public class StaticKeyDataV2
 {
-    /// <summary>
-    /// The full printable ASCII range used as the default alphabet for password generation.
-    /// </summary>
-    public const string DefaultAlphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-
     [JsonPropertyName("publicPart")]
     public required string PublicPart { get; init; }
 

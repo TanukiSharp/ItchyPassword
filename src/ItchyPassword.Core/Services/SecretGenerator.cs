@@ -1,3 +1,5 @@
+using ItchyPassword.Core.Constants;
+
 namespace ItchyPassword.Core.Services;
 
 /// <summary>
@@ -5,14 +7,12 @@ namespace ItchyPassword.Core.Services;
 /// </summary>
 public class SecretGenerationRules
 {
-    public const string DefaultSymbolAlphabet = "!@#$%^&*()-_=+[]{}|;:',.<>?/`~";
-
-    public int TotalLength { get; set; } = 64;
+    public int TotalLength { get; set; } = SecretDataConstants.DefaultLength;
     public int MinLowercase { get; set; } = 3;
     public int MinUppercase { get; set; } = 3;
     public int MinDigits { get; set; } = 3;
     public int MinSymbols { get; set; } = 3;
-    public string SymbolAlphabet { get; set; } = DefaultSymbolAlphabet;
+    public string SymbolAlphabet { get; set; } = SecretDataConstants.DefaultSymbolAlphabet;
 
     /// <summary>
     /// Returns the sum of all minimum character class requirements.
