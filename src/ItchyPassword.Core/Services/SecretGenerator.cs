@@ -92,50 +92,53 @@ public static class SecretGenerator
             throw new ArgumentException(error);
         }
 
-        var result = new char[rules.TotalLength];
-        int charIndex = 0;
+        // WORKAROUND: Use List<char> instead of char[] to avoid .NET 10 WASM bug
+        // where `new string(char[])` returns "" when an async state machine contains
+        // a throw branch before await points that fill the array.
+        // See: bug-repro/ directory for minimal reproduction.
+        var result = new List<char>(rules.TotalLength);
 
         // Fill minimum lowercase characters.
         for (int i = 0; i < rules.MinLowercase; i++)
         {
-            result[charIndex++] = await PickCharAsync(LowercaseChars, pool);
+            result.Add(await PickCharAsync(LowercaseChars, pool));
         }
 
         // Fill minimum uppercase characters.
         for (int i = 0; i < rules.MinUppercase; i++)
         {
-            result[charIndex++] = await PickCharAsync(UppercaseChars, pool);
+            result.Add(await PickCharAsync(UppercaseChars, pool));
         }
 
         // Fill minimum digit characters.
         for (int i = 0; i < rules.MinDigits; i++)
         {
-            result[charIndex++] = await PickCharAsync(DigitChars, pool);
+            result.Add(await PickCharAsync(DigitChars, pool));
         }
 
         // Fill minimum symbol characters.
         for (int i = 0; i < rules.MinSymbols; i++)
         {
-            result[charIndex++] = await PickCharAsync(rules.SymbolAlphabet, pool);
+            result.Add(await PickCharAsync(rules.SymbolAlphabet, pool));
         }
 
         // Build combined alphabet for remaining positions.
         string allChars = BuildCombinedAlphabet(rules);
 
         // Fill remaining positions with random characters from the combined alphabet.
-        while (charIndex < rules.TotalLength)
+        while (result.Count < rules.TotalLength)
         {
-            result[charIndex++] = await PickCharAsync(allChars, pool);
+            result.Add(await PickCharAsync(allChars, pool));
         }
 
         // Fisher-Yates shuffle to randomize character positions.
-        for (int i = result.Length - 1; i > 0; i--)
+        for (int i = result.Count - 1; i > 0; i--)
         {
             int j = await GetBoundedRandomIndexAsync(i + 1, pool);
             (result[i], result[j]) = (result[j], result[i]);
         }
 
-        return new string(result);
+        return new string(result.ToArray());
     }
 
     /// <summary>
