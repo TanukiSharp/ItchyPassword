@@ -1,0 +1,25 @@
+@inject IJSRuntime JS
+
+<div class="theme-selector">
+    <label class="theme-selector-label">Theme</label>
+    <select class="input theme-selector-select" value="@_theme" @onchange="OnThemeChanged">
+        <option value="system">System</option>
+        <option value="light">Light</option>
+        <option value="dark">Dark</option>
+    </select>
+</div>
+
+@code {
+    private string _theme = "system";
+
+    protected override async Task OnInitializedAsync()
+    {
+        _theme = await JS.InvokeAsync<string>("themeInterop.get");
+    }
+
+    private async Task OnThemeChanged(ChangeEventArgs e)
+    {
+        _theme = e.Value?.ToString() ?? "system";
+        await JS.InvokeVoidAsync("themeInterop.set", _theme);
+    }
+}

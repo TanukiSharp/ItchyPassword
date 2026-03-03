@@ -34,26 +34,48 @@
     --border-radius: 4px;
 }
 
-@media (prefers-color-scheme: light) {
-    :root {
-        --bg-color: #f3f4f6;
-        --card-bg: #ffffff;
-        --secondary-bg: #e5e7eb;
-        --text-color: #1f2937;
-        --text-muted: #6b7280;
-        --border-color: #e5e7eb;
-        --input-bg: #f9fafb;
+/* Light theme variables — applied by explicit data-theme or system preference fallback. */
+:root[data-theme="light"] {
+    --bg-color: #eef0f4;
+    --card-bg: #ffffff;
+    --secondary-bg: #dde0e6;
+    --text-color: #1a1d24;
+    --text-muted: #4b5563;
+    --border-color: #c9cdd5;
+    --input-bg: #fafbfc;
 
-        /* Derived colors */
-        --secondary-hover-bg: #d1d5db;
-        --secondary-border: #9ca3af;
+    --secondary-hover-bg: #c9cdd5;
+    --secondary-border: #8b919d;
+    --alert-danger-text: #dc2626;
+    --alert-warn-text: #b45309;
+    --overlay-subtle: rgba(0, 0, 0, 0.06);
+    --hover-overlay: rgba(0, 0, 0, 0.07);
+    --connector-bg: #f5f6f8;
+    --connector-border: #b4b9c4;
+    --spinner-track: rgba(0, 0, 0, 0.12);
+    --checkbox-disabled-bg: #93c5fd;
+}
+
+/* System default: apply light colors when no explicit theme is set and OS prefers light. */
+@media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+        --bg-color: #eef0f4;
+        --card-bg: #ffffff;
+        --secondary-bg: #dde0e6;
+        --text-color: #1a1d24;
+        --text-muted: #4b5563;
+        --border-color: #c9cdd5;
+        --input-bg: #fafbfc;
+
+        --secondary-hover-bg: #c9cdd5;
+        --secondary-border: #8b919d;
         --alert-danger-text: #dc2626;
         --alert-warn-text: #b45309;
-        --overlay-subtle: rgba(0, 0, 0, 0.03);
-        --hover-overlay: rgba(0, 0, 0, 0.04);
-        --connector-bg: #f9fafb;
-        --connector-border: #d1d5db;
-        --spinner-track: rgba(0, 0, 0, 0.1);
+        --overlay-subtle: rgba(0, 0, 0, 0.06);
+        --hover-overlay: rgba(0, 0, 0, 0.07);
+        --connector-bg: #f5f6f8;
+        --connector-border: #b4b9c4;
+        --spinner-track: rgba(0, 0, 0, 0.12);
         --checkbox-disabled-bg: #93c5fd;
     }
 }
@@ -153,6 +175,29 @@ a:hover { text-decoration: underline; }
     padding-top: var(--spacing-sm);
     border-top: 1px solid var(--border-color);
     text-align: center;
+}
+
+/* ── Theme Selector ──────────────────────────────────────────────── */
+
+.theme-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: var(--spacing-sm) var(--spacing-md);
+}
+
+.theme-selector-label {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    display: inline;
+    margin-bottom: 0;
+}
+
+.theme-selector-select {
+    flex: 1;
+    padding: 0.2rem 0.4rem;
+    font-size: 0.85rem;
+    margin-bottom: 0;
 }
 
 .main-content {
@@ -355,6 +400,23 @@ button.danger, .button.danger {
     color: white;
 }
 
+/* Icon-only Variant — sized to match text buttons (padding + line-height + border). */
+.icon-button {
+    width: calc(2.5rem + 2px);
+    height: calc(2.5rem + 2px);
+    padding: 0;
+    line-height: 0;
+    flex-shrink: 0;
+}
+
+/* Make icons white inside primary/danger buttons. */
+.primary .themed-icon,
+.danger .themed-icon,
+:root[data-theme="light"] .primary .themed-icon,
+:root[data-theme="light"] .danger .themed-icon {
+    filter: brightness(0) invert(1);
+}
+
 /* Alerts */
 .alert {
     padding: 1rem;
@@ -367,7 +429,7 @@ button.danger, .button.danger {
     border-color: rgba(239, 68, 68, 0.2);
     color: var(--alert-danger-text);
 }
-.alert.warn {
+.alert.warn, .alert.warning {
     background-color: rgba(245, 158, 11, 0.1);
     border-color: rgba(245, 158, 11, 0.2);
     color: var(--alert-warn-text);
@@ -794,6 +856,13 @@ tr:hover td { background-color: var(--hover-overlay); }
     display: flex;
     gap: 0.5rem;
     align-items: center;
+    flex: 1;
+    justify-content: flex-end;
+    margin-left: 1rem;
+}
+
+.vault-lock-btn {
+    margin-left: 0.5rem;
 }
 
 .vault-search {
@@ -903,10 +972,13 @@ tr:hover td { background-color: var(--hover-overlay); }
     border: 1px solid var(--border-color);
     border-radius: 4px;
     margin-bottom: 1rem;
+    background-color: var(--connector-bg);
 }
 
 .result-section {
     margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--border-color);
 }
 
 .result-input {
@@ -1198,9 +1270,18 @@ tr:hover td { background-color: var(--hover-overlay); }
     filter: none;
 }
 
+:root[data-theme="light"] .themed-icon {
+    filter: brightness(0) saturate(100%) opacity(0.6);
+}
+
 @media (prefers-color-scheme: light) {
-    .themed-icon {
+    :root:not([data-theme]) .themed-icon {
         filter: brightness(0) saturate(100%) opacity(0.6);
+    }
+
+    :root:not([data-theme]) .primary .themed-icon,
+    :root:not([data-theme]) .danger .themed-icon {
+        filter: brightness(0) invert(1);
     }
 }
 

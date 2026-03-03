@@ -21,8 +21,10 @@
             <button class="button icon-button secondary" @onclick="ReloadVaultAsync" title="Reload vault from storage." disabled="@_isReloading">
                 <img class="themed-icon" src="icons/reload-dark.svg" width="16" height="16" alt="Reload the vault." />
             </button>
-            <button class="button secondary" @onclick="LockVault" title="Clears the master key and unloads all vault data.">Lock vault</button>
-            <button class="button primary" @onclick="CreateNew" title="Create a new vault item.">New Item</button>
+            <button class="button icon-button primary" @onclick="CreateNew" title="Create a new vault item.">
+                <img class="themed-icon" src="icons/plus-dark.svg" width="16" height="16" alt="New item" />
+            </button>
+            <button class="button secondary vault-lock-btn" @onclick="LockVault" title="Clears the master key and unloads all vault data.">Lock vault</button>
         </div>
     </div>
 
