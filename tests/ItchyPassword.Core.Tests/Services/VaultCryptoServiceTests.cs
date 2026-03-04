@@ -23,7 +23,7 @@ public class VaultCryptoServiceTests
     public async Task EncryptSecretAsync_WithValidInput_ReturnsSecretData()
     {
         string plaintext = "Hello World";
-        var result = await _service.EncryptSecretAsync(plaintext, _masterKey);
+        var result = await _service.EncryptSecretAsync(plaintext, _masterKey, "base58", CancellationToken.None);
 
         Assert.NotNull(result);
         Assert.False(string.IsNullOrWhiteSpace(result.Cipher));
@@ -37,16 +37,16 @@ public class VaultCryptoServiceTests
         string plaintext = "Hello World";
 
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            _service.EncryptSecretAsync(plaintext, _masterKey, "base62"));
+            _service.EncryptSecretAsync(plaintext, _masterKey, "base62", CancellationToken.None));
     }
 
     [Fact]
     public async Task DecryptSecretAsync_WithValidCipher_ReturnsOriginalPlaintext()
     {
         string plaintext = "Sensitive Data 123";
-        var secretData = await _service.EncryptSecretAsync(plaintext, _masterKey);
+        var secretData = await _service.EncryptSecretAsync(plaintext, _masterKey, "base58", CancellationToken.None);
 
-        string decrypted = await _service.DecryptSecretAsync(secretData, _masterKey);
+        string decrypted = await _service.DecryptSecretAsync(secretData, _masterKey, CancellationToken.None);
 
         Assert.Equal(plaintext, decrypted);
     }
@@ -55,7 +55,7 @@ public class VaultCryptoServiceTests
     public async Task DecryptSecretAsync_WithWrongKey_ThrowsOrReturnsGarbage()
     {
         string plaintext = "Sensitive Data 123";
-        var secretData = await _service.EncryptSecretAsync(plaintext, _masterKey);
+        var secretData = await _service.EncryptSecretAsync(plaintext, _masterKey, "base58", CancellationToken.None);
 
         byte[] wrongKey = new byte[_masterKey.Length];
         Array.Copy(_masterKey, wrongKey, _masterKey.Length);
@@ -63,7 +63,7 @@ public class VaultCryptoServiceTests
 
         // AES-GCM tag verification failure usually throws CryptographicException
         await Assert.ThrowsAnyAsync<CryptographicException>(() =>
-            _service.DecryptSecretAsync(secretData, wrongKey));
+            _service.DecryptSecretAsync(secretData, wrongKey, CancellationToken.None));
     }
 
     [Fact]
@@ -78,8 +78,8 @@ public class VaultCryptoServiceTests
             CryptoVersion = 1    // PBKDF2-SHA256
         };
 
-        string result1 = await _service.GenerateStaticKeyAsync(data, _masterKey);
-        string result2 = await _service.GenerateStaticKeyAsync(data, _masterKey);
+        string result1 = await _service.GenerateStaticKeyAsync(data, _masterKey, CancellationToken.None);
+        string result2 = await _service.GenerateStaticKeyAsync(data, _masterKey, CancellationToken.None);
 
         Assert.Equal(result1, result2);
         Assert.Equal(16, result1.Length);
@@ -103,8 +103,8 @@ public class VaultCryptoServiceTests
             CryptoVersion = StaticKeyDataConstants.LatestCryptoVersion,
         };
 
-        string result1 = await _service.GenerateStaticKeyAsync(data, _masterKey);
-        string result2 = await _service.GenerateStaticKeyAsync(data, _masterKey);
+        string result1 = await _service.GenerateStaticKeyAsync(data, _masterKey, CancellationToken.None);
+        string result2 = await _service.GenerateStaticKeyAsync(data, _masterKey, CancellationToken.None);
 
         Assert.Equal(result1, result2);
         Assert.Equal(20, result1.Length);

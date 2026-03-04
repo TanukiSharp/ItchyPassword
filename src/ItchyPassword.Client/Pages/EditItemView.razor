@@ -92,7 +92,7 @@ else
 
         if (Session.Vault is not null)
         {
-            _item = Session.Vault.Items.FirstOrDefault(i => i.Id == parsedId);
+            _item = Session.Vault.Value.Items.FirstOrDefault(i => i.Id == parsedId);
         }
     }
 
@@ -136,7 +136,7 @@ else
             _item.LastModified = DateTime.UtcNow;
 
             // Serialize entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync();
+            var results = await Session.SaveVaultAsync(CancellationToken.None);
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)
@@ -182,18 +182,18 @@ else
 
         try
         {
-            Session.Vault.Items.Remove(_item);
+            Session.Vault.Value.Items.Remove(_item);
 
             // Serialize entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync();
+            var results = await Session.SaveVaultAsync(CancellationToken.None);
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)
             {
                 _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
                 // Attempt to revert memory state because persistence failed
-                Session.Vault.Items.Add(_item);
-                Session.Vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
+                Session.Vault.Value.Items.Add(_item);
+                Session.Vault.Value.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
                 return;
             }
 
@@ -203,10 +203,10 @@ else
         {
             _error = $"Delete failed: {ex.Message}";
             // Attempt to revert memory state
-            if (Session.Vault is not null && Session.Vault.Items.Contains(_item) == false)
+            if (Session.Vault is not null && Session.Vault.Value.Items.Contains(_item) == false)
             {
-                Session.Vault.Items.Add(_item);
-                Session.Vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
+                Session.Vault.Value.Items.Add(_item);
+                Session.Vault.Value.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
             }
         }
         finally

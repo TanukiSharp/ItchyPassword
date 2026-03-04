@@ -16,7 +16,7 @@ public sealed class DotNetCryptoService : ICryptoService
     private const int TagSize = 16; // AES-GCM tag
     private const int IterationsContext = 400_000;
 
-    public Task<byte[]> EncryptV3Async(byte[] input, byte[] password)
+    public Task<byte[]> EncryptV3Async(byte[] input, byte[] password, CancellationToken cancellationToken)
     {
         // 1. Generate Nonce (IV) 12 bytes
         var iv = RandomNumberGenerator.GetBytes(IvSize);
@@ -79,17 +79,17 @@ public sealed class DotNetCryptoService : ICryptoService
         return Task.FromResult(plaintext);
     }
 
-    public async Task<byte[]> DecryptV2Async(byte[] input, byte[] password)
+    public async Task<byte[]> DecryptV2Async(byte[] input, byte[] password, CancellationToken cancellationToken)
     {
         return await DecryptAsync(input, password, 100_000);
     }
 
-    public async Task<byte[]> DecryptV3Async(byte[] input, byte[] password)
+    public async Task<byte[]> DecryptV3Async(byte[] input, byte[] password, CancellationToken cancellationToken)
     {
         return await DecryptAsync(input, password, IterationsContext);
     }
 
-    public Task<byte[]> GeneratePasswordV1Async(byte[] privatePart, byte[] publicPart)
+    public Task<byte[]> GeneratePasswordV1Async(byte[] privatePart, byte[] publicPart, CancellationToken cancellationToken)
     {
         // Logic from crypto.js:
         // 1. Derive Key: PBKDF2(pass=private, salt=public, iter=100000, alg=SHA512, len=256 bits)
@@ -106,7 +106,7 @@ public sealed class DotNetCryptoService : ICryptoService
         return Task.FromResult(hmac);
     }
 
-    public Task<byte[]> GeneratePasswordV2Async(byte[] privatePart, byte[] publicPart, string purpose = "Password")
+    public Task<byte[]> GeneratePasswordV2Async(byte[] privatePart, byte[] publicPart, string purpose, CancellationToken cancellationToken)
     {
         // Logic from crypto.js:
         // 1. Derive Key: PBKDF2(pass=private, salt=public, iter=400000, alg=SHA512, len=256 bits)
@@ -123,7 +123,7 @@ public sealed class DotNetCryptoService : ICryptoService
         return Task.FromResult(hmac);
     }
 
-    public Task<byte[]> GenerateRandomBytesAsync(int count)
+    public Task<byte[]> GenerateRandomBytesAsync(int count, CancellationToken cancellationToken)
     {
         return Task.FromResult(RandomNumberGenerator.GetBytes(count));
     }

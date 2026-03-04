@@ -78,7 +78,7 @@
                 return;
             }
 
-            await Clipboard.CopyTextAsync(text);
+            await Clipboard.CopyTextAsync(text, CancellationToken.None);
             _state = CopyState.Success;
         }
         catch

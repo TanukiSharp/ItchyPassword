@@ -11,13 +11,13 @@ public enum VaultItemTypeV2
 /// <summary>
 /// Data for Secret-type vault items (encrypted secrets).
 /// </summary>
-public class SecretDataV2
+public readonly struct SecretDataV2
 {
     /// <summary>
     /// The encrypted cipher text.
     /// </summary>
     [JsonPropertyName("cipher")]
-    public string Cipher { get; init; } = string.Empty;
+    public required string Cipher { get; init; }
 
     [JsonPropertyName("cryptoVersion")]
     public required int CryptoVersion { get; init; }
@@ -29,7 +29,7 @@ public class SecretDataV2
 /// <summary>
 /// Data for StaticKey-type vault items (deterministic password generation).
 /// </summary>
-public class StaticKeyDataV2
+public readonly struct StaticKeyDataV2
 {
     [JsonPropertyName("publicPart")]
     public required string PublicPart { get; init; }
@@ -108,16 +108,16 @@ public class VaultItemV2
 /// <summary>
 /// A single key-value metadata entry attached to a vault item.
 /// </summary>
-public class MetadataEntryV2
+public readonly struct MetadataEntryV2
 {
     [JsonPropertyName("key")]
-    public string Key { get; set; } = string.Empty;
+    public required string Key { get; init; }
 
     [JsonPropertyName("value")]
-    public string Value { get; set; } = string.Empty;
+    public required string Value { get; init; }
 }
 
-public class VaultV2
+public readonly struct VaultV2
 {
     [JsonPropertyName("version")]
     public required int Version { get; init; }

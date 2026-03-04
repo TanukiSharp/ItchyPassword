@@ -20,11 +20,11 @@ public sealed class RandomBytePool(ICryptoService cryptoService)
     /// Reads two bytes and returns a 16-bit unsigned value (0–65535).
     /// Fetches a new batch when fewer than 2 bytes remain.
     /// </summary>
-    public async Task<int> ReadTwoBytesAsync()
+    public async Task<int> ReadTwoBytesAsync(CancellationToken cancellationToken)
     {
         if (_index + 2 > _bytes.Length)
         {
-            _bytes = await cryptoService.GenerateRandomBytesAsync(BatchSize);
+            _bytes = await cryptoService.GenerateRandomBytesAsync(BatchSize, cancellationToken);
             _index = 0;
         }
 

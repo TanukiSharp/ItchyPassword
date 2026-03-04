@@ -40,14 +40,14 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
     /// <summary>
     /// Migrates a V1 vault string to a V2 Vault object, including password-to-cipher conversion.
     /// </summary>
-    public async Task<VaultV2> MigrateAsync(string jsonContent, byte[] masterKey, IProgress<double>? progress = null)
+    public async Task<VaultV2> MigrateAsync(string jsonContent, byte[] masterKey, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         // 1. Structural Migration (JSON -> Vault Items)
         VaultV2 vault = PerformStructuralMigration(jsonContent);
 
         // 2. Content Migration (Password Recipes -> Encrypted Ciphers)
-        await MigrateLegacyPasswordRecipesToCiphersAsync(vault, masterKey, progress);
-        await MigrateLegacyCiphersAsync(vault, masterKey, progress);
+        await MigrateLegacyPasswordRecipesToCiphersAsync(vault, masterKey, progress, cancellationToken);
+        await MigrateLegacyCiphersAsync(vault, masterKey, progress, cancellationToken);
 
         vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
 
@@ -235,15 +235,15 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
         }
     }
 
-    private async Task MigrateLegacyPasswordRecipesToCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress = null)
+    private async Task MigrateLegacyPasswordRecipesToCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         // Pre-filter items that need migration to avoid repeated checks in loop.
         List<VaultItemV2> itemsToMigrate = vault.Items.Where(item =>
             item.Type == VaultItemTypeV2.StaticKey &&
             item.StaticKeyData is not null &&
-            string.IsNullOrWhiteSpace(item.StaticKeyData.PublicPart) == false &&
-            item.StaticKeyData.PublicPart.Length > 20 &&
-            item.StaticKeyData.PublicPart.All(c => Base62.Alphabet.Contains(c))
+            string.IsNullOrWhiteSpace(item.StaticKeyData.Value.PublicPart) == false &&
+            item.StaticKeyData.Value.PublicPart.Length > 20 &&
+            item.StaticKeyData.Value.PublicPart.All(c => Base62.Alphabet.Contains(c))
         ).ToList();
 
         int total = itemsToMigrate.Count;
@@ -253,8 +253,8 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
         {
             try
             {
-                string staticKey = await vaultCrypto.GenerateStaticKeyAsync(item.StaticKeyData!, masterKeyBytes);
-                SecretDataV2 secret = await vaultCrypto.EncryptSecretAsync(staticKey, masterKeyBytes, SecretDataConstants.LatestEncoding);
+                string staticKey = await vaultCrypto.GenerateStaticKeyAsync(item.StaticKeyData!.Value, masterKeyBytes, cancellationToken);
+                SecretDataV2 secret = await vaultCrypto.EncryptSecretAsync(staticKey, masterKeyBytes, SecretDataConstants.LatestEncoding, cancellationToken);
 
                 item.Type = VaultItemTypeV2.Secret;
                 item.SetData(secret);
@@ -270,14 +270,14 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
         }
     }
 
-    private async Task MigrateLegacyCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress = null)
+    private async Task MigrateLegacyCiphersAsync(VaultV2 vault, byte[] masterKeyBytes, IProgress<double>? progress, CancellationToken cancellationToken)
     {
         // Pre-filter items that need migration to avoid repeated checks in loop.
         List<VaultItemV2> itemsToMigrate = vault.Items.Where(item =>
             item.Type == VaultItemTypeV2.Secret &&
             item.SecretData is not null &&
-            string.IsNullOrWhiteSpace(item.SecretData.Cipher) == false &&
-            (item.SecretData.CryptoVersion != SecretDataConstants.LatestCryptoVersion || item.SecretData.Encoding != SecretDataConstants.LatestEncoding)
+            string.IsNullOrWhiteSpace(item.SecretData!.Value.Cipher) == false &&
+            (item.SecretData.Value.CryptoVersion != SecretDataConstants.LatestCryptoVersion || item.SecretData.Value.Encoding != SecretDataConstants.LatestEncoding)
         ).ToList();
 
         int total = itemsToMigrate.Count;
@@ -287,13 +287,13 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
         {
             try
             {
-                SecretDataV2 secretData = item.SecretData!;
+                SecretDataV2 secretData = item.SecretData!.Value;
                 string cipher = secretData.Cipher;
                 int cryptoVersion = secretData.CryptoVersion;
 
-                string decryptedValue = await vaultCrypto.DecryptSecretAsync(secretData, masterKeyBytes);
+                string decryptedValue = await vaultCrypto.DecryptSecretAsync(secretData, masterKeyBytes, cancellationToken);
 
-                secretData = await vaultCrypto.EncryptSecretAsync(decryptedValue, masterKeyBytes, SecretDataConstants.LatestEncoding);
+                secretData = await vaultCrypto.EncryptSecretAsync(decryptedValue, masterKeyBytes, SecretDataConstants.LatestEncoding, cancellationToken);
 
                 item.SetData(secretData);
             }

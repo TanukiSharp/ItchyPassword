@@ -64,7 +64,7 @@
             bool isEncrypted = entry.Value.StartsWith("enc:", StringComparison.Ordinal);
 
             string decryptedValue = isEncrypted && masterKey.Length > 0
-                ? await VaultConnectorHelper.DecryptIfNeededAsync(entry.Value, masterKey, Crypto)
+                ? await VaultConnectorHelper.DecryptIfNeededAsync(entry.Value, masterKey, Crypto, CancellationToken.None)
                 : entry.Value;
 
             _entries.Add(new MetadataEntry
@@ -112,7 +112,7 @@
 
                 storedValue = valueUnchanged
                     ? entry.EncryptedValue!
-                    : await VaultConnectorHelper.EncryptAsync(entry.NewValue, masterKey, Crypto);
+                    : await VaultConnectorHelper.EncryptAsync(entry.NewValue, masterKey, Crypto, CancellationToken.None);
             }
             else
             {

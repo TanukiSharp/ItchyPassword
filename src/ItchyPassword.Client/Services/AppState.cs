@@ -56,7 +56,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         }
     }
 
-    public async Task UnlockAsync(byte[] key)
+    public async Task UnlockAsync(byte[] key, CancellationToken cancellationToken)
     {
         if (Status == AppStatus.Unlocking)
         {
@@ -66,10 +66,10 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         }
 
         _keyProvider.MasterKey = key;
-        await StartUnlockFlowAsync();
+        await StartUnlockFlowAsync(cancellationToken);
     }
 
-    public async Task RetryUnlockAsync()
+    public async Task RetryUnlockAsync(CancellationToken cancellationToken)
     {
         if (!_keyProvider.HasMasterKey)
         {
@@ -77,10 +77,10 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             return;
         }
 
-        await StartUnlockFlowAsync();
+        await StartUnlockFlowAsync(cancellationToken);
     }
 
-    private async Task StartUnlockFlowAsync()
+    private async Task StartUnlockFlowAsync(CancellationToken cancellationToken)
     {
         Status = AppStatus.Unlocking;
         StatusMessage = "Accessing vault...";
@@ -107,7 +107,8 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                     Status = AppStatus.LoadingVault;
                     // Message will be updated by UnlockAsync's status callback immediately after this
                     NotifyStateChanged();
-                }
+                },
+                cancellationToken
             );
 
             await _currentUnlockTask;
@@ -147,11 +148,11 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         _nav.NavigateTo("/");
     }
 
-    public async Task ReloadVaultAsync()
+    public async Task ReloadVaultAsync(CancellationToken cancellationToken)
     {
         if (Status == AppStatus.Unlocked && _keyProvider.HasMasterKey)
         {
-            await StartUnlockFlowAsync();
+            await StartUnlockFlowAsync(cancellationToken);
         }
     }
 

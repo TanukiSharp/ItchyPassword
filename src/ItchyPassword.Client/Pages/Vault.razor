@@ -53,7 +53,7 @@ else if (AppState.Status == AppStatus.Unlocked)
 
     private async Task RetryAccess()
     {
-        await AppState.RetryUnlockAsync();
+        await AppState.RetryUnlockAsync(CancellationToken.None);
     }
 
     private void GoHome()

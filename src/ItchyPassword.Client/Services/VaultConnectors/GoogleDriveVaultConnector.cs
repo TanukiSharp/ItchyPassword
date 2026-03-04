@@ -159,7 +159,7 @@ public class GoogleDriveVaultConnector(
     public string? AccessFailureMessage { get; private set; }
 
     /// <inheritdoc />
-    public async Task LoadConfigurationAsync()
+    public async Task LoadConfigurationAsync(CancellationToken cancellationToken)
     {
         // Short-circuit if already loaded.
         if (_configLoaded)
@@ -168,41 +168,41 @@ public class GoogleDriveVaultConnector(
         }
 
         byte[]? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
-        await VaultConnectorHelper.LoadEntriesAsync(Configuration, _storage, masterKey, _crypto);
+        await VaultConnectorHelper.LoadEntriesAsync(Configuration, _storage, masterKey, _crypto, cancellationToken);
 
         // Load tokens into private fields (not in Configuration, since that is UI-visible).
-        _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey);
-        _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey);
+        _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey, cancellationToken);
+        _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey, cancellationToken);
 
         _configLoaded = true;
     }
 
     /// <inheritdoc />
-    public async Task SaveConfigurationAsync()
+    public async Task SaveConfigurationAsync(CancellationToken cancellationToken)
     {
         byte[]? masterKey = _masterKeyProvider.HasMasterKey ? _masterKeyProvider.MasterKey : null;
-        await VaultConnectorHelper.SaveEntriesAsync(Configuration, _storage, masterKey, _crypto);
+        await VaultConnectorHelper.SaveEntriesAsync(Configuration, _storage, masterKey, _crypto, cancellationToken);
 
         // Persist tokens encrypted directly to localStorage (not via Configuration).
-        await SaveEncryptedTokenAsync(AccessTokenStorageKey, _accessToken);
-        await SaveEncryptedTokenAsync(RefreshTokenStorageKey, _refreshToken);
+        await SaveEncryptedTokenAsync(AccessTokenStorageKey, _accessToken, cancellationToken);
+        await SaveEncryptedTokenAsync(RefreshTokenStorageKey, _refreshToken, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccessAsync()
+    public async Task<bool> AccessAsync(CancellationToken cancellationToken)
     {
         AccessFailureMessage = null;
 
         // Ensure configuration (StorageMode, FolderId) is loaded before we
         // potentially call SaveConfigurationAsync (which would overwrite with defaults).
-        await LoadConfigurationAsync();
+        await LoadConfigurationAsync(cancellationToken);
 
         // Always reload tokens from storage to detect external changes
         // (e.g. user deleted tokens from localStorage via DevTools).
         try
         {
-            _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey);
-            _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey);
+            _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey, cancellationToken);
+            _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey, cancellationToken);
         }
         catch (Exception)
         {
@@ -213,7 +213,7 @@ public class GoogleDriveVaultConnector(
         // 1. If we have an access token, validate it (checks expiry + scopes).
         if (string.IsNullOrWhiteSpace(_accessToken) == false)
         {
-            if (await ValidateTokenAsync(_accessToken))
+            if (await ValidateTokenAsync(_accessToken, cancellationToken))
             {
                 return true;
             }
@@ -222,12 +222,12 @@ public class GoogleDriveVaultConnector(
         // 2. Access token missing or invalid — try refreshing.
         if (string.IsNullOrWhiteSpace(_refreshToken) == false)
         {
-            string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken);
+            string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken, cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(refreshed) == false && await ValidateTokenAsync(refreshed))
+            if (string.IsNullOrWhiteSpace(refreshed) == false && await ValidateTokenAsync(refreshed, cancellationToken))
             {
                 _accessToken = refreshed;
-                await SaveConfigurationAsync();
+                await SaveConfigurationAsync(cancellationToken);
                 return true;
             }
 
@@ -238,18 +238,18 @@ public class GoogleDriveVaultConnector(
                 Google did not grant the required permissions.
                 Please revoke ItchyPassword at https://myaccount.google.com/permissions and try again.
                 """;
-            await SaveConfigurationAsync();
+            await SaveConfigurationAsync(cancellationToken);
         }
 
         // 3. No valid token — interactive sign-in required.
-        return await InteractiveSignInAsync();
+        return await InteractiveSignInAsync(cancellationToken);
     }
 
     /// <summary>
     /// Performs interactive OAuth sign-in via a popup window.
     /// Must be called on the browser gesture call-stack so the popup is not blocked.
     /// </summary>
-    private async Task<bool> InteractiveSignInAsync()
+    private async Task<bool> InteractiveSignInAsync(CancellationToken cancellationToken)
     {
         string codeVerifier = GenerateCodeVerifier();
         string codeChallenge = ComputeCodeChallenge(codeVerifier);
@@ -264,7 +264,7 @@ public class GoogleDriveVaultConnector(
             jsInProcess.InvokeVoid("googleDriveInterop.openPopup", authUrl);
         }
 
-        string? resultJson = await _js.InvokeAsync<string?>("googleDriveInterop.awaitResult");
+        string? resultJson = await _js.InvokeAsync<string?>("googleDriveInterop.awaitResult", cancellationToken);
 
         if (string.IsNullOrWhiteSpace(resultJson))
         {
@@ -288,7 +288,7 @@ public class GoogleDriveVaultConnector(
         }
 
         // Exchange the authorization code for tokens.
-        GoogleTokenResponse? tokenResponse = await ExchangeCodeForTokensAsync(callbackResult.Code, codeVerifier, redirectUri);
+        GoogleTokenResponse? tokenResponse = await ExchangeCodeForTokensAsync(callbackResult.Code, codeVerifier, redirectUri, cancellationToken);
 
         if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
         {
@@ -299,7 +299,7 @@ public class GoogleDriveVaultConnector(
         _accessToken = tokenResponse.AccessToken;
 
         // Validate the freshly obtained token has the required scopes.
-        if (await ValidateTokenAsync(_accessToken) == false)
+        if (await ValidateTokenAsync(_accessToken, cancellationToken) == false)
         {
             AccessFailureMessage = """
                 Google did not grant the required permissions.
@@ -314,18 +314,18 @@ public class GoogleDriveVaultConnector(
             _refreshToken = tokenResponse.RefreshToken;
         }
 
-        await SaveConfigurationAsync();
+        await SaveConfigurationAsync(cancellationToken);
         return true;
     }
 
     /// <inheritdoc />
-    public async Task<string> LoadVaultAsync()
+    public async Task<string> LoadVaultAsync(CancellationToken cancellationToken)
     {
         // Ensure configuration is loaded (short-circuits if already done).
-        await LoadConfigurationAsync();
+        await LoadConfigurationAsync(cancellationToken);
 
-        string accessToken = await GetOrRefreshAccessTokenAsync();
-        string? fileId = await FindVaultFileAsync(accessToken);
+        string accessToken = await GetOrRefreshAccessTokenAsync(cancellationToken);
+        string? fileId = await FindVaultFileAsync(accessToken, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(fileId))
         {
@@ -339,45 +339,45 @@ public class GoogleDriveVaultConnector(
         using var request = new HttpRequestMessage(HttpMethod.Get, $"{DriveApiBase}/files/{fileId}?alt=media");
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        using HttpResponseMessage response = await _http.SendAsync(request);
-        await EnsureDriveSuccessAsync(response);
+        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
+        await EnsureDriveSuccessAsync(response, cancellationToken);
 
-        return await response.Content.ReadAsStringAsync();
+        return await response.Content.ReadAsStringAsync(cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task SaveVaultAsync(string content)
+    public async Task SaveVaultAsync(string content, CancellationToken cancellationToken)
     {
         // Ensure configuration is loaded. Writer connectors may not have
         // been explicitly loaded or accessed before save is called.
-        await LoadConfigurationAsync();
+        await LoadConfigurationAsync(cancellationToken);
 
-        string accessToken = await GetOrRefreshAccessTokenAsync();
+        string accessToken = await GetOrRefreshAccessTokenAsync(cancellationToken);
 
         if (string.IsNullOrWhiteSpace(_cachedFileId))
         {
             // Try to find existing file first.
-            _cachedFileId = await FindVaultFileAsync(accessToken);
+            _cachedFileId = await FindVaultFileAsync(accessToken, cancellationToken);
         }
 
         if (string.IsNullOrWhiteSpace(_cachedFileId))
         {
             // Create a new file.
-            _cachedFileId = await CreateVaultFileAsync(accessToken, content);
+            _cachedFileId = await CreateVaultFileAsync(accessToken, content, cancellationToken);
         }
         else
         {
             try
             {
                 // Update existing file.
-                await UpdateVaultFileAsync(accessToken, _cachedFileId, content);
+                await UpdateVaultFileAsync(accessToken, _cachedFileId, content, cancellationToken);
             }
             catch (HttpRequestException ex) when ((int?)ex.StatusCode == 404)
             {
                 // File no longer exists (deleted externally, or stale ID).
                 // Clear the cache and create a new file.
                 _cachedFileId = null;
-                _cachedFileId = await CreateVaultFileAsync(accessToken, content);
+                _cachedFileId = await CreateVaultFileAsync(accessToken, content, cancellationToken);
             }
         }
     }
@@ -386,7 +386,7 @@ public class GoogleDriveVaultConnector(
     /// Exchanges an authorization code for access and refresh tokens
     /// via Google's token endpoint using the PKCE code verifier.
     /// </summary>
-    private async Task<GoogleTokenResponse?> ExchangeCodeForTokensAsync(string code, string codeVerifier, string redirectUri)
+    private async Task<GoogleTokenResponse?> ExchangeCodeForTokensAsync(string code, string codeVerifier, string redirectUri, CancellationToken cancellationToken)
     {
         try
         {
@@ -400,14 +400,14 @@ public class GoogleDriveVaultConnector(
                 ["code_verifier"] = codeVerifier,
             });
 
-            using HttpResponseMessage response = await _http.PostAsync(GoogleTokenEndpoint, content);
+            using HttpResponseMessage response = await _http.PostAsync(GoogleTokenEndpoint, content, cancellationToken);
 
             if (response.IsSuccessStatusCode == false)
             {
                 return null;
             }
 
-            return await response.Content.ReadFromJsonAsync<GoogleTokenResponse>();
+            return await response.Content.ReadFromJsonAsync<GoogleTokenResponse>(cancellationToken);
         }
         catch
         {
@@ -419,7 +419,7 @@ public class GoogleDriveVaultConnector(
     /// Attempts to obtain a new access token using a stored refresh token.
     /// Returns the new access token, or <see langword="null"/> if the refresh failed.
     /// </summary>
-    private async Task<string?> TryRefreshAccessTokenAsync(string refreshToken)
+    private async Task<string?> TryRefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
     {
         try
         {
@@ -431,14 +431,14 @@ public class GoogleDriveVaultConnector(
                 ["client_secret"] = ClientSecret,
             });
 
-            using HttpResponseMessage response = await _http.PostAsync(GoogleTokenEndpoint, content);
+            using HttpResponseMessage response = await _http.PostAsync(GoogleTokenEndpoint, content, cancellationToken);
 
             if (response.IsSuccessStatusCode == false)
             {
                 return null;
             }
 
-            GoogleTokenResponse? tokenResponse = await response.Content.ReadFromJsonAsync<GoogleTokenResponse>();
+            GoogleTokenResponse? tokenResponse = await response.Content.ReadFromJsonAsync<GoogleTokenResponse>(cancellationToken);
             return tokenResponse?.AccessToken;
         }
         catch
@@ -452,12 +452,12 @@ public class GoogleDriveVaultConnector(
     /// Returns <see langword="true"/> if the token is still valid and has the scope
     /// required by the current storage mode.
     /// </summary>
-    private async Task<bool> ValidateTokenAsync(string accessToken)
+    private async Task<bool> ValidateTokenAsync(string accessToken, CancellationToken cancellationToken)
     {
         try
         {
             string url = $"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={Uri.EscapeDataString(accessToken)}";
-            using HttpResponseMessage response = await _http.GetAsync(url);
+            using HttpResponseMessage response = await _http.GetAsync(url, cancellationToken);
 
             if (response.IsSuccessStatusCode == false)
             {
@@ -465,7 +465,7 @@ public class GoogleDriveVaultConnector(
             }
 
             // Verify the token has the scope required for the current storage mode.
-            string json = await response.Content.ReadAsStringAsync();
+            string json = await response.Content.ReadAsStringAsync(cancellationToken);
             using JsonDocument doc = JsonDocument.Parse(json);
 
             if (doc.RootElement.TryGetProperty("scope", out JsonElement scopeElement))
@@ -495,12 +495,12 @@ public class GoogleDriveVaultConnector(
     /// <summary>
     /// Searches for the vault file in Google Drive.
     /// </summary>
-    private async Task<string?> FindVaultFileAsync(string accessToken)
+    private async Task<string?> FindVaultFileAsync(string accessToken, CancellationToken cancellationToken)
     {
         string storageMode = GetStorageMode();
 
         string? folderId = storageMode == "folder"
-            ? await GetResolvedFolderIdAsync(accessToken)
+            ? await GetResolvedFolderIdAsync(accessToken, cancellationToken)
             : null;
 
         string query = storageMode == "appdata"
@@ -515,10 +515,10 @@ public class GoogleDriveVaultConnector(
         using var request = new HttpRequestMessage(HttpMethod.Get, url);
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        using HttpResponseMessage response = await _http.SendAsync(request);
-        await EnsureDriveSuccessAsync(response);
+        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
+        await EnsureDriveSuccessAsync(response, cancellationToken);
 
-        string rawJson = await response.Content.ReadAsStringAsync();
+        string rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
 
         DriveFileListResponse? result = JsonSerializer.Deserialize<DriveFileListResponse>(rawJson);
 
@@ -533,12 +533,12 @@ public class GoogleDriveVaultConnector(
     /// <summary>
     /// Creates a new vault file in Google Drive using a multipart upload.
     /// </summary>
-    private async Task<string> CreateVaultFileAsync(string accessToken, string content)
+    private async Task<string> CreateVaultFileAsync(string accessToken, string content, CancellationToken cancellationToken)
     {
         string storageMode = GetStorageMode();
 
         string? folderId = storageMode == "folder"
-            ? await GetResolvedFolderIdAsync(accessToken)
+            ? await GetResolvedFolderIdAsync(accessToken, cancellationToken)
             : null;
 
         List<string> parents = storageMode == "appdata"
@@ -559,10 +559,10 @@ public class GoogleDriveVaultConnector(
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Content = multipart;
 
-        using HttpResponseMessage response = await _http.SendAsync(request);
-        await EnsureDriveSuccessAsync(response);
+        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
+        await EnsureDriveSuccessAsync(response, cancellationToken);
 
-        DriveFileResponse? result = await response.Content.ReadFromJsonAsync<DriveFileResponse>();
+        DriveFileResponse? result = await response.Content.ReadFromJsonAsync<DriveFileResponse>(cancellationToken);
         string? fileId = result?.Id;
 
         if (string.IsNullOrWhiteSpace(fileId))
@@ -576,7 +576,7 @@ public class GoogleDriveVaultConnector(
     /// <summary>
     /// Updates the content of an existing vault file in Google Drive.
     /// </summary>
-    private async Task UpdateVaultFileAsync(string accessToken, string fileId, string content)
+    private async Task UpdateVaultFileAsync(string accessToken, string fileId, string content, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(fileId) || fileId.Length < 5)
         {
@@ -587,8 +587,8 @@ public class GoogleDriveVaultConnector(
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         request.Content = new StringContent(content, Encoding.UTF8, "application/json");
 
-        using HttpResponseMessage response = await _http.SendAsync(request);
-        await EnsureDriveSuccessAsync(response);
+        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
+        await EnsureDriveSuccessAsync(response, cancellationToken);
     }
 
     /// <summary>
@@ -597,7 +597,7 @@ public class GoogleDriveVaultConnector(
     /// Used by <see cref="LoadVaultAsync"/> and <see cref="SaveVaultAsync"/> to support
     /// writer connectors that may not have been explicitly accessed via <see cref="AccessAsync"/>.
     /// </summary>
-    private async Task<string> GetOrRefreshAccessTokenAsync()
+    private async Task<string> GetOrRefreshAccessTokenAsync(CancellationToken cancellationToken)
     {
         // Fast path: return existing token if available.
         if (string.IsNullOrWhiteSpace(_accessToken) == false)
@@ -608,12 +608,12 @@ public class GoogleDriveVaultConnector(
         // Attempt to refresh using the stored refresh token.
         if (string.IsNullOrWhiteSpace(_refreshToken) == false)
         {
-            string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken);
+            string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken, cancellationToken);
 
             if (string.IsNullOrWhiteSpace(refreshed) == false)
             {
                 _accessToken = refreshed;
-                await SaveConfigurationAsync();
+                await SaveConfigurationAsync(cancellationToken);
                 return _accessToken;
             }
         }
@@ -632,7 +632,7 @@ public class GoogleDriveVaultConnector(
     /// (which may be a folder name or an actual ID) on first use.
     /// The result is cached for the lifetime of the connector instance.
     /// </summary>
-    private async Task<string> GetResolvedFolderIdAsync(string accessToken)
+    private async Task<string> GetResolvedFolderIdAsync(string accessToken, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(_resolvedFolderId) == false)
         {
@@ -647,7 +647,7 @@ public class GoogleDriveVaultConnector(
                 "Google Drive folder is not configured. Please enter a folder name or ID in Settings.");
         }
 
-        _resolvedFolderId = await ResolveFolderIdAsync(accessToken, configured);
+        _resolvedFolderId = await ResolveFolderIdAsync(accessToken, configured, cancellationToken);
         return _resolvedFolderId;
     }
 
@@ -661,7 +661,7 @@ public class GoogleDriveVaultConnector(
     /// </list>
     /// Folders that do not exist are created automatically.
     /// </summary>
-    private async Task<string> ResolveFolderIdAsync(string accessToken, string folderNameOrId)
+    private async Task<string> ResolveFolderIdAsync(string accessToken, string folderNameOrId, CancellationToken cancellationToken)
     {
         // Heuristic: Drive file IDs are typically 20–44 characters of alphanumeric + dash + underscore.
         // A human-readable folder name will rarely match this pattern.
@@ -688,7 +688,7 @@ public class GoogleDriveVaultConnector(
 
         foreach (string segment in segments)
         {
-            parentId = await FindOrCreateFolderAsync(accessToken, segment, parentId);
+            parentId = await FindOrCreateFolderAsync(accessToken, segment, parentId, cancellationToken);
         }
 
         return parentId;
@@ -697,7 +697,7 @@ public class GoogleDriveVaultConnector(
     /// <summary>
     /// Finds a child folder by name under a given parent, or creates it if it does not exist.
     /// </summary>
-    private async Task<string> FindOrCreateFolderAsync(string accessToken, string folderName, string parentId)
+    private async Task<string> FindOrCreateFolderAsync(string accessToken, string folderName, string parentId, CancellationToken cancellationToken)
     {
         string escapedName = folderName.Replace("'", "\\'", StringComparison.Ordinal);
         string query = $"name = '{escapedName}' and mimeType = 'application/vnd.google-apps.folder' and '{parentId}' in parents and trashed = false";
@@ -707,10 +707,10 @@ public class GoogleDriveVaultConnector(
         using var searchRequest = new HttpRequestMessage(HttpMethod.Get, url);
         searchRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-        using HttpResponseMessage searchResponse = await _http.SendAsync(searchRequest);
-        await EnsureDriveSuccessAsync(searchResponse);
+        using HttpResponseMessage searchResponse = await _http.SendAsync(searchRequest, cancellationToken);
+        await EnsureDriveSuccessAsync(searchResponse, cancellationToken);
 
-        string json = await searchResponse.Content.ReadAsStringAsync();
+        string json = await searchResponse.Content.ReadAsStringAsync(cancellationToken);
         DriveFileListResponse? result = JsonSerializer.Deserialize<DriveFileListResponse>(json);
 
         if (result?.Files is { Count: > 0 } && string.IsNullOrWhiteSpace(result.Files[0].Id) == false)
@@ -732,10 +732,10 @@ public class GoogleDriveVaultConnector(
         createRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
         createRequest.Content = new StringContent(metadataJson, Encoding.UTF8, "application/json");
 
-        using HttpResponseMessage createResponse = await _http.SendAsync(createRequest);
-        await EnsureDriveSuccessAsync(createResponse);
+        using HttpResponseMessage createResponse = await _http.SendAsync(createRequest, cancellationToken);
+        await EnsureDriveSuccessAsync(createResponse, cancellationToken);
 
-        DriveFileResponse? created = await createResponse.Content.ReadFromJsonAsync<DriveFileResponse>();
+        DriveFileResponse? created = await createResponse.Content.ReadFromJsonAsync<DriveFileResponse>(cancellationToken);
 
         if (created is null || string.IsNullOrWhiteSpace(created.Id))
         {
@@ -750,14 +750,14 @@ public class GoogleDriveVaultConnector(
     /// when the status code indicates failure. This provides much better diagnostics
     /// than <see cref="HttpResponseMessage.EnsureSuccessStatusCode"/> which discards the body.
     /// </summary>
-    private static async Task EnsureDriveSuccessAsync(HttpResponseMessage response)
+    private static async Task EnsureDriveSuccessAsync(HttpResponseMessage response, CancellationToken cancellationToken)
     {
         if (response.IsSuccessStatusCode)
         {
             return;
         }
 
-        string body = await response.Content.ReadAsStringAsync();
+        string body = await response.Content.ReadAsStringAsync(cancellationToken);
         throw new HttpRequestException(
             $"Google Drive API {(int)response.StatusCode} {response.ReasonPhrase}: {body}",
             inner: null,
@@ -768,9 +768,9 @@ public class GoogleDriveVaultConnector(
     /// Loads an encrypted token from localStorage and decrypts it using the master key.
     /// Returns <see cref="string.Empty"/> if no value is stored.
     /// </summary>
-    private async Task<string> LoadEncryptedTokenAsync(string key)
+    private async Task<string> LoadEncryptedTokenAsync(string key, CancellationToken cancellationToken)
     {
-        string? stored = await _storage.GetItemAsync(key);
+        string? stored = await _storage.GetItemAsync(key, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(stored))
         {
@@ -780,7 +780,7 @@ public class GoogleDriveVaultConnector(
         try
         {
             return _masterKeyProvider.HasMasterKey
-                ? await VaultConnectorHelper.DecryptIfNeededAsync(stored, _masterKeyProvider.MasterKey, _crypto)
+                ? await VaultConnectorHelper.DecryptIfNeededAsync(stored, _masterKeyProvider.MasterKey, _crypto, cancellationToken)
                 : stored;
         }
         catch (Exception ex)
@@ -793,15 +793,15 @@ public class GoogleDriveVaultConnector(
     /// Encrypts and persists a token value to localStorage.
     /// Only writes when the master key is available and the value is non-empty.
     /// </summary>
-    private async Task SaveEncryptedTokenAsync(string key, string value)
+    private async Task SaveEncryptedTokenAsync(string key, string value, CancellationToken cancellationToken)
     {
         if (string.IsNullOrWhiteSpace(value) || _masterKeyProvider.HasMasterKey == false)
         {
             return;
         }
 
-        string encrypted = await VaultConnectorHelper.EncryptAsync(value, _masterKeyProvider.MasterKey, _crypto);
-        await _storage.SetItemAsync(key, encrypted);
+        string encrypted = await VaultConnectorHelper.EncryptAsync(value, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
+        await _storage.SetItemAsync(key, encrypted, cancellationToken);
     }
 
     /// <summary>

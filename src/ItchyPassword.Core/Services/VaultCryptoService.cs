@@ -6,9 +6,9 @@ namespace ItchyPassword.Core.Services;
 
 public interface IVaultCryptoService
 {
-    Task<string> DecryptSecretAsync(SecretDataV2 secretData, byte[] masterKey);
-    Task<SecretDataV2> EncryptSecretAsync(string plaintext, byte[] masterKey, string encoding = "base58");
-    Task<string> GenerateStaticKeyAsync(StaticKeyDataV2 data, byte[] masterKey);
+    Task<string> DecryptSecretAsync(SecretDataV2 secretData, byte[] masterKey, CancellationToken cancellationToken);
+    Task<SecretDataV2> EncryptSecretAsync(string plaintext, byte[] masterKey, string encoding, CancellationToken cancellationToken);
+    Task<string> GenerateStaticKeyAsync(StaticKeyDataV2 data, byte[] masterKey, CancellationToken cancellationToken);
 }
 
 /// <summary>
@@ -20,9 +20,9 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
     /// <summary>
     /// Decrypts a Secret-type vault item.
     /// </summary>
-    public async Task<string> DecryptSecretAsync(SecretDataV2 secretData, byte[] masterKey)
+    public async Task<string> DecryptSecretAsync(SecretDataV2 secretData, byte[] masterKey, CancellationToken cancellationToken)
     {
-        if (secretData is null || string.IsNullOrWhiteSpace(secretData.Cipher))
+        if (string.IsNullOrWhiteSpace(secretData.Cipher))
         {
              throw new InvalidOperationException("No secret data to decrypt.");
         }
@@ -35,8 +35,8 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
 
         byte[] decryptedBytes = secretData.CryptoVersion switch
         {
-            SecretDataConstants.LatestCryptoVersion => await cryptoService.DecryptV3Async(encryptedBytes, masterKey),
-            2 => await cryptoService.DecryptV2Async(encryptedBytes, masterKey),
+            SecretDataConstants.LatestCryptoVersion => await cryptoService.DecryptV3Async(encryptedBytes, masterKey, cancellationToken),
+            2 => await cryptoService.DecryptV2Async(encryptedBytes, masterKey, cancellationToken),
             _ => throw new NotSupportedException($"Crypto version {secretData.CryptoVersion} is not supported.")
         };
 
@@ -46,7 +46,7 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
     /// <summary>
     /// Encrypts a plaintext string into a SecretDataV2 object.
     /// </summary>
-    public async Task<SecretDataV2> EncryptSecretAsync(string plaintext, byte[] masterKey, string encoding = SecretDataConstants.LatestEncoding)
+    public async Task<SecretDataV2> EncryptSecretAsync(string plaintext, byte[] masterKey, string encoding, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(plaintext))
         {
@@ -60,7 +60,7 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
         byte[] plaintextBytes = System.Text.Encoding.UTF8.GetBytes(plaintext);
 
         // Always encrypt with the latest version (v3).
-        byte[] encrypted = await cryptoService.EncryptV3Async(plaintextBytes, masterKey);
+        byte[] encrypted = await cryptoService.EncryptV3Async(plaintextBytes, masterKey, cancellationToken);
 
         return new SecretDataV2
         {
@@ -73,19 +73,14 @@ public class VaultCryptoService(ICryptoService cryptoService) : IVaultCryptoServ
     /// <summary>
     /// Generates a static password based on the master key and item configuration.
     /// </summary>
-    public async Task<string> GenerateStaticKeyAsync(StaticKeyDataV2 keyData, byte[] masterKey)
+    public async Task<string> GenerateStaticKeyAsync(StaticKeyDataV2 keyData, byte[] masterKey, CancellationToken cancellationToken)
     {
-        if (keyData is null)
-        {
-            throw new InvalidOperationException("No static key data.");
-        }
-
         byte[] publicPart = System.Text.Encoding.UTF8.GetBytes(keyData.PublicPart);
 
         byte[] rawBytes = keyData.CryptoVersion switch
         {
-            1 => await cryptoService.GeneratePasswordV1Async(masterKey, publicPart),
-            StaticKeyDataConstants.LatestCryptoVersion => await cryptoService.GeneratePasswordV2Async(masterKey, publicPart),
+            1 => await cryptoService.GeneratePasswordV1Async(masterKey, publicPart, cancellationToken),
+            StaticKeyDataConstants.LatestCryptoVersion => await cryptoService.GeneratePasswordV2Async(masterKey, publicPart, "Password", cancellationToken),
             _ => throw new NotSupportedException($"Crypto version {keyData.CryptoVersion} is not supported.")
         };
 

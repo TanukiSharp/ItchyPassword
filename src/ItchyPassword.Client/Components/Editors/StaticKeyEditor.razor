@@ -2,6 +2,7 @@
 @using ItchyPassword.Core.Constants
 @using ItchyPassword.Core.Services
 @implements IItemEditor
+@implements IDisposable
 @inject IVaultCryptoService VaultCrypto
 @inject IMasterKeyProvider MasterKeyProvider
 
@@ -14,7 +15,16 @@
 
         <div class="form-group">
             <label>Alphabet</label>
-            <input class="input" value="@_alphabet" @oninput="OnAlphabetInput" />
+            <input class="input @(_hasDuplicateChars ? "input-warning" : string.Empty)" value="@_alphabet" @oninput="OnAlphabetInput" />
+            @if (_hasDuplicateChars)
+            {
+                <div class="alphabet-warning">
+                    <span class="alert-inline-warning">Duplicate characters detected: @_duplicateCharsSummary</span>
+                    <button type="button" class="button secondary button-sm" @onclick="DeduplicateAlphabet" title="Remove duplicate characters from the alphabet.">
+                        Remove duplicates
+                    </button>
+                </div>
+            }
         </div>
 
         <div class="form-group">
@@ -38,7 +48,7 @@
             </select>
         </div>
 
-        <button type="button" class="button primary button-block" @onclick="GenerateAsync" disabled="@(_isGenerating || _publicPart.Length < MinPublicPartLength || _length < MinLength)">
+        <button type="button" class="button primary button-block" @onclick="() => GenerateAsync()" disabled="@(_isGenerating || _publicPart.Length < MinPublicPartLength || _length < MinLength)">
             Generate Password
         </button>
 
@@ -69,16 +79,20 @@
     private int _cryptoVersion = StaticKeyDataConstants.LatestCryptoVersion;
     private int _encodingVersion = StaticKeyDataConstants.LatestEncodingVersion;
 
+    private readonly Debouncer _debouncer = new();
     private string _result = string.Empty;
     private bool _isGenerating = false;
     private string _error = string.Empty;
+
+    private bool _hasDuplicateChars = false;
+    private string _duplicateCharsSummary = string.Empty;
 
     private const int MinPublicPartLength = 8;
     private const int MinLength = 8;
 
     protected override async Task OnInitializedAsync()
     {
-        StaticKeyDataV2 parameters = Item.StaticKeyData!;
+        StaticKeyDataV2 parameters = Item.StaticKeyData!.Value;
 
         _publicPart = parameters.PublicPart;
         _encodingVersion = parameters.EncodingVersion;
@@ -90,6 +104,8 @@
             _alphabet = parameters.Alphabet;
         }
 
+        UpdateAlphabetValidation();
+
         // Auto-generate if editing an existing item with a public part.
         if (string.IsNullOrWhiteSpace(_publicPart) == false)
         {
@@ -97,8 +113,44 @@
         }
     }
 
-    private async Task GenerateAsync()
+    /// <summary>
+    /// Checks the alphabet for duplicate characters and updates the warning state.
+    /// </summary>
+    private void UpdateAlphabetValidation()
     {
+        var duplicates = AlphabetValidator.FindDuplicates(_alphabet);
+        _hasDuplicateChars = duplicates.Count > 0;
+
+        if (_hasDuplicateChars)
+        {
+            _duplicateCharsSummary = string.Join(", ", duplicates.Select(kv => $"'{kv.Key}' ({kv.Value}x)"));
+        }
+        else
+        {
+            _duplicateCharsSummary = string.Empty;
+        }
+    }
+
+    /// <summary>
+    /// Removes duplicate characters from the alphabet and re-generates if possible.
+    /// </summary>
+    private async Task DeduplicateAlphabet()
+    {
+        _alphabet = AlphabetValidator.Deduplicate(_alphabet);
+        UpdateAlphabetValidation();
+        await TryAutoGenerateAsync();
+    }
+
+    private async Task GenerateAsync(bool debounce = false)
+    {
+        if (debounce)
+        {
+            if (await _debouncer.IsBouncedAsync())
+            {
+                return;
+            }
+        }
+
         _isGenerating = true;
 
         try
@@ -112,9 +164,9 @@
                 EncodingVersion = _encodingVersion,
             };
 
-            _result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey);
+            _result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey, CancellationToken.None);
 
-            // Sync updated config to the item
+            // Sync updated config to the item.
             Item.SetData(data);
         }
         catch (Exception ex)
@@ -189,6 +241,7 @@
     private async Task OnAlphabetInput(ChangeEventArgs e)
     {
         _alphabet = e.Value?.ToString() ?? string.Empty;
+        UpdateAlphabetValidation();
         await TryAutoGenerateAsync();
     }
 
@@ -208,11 +261,17 @@
     {
         if (_publicPart.Length >= MinPublicPartLength && _length >= MinLength && _alphabet.Length >= 2)
         {
-            await GenerateAsync();
+            await GenerateAsync(debounce: true);
         }
         else
         {
+            _debouncer.Cancel();
             _result = string.Empty;
         }
+    }
+
+    public void Dispose()
+    {
+        _debouncer.Dispose();
     }
 }

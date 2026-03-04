@@ -10,8 +10,6 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 - **Architecture**:
   - `src/ItchyPassword.Client`: Main Blazor WASM application.
   - `src/ItchyPassword.Core`: Shared logic, models, and cryptography.
-  - `cli/`: Legacy/Utility projects (Console reader, Validation backend) - *Secondary focus*.
-  - `web/`: Legacy TypeScript implementation - *Do not edit unless explicitly asked*.
 
 ## Architectural Patterns
 

@@ -24,7 +24,7 @@ public class VaultDataService
             VaultV2? vault = JsonSerializer.Deserialize<VaultV2>(jsonContent, _loadOptions);
 
             // V2 or newer detected
-            if (vault is not null && vault.Version >= 2)
+            if (vault is not null && vault.Value.Version >= 2)
             {
                 return vault;
             }

@@ -1,0 +1,50 @@
+@page "/raw-vault"
+@using ItchyPassword.Core.Services
+@inject VaultSession Session
+@inject IAppState AppState
+@inject NavigationManager Nav
+
+@if (AppState.Status != AppStatus.Unlocked || Session.Vault is null)
+{
+    <div class="page-centered">
+        <p>Vault is not unlocked.</p>
+        <button class="button secondary" @onclick="GoHome">Back to Login</button>
+    </div>
+}
+else
+{
+    <div class="card page-container">
+        <div class="card-header">
+            <h3 class="heading-flush">Raw Vault JSON</h3>
+            <span class="text-muted">Debug view — shows vault data as-is (secrets remain encrypted).</span>
+        </div>
+
+        <div class="card-body">
+            <pre class="raw-vault-json">@(Session.LastRawContent ?? "(no content)")</pre>
+
+            <div class="form-actions">
+                <button class="button secondary" @onclick="GoBack">Back</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized()
+    {
+        if (AppState.Status != AppStatus.Unlocked)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+
+    private void GoHome()
+    {
+        Nav.NavigateTo("/");
+    }
+
+    private void GoBack()
+    {
+        Nav.NavigateTo("/vault");
+    }
+}

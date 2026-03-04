@@ -19,6 +19,7 @@ builder.Services.AddScoped<VaultSession>();
 builder.Services.AddScoped<IVaultCryptoService, VaultCryptoService>();
 builder.Services.AddScoped<ClipboardService>();
 builder.Services.AddScoped<VaultMigrationService>();
+builder.Services.AddSingleton<ErrorLogService>();
 
 builder.Services.AddScoped<IVaultConnector, GitHubVaultConnector>();
 builder.Services.AddScoped<IVaultConnector, GoogleDriveVaultConnector>();

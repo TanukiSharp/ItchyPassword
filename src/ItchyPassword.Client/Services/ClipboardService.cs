@@ -2,17 +2,10 @@ using Microsoft.JSInterop;
 
 namespace ItchyPassword.Client.Services;
 
-public class ClipboardService
+public class ClipboardService(IJSRuntime jsRuntime)
 {
-    private readonly IJSRuntime _jsRuntime;
-
-    public ClipboardService(IJSRuntime jsRuntime)
+    public async Task CopyTextAsync(string text, CancellationToken cancellationToken)
     {
-        _jsRuntime = jsRuntime;
-    }
-
-    public async Task CopyTextAsync(string text)
-    {
-        await _jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", text);
+        await jsRuntime.InvokeVoidAsync("navigator.clipboard.writeText", cancellationToken, text);
     }
 }

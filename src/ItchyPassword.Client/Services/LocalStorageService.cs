@@ -3,27 +3,20 @@ using Microsoft.JSInterop;
 
 namespace ItchyPassword.Client.Services;
 
-public class LocalStorageService : ILocalStorageService
+public class LocalStorageService(IJSRuntime js) : ILocalStorageService
 {
-    private readonly IJSRuntime _js;
-
-    public LocalStorageService(IJSRuntime js)
+    public async Task SetItemAsync(string key, string value, CancellationToken cancellationToken)
     {
-        _js = js;
+        await js.InvokeVoidAsync("localStorage.setItem", cancellationToken, key, value);
     }
 
-    public async Task SetItemAsync(string key, string value)
+    public async Task<string?> GetItemAsync(string key, CancellationToken cancellationToken)
     {
-        await _js.InvokeVoidAsync("localStorage.setItem", key, value);
+        return await js.InvokeAsync<string?>("localStorage.getItem", cancellationToken, key);
     }
 
-    public async Task<string?> GetItemAsync(string key)
+    public async Task RemoveItemAsync(string key, CancellationToken cancellationToken)
     {
-        return await _js.InvokeAsync<string?>("localStorage.getItem", key);
-    }
-
-    public async Task RemoveItemAsync(string key)
-    {
-        await _js.InvokeVoidAsync("localStorage.removeItem", key);
+        await js.InvokeVoidAsync("localStorage.removeItem", cancellationToken, key);
     }
 }

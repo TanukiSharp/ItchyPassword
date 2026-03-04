@@ -72,7 +72,7 @@ public class LocalFileVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public async Task LoadConfigurationAsync()
+    public async Task LoadConfigurationAsync(CancellationToken cancellationToken)
     {
         // Short-circuit if already loaded — this avoids an async yield on retry,
         // which would consume the browser's transient user activation before
@@ -85,17 +85,17 @@ public class LocalFileVaultConnector : IVaultConnector
         // Restore the file handle from IndexedDB into the JS in-memory variable.
         // Also calls queryPermission() — if the user chose "allow every time",
         // the handle is ready to use without a gesture.
-        _hasStoredHandle = await _js.InvokeAsync<bool>("localFileInterop.restoreHandle");
+        _hasStoredHandle = await _js.InvokeAsync<bool>("localFileInterop.restoreHandle", cancellationToken);
     }
 
     /// <inheritdoc />
-    public Task SaveConfigurationAsync()
+    public Task SaveConfigurationAsync(CancellationToken cancellationToken)
     {
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccessAsync()
+    public async Task<bool> AccessAsync(CancellationToken cancellationToken)
     {
         // Already accessed this session.
         if (_hasAccess)
@@ -112,7 +112,7 @@ public class LocalFileVaultConnector : IVaultConnector
         }
 
         // Now await the async result.
-        string? fileName = await _js.InvokeAsync<string?>("localFileInterop.awaitAccess");
+        string? fileName = await _js.InvokeAsync<string?>("localFileInterop.awaitAccess", cancellationToken);
 
         if (string.IsNullOrWhiteSpace(fileName))
         {
@@ -131,26 +131,26 @@ public class LocalFileVaultConnector : IVaultConnector
     }
 
     /// <inheritdoc />
-    public async Task<string> LoadVaultAsync()
+    public async Task<string> LoadVaultAsync(CancellationToken cancellationToken)
     {
         if (_hasAccess == false)
         {
             throw new InvalidOperationException("No file selected. Use Access to pick a file first.");
         }
 
-        string? content = await _js.InvokeAsync<string?>("localFileInterop.readFile");
+        string? content = await _js.InvokeAsync<string?>("localFileInterop.readFile", cancellationToken);
         return content ?? string.Empty;
     }
 
     /// <inheritdoc />
-    public async Task SaveVaultAsync(string content)
+    public async Task SaveVaultAsync(string content, CancellationToken cancellationToken)
     {
         if (_hasAccess == false)
         {
             throw new InvalidOperationException("No file selected. Use Access to pick a file first.");
         }
 
-        bool success = await _js.InvokeAsync<bool>("localFileInterop.writeFile", content);
+        bool success = await _js.InvokeAsync<bool>("localFileInterop.writeFile", cancellationToken, content);
 
         if (success == false)
         {

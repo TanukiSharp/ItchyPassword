@@ -161,7 +161,7 @@
                 EncodingVersion = encoding == "v1" ? 1 : StaticKeyDataConstants.LatestEncodingVersion
             };
 
-            result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey);
+            result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey, CancellationToken.None);
         }
         catch (Exception ex)
         {

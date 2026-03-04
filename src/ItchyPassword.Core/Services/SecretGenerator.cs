@@ -85,7 +85,7 @@ public static class SecretGenerator
     /// <param name="pool">The random byte pool used as entropy source.</param>
     /// <returns>A randomly generated secret string.</returns>
     /// <exception cref="ArgumentException">When the rules are invalid.</exception>
-    public static async Task<string> GenerateAsync(SecretGenerationRules rules, RandomBytePool pool)
+    public static async Task<string> GenerateAsync(SecretGenerationRules rules, RandomBytePool pool, CancellationToken cancellationToken)
     {
         if (rules.IsValid(out string? error) == false)
         {
@@ -101,25 +101,25 @@ public static class SecretGenerator
         // Fill minimum lowercase characters.
         for (int i = 0; i < rules.MinLowercase; i++)
         {
-            result.Add(await PickCharAsync(LowercaseChars, pool));
+            result.Add(await PickCharAsync(LowercaseChars, pool, cancellationToken));
         }
 
         // Fill minimum uppercase characters.
         for (int i = 0; i < rules.MinUppercase; i++)
         {
-            result.Add(await PickCharAsync(UppercaseChars, pool));
+            result.Add(await PickCharAsync(UppercaseChars, pool, cancellationToken));
         }
 
         // Fill minimum digit characters.
         for (int i = 0; i < rules.MinDigits; i++)
         {
-            result.Add(await PickCharAsync(DigitChars, pool));
+            result.Add(await PickCharAsync(DigitChars, pool, cancellationToken));
         }
 
         // Fill minimum symbol characters.
         for (int i = 0; i < rules.MinSymbols; i++)
         {
-            result.Add(await PickCharAsync(rules.SymbolAlphabet, pool));
+            result.Add(await PickCharAsync(rules.SymbolAlphabet, pool, cancellationToken));
         }
 
         // Build combined alphabet for remaining positions.
@@ -128,13 +128,13 @@ public static class SecretGenerator
         // Fill remaining positions with random characters from the combined alphabet.
         while (result.Count < rules.TotalLength)
         {
-            result.Add(await PickCharAsync(allChars, pool));
+            result.Add(await PickCharAsync(allChars, pool, cancellationToken));
         }
 
         // Fisher-Yates shuffle to randomize character positions.
         for (int i = result.Count - 1; i > 0; i--)
         {
-            int j = await GetBoundedRandomIndexAsync(i + 1, pool);
+            int j = await GetBoundedRandomIndexAsync(i + 1, pool, cancellationToken);
             (result[i], result[j]) = (result[j], result[i]);
         }
 
@@ -175,9 +175,9 @@ public static class SecretGenerator
     /// <summary>
     /// Picks a character from the alphabet using rejection sampling to eliminate modulo bias.
     /// </summary>
-    private static async Task<char> PickCharAsync(string alphabet, RandomBytePool pool)
+    private static async Task<char> PickCharAsync(string alphabet, RandomBytePool pool, CancellationToken cancellationToken)
     {
-        int index = await GetBoundedRandomIndexAsync(alphabet.Length, pool);
+        int index = await GetBoundedRandomIndexAsync(alphabet.Length, pool, cancellationToken);
         return alphabet[index];
     }
 
@@ -186,7 +186,7 @@ public static class SecretGenerator
     /// Reads 2 bytes at a time (16-bit value space) and rejects values that would cause modulo bias.
     /// Fetches a fresh batch of random bytes when the current one is exhausted.
     /// </summary>
-    private static async Task<int> GetBoundedRandomIndexAsync(int maxExclusive, RandomBytePool pool)
+    private static async Task<int> GetBoundedRandomIndexAsync(int maxExclusive, RandomBytePool pool, CancellationToken cancellationToken)
     {
         // The largest multiple of maxExclusive that fits in a 16-bit value.
         // Values >= this threshold are rejected to eliminate modulo bias.
@@ -194,7 +194,7 @@ public static class SecretGenerator
 
         while (true)
         {
-            int value = await pool.ReadTwoBytesAsync();
+            int value = await pool.ReadTwoBytesAsync(cancellationToken);
 
             if (value < threshold)
             {

@@ -7,6 +7,7 @@
 @inject VaultSession Session
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
+@inject ErrorLogService ErrorLog
 
 <div class="app-layout">
     @if (IsSidebarVisible)
@@ -23,6 +24,7 @@
             </div>
             <nav>
                 <ul>
+                    <li><NavLink href="empty" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🫣 Empty</NavLink></li>
                     <li>
                         <NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
                             @(AppState.Status == AppStatus.Unlocked ? "🔓" : "🔒") Vault
@@ -31,6 +33,27 @@
                     <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static Key</NavLink></li>
                     <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
                 </ul>
+                <details class="sidebar-debug-section">
+                    <summary class="sidebar-debug-toggle">
+                        🛠️ Debug
+                        @if (ErrorLog.Count > 0)
+                        {
+                            <span class="sidebar-badge">@ErrorLog.Count</span>
+                        }
+                    </summary>
+                    <ul>
+                        <li><NavLink href="raw-vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">📄 Raw JSON</NavLink></li>
+                        <li>
+                            <NavLink href="error-log" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
+                                ⚠️ Errors
+                                @if (ErrorLog.Count > 0)
+                                {
+                                    <span class="sidebar-badge">@ErrorLog.Count</span>
+                                }
+                            </NavLink>
+                        </li>
+                    </ul>
+                </details>
             </nav>
             <ThemeSelector />
             <div class="sidebar-version">@AppVersion.FullVersion</div>
@@ -59,11 +82,18 @@
     protected override void OnInitialized()
     {
         AppState.OnChange += StateHasChanged;
+        ErrorLog.OnErrorLogged += OnErrorLogged;
     }
 
     public void Dispose()
     {
         AppState.OnChange -= StateHasChanged;
+        ErrorLog.OnErrorLogged -= OnErrorLogged;
+    }
+
+    private void OnErrorLogged()
+    {
+        InvokeAsync(StateHasChanged);
     }
 
     private void ToggleSidebar()

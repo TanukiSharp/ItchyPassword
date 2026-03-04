@@ -1,4 +1,5 @@
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Models
 @using ItchyPassword.Core.Services
 @using ItchyPassword.Core.Extensions
 @inject VaultSession Session
@@ -29,7 +30,14 @@
     </div>
 
     <div class="vault-search">
-        <input class="input" type="text" placeholder="Search items..." @bind="AppState.SearchQuery" @bind:event="oninput" />
+        <div class="vault-search-row">
+            <input class="input vault-search-input" type="text" placeholder="Search items..." @bind="AppState.SearchQuery" @bind:event="oninput" />
+            <select class="input vault-search-mode" value="@_searchMode" @onchange="OnSearchModeChanged" title="Search mode">
+                <option value="@SearchMode.Contains">Contains</option>
+                <option value="@SearchMode.Fuzzy">Fuzzy</option>
+                <option value="@SearchMode.Exact">Exact</option>
+            </select>
+        </div>
     </div>
 
     <div class="vault-scroll-area">
@@ -41,26 +49,39 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (VaultItemV2 item in FilteredItems)
+                @foreach (VaultItemMatch match in FilteredItems)
                 {
                     <tr>
                         <td>
                             <span class="vault-item-name">
-                                @if (item.IsLegacy())
+                                @if (match.Item.IsLegacy())
                                 {
                                     <span title="This item uses legacy settings. Edit and save to upgrade." style="cursor: help; margin-right: 4px;">⚠️</span>
                                 }
-                                @if (item.Type == VaultItemTypeV2.StaticKey)
+                                @if (match.Item.Type == VaultItemTypeV2.StaticKey)
                                 {
                                     <img class="vault-icon-key" src="icons/key-dark.svg" alt="Static key" width="14" height="14" />
                                 }
-                                @item.Name
+                                @RenderHighlightedName(match)
                             </span>
+
+                            @if (match.HasMetadataMatch)
+                            {
+                                <div class="vault-metadata-matches">
+                                    @foreach (MetadataMatch metaMatch in match.MetadataMatches)
+                                    {
+                                        <span class="vault-metadata-tag">
+                                            @RenderHighlightedText(metaMatch.Key, metaMatch.KeyResult.Ranges):
+                                            @RenderHighlightedText(metaMatch.Value, metaMatch.ValueResult.Ranges)
+                                        </span>
+                                    }
+                                </div>
+                            }
                         </td>
                         <td class="text-right">
                             <div class="vault-actions-group">
-                                <CopyButton CssClass="vault-item-action-btn" TextProvider="() => GetItemValueAsync(item)" />
-                                <button class="button secondary vault-item-action-btn" @onclick="() => EditItem(item)" title="Edit item">
+                                <CopyButton CssClass="vault-item-action-btn" TextProvider="() => GetItemValueAsync(match.Item, CancellationToken.None)" />
+                                <button class="button secondary vault-item-action-btn" @onclick="() => EditItem(match.Item)" title="Edit item">
                                     <img class="themed-icon" src="icons/edit-dark.svg" width="14" height="14" alt="Edit" />
                                 </button>
                             </div>
@@ -82,23 +103,42 @@
 
 @code {
     private const string DisplayFilterStorageKey = "itchypassword_vault_display_filter";
+    private const string SearchModeStorageKey = "itchypassword_vault_search_mode";
 
     private string _displayFilter = "all";
+    private SearchMode _searchMode = SearchMode.Contains;
 
     protected override async Task OnInitializedAsync()
     {
-        string? stored = await Storage.GetItemAsync(DisplayFilterStorageKey);
+        string? stored = await Storage.GetItemAsync(DisplayFilterStorageKey, CancellationToken.None);
 
         if (string.IsNullOrWhiteSpace(stored) == false)
         {
             _displayFilter = stored;
+        }
+
+        string? storedMode = await Storage.GetItemAsync(SearchModeStorageKey, CancellationToken.None);
+
+        if (Enum.TryParse<SearchMode>(storedMode, out SearchMode parsedMode))
+        {
+            _searchMode = parsedMode;
         }
     }
 
     private async Task OnFilterChanged(ChangeEventArgs e)
     {
         _displayFilter = e.Value?.ToString() ?? "all";
-        await Storage.SetItemAsync(DisplayFilterStorageKey, _displayFilter);
+        await Storage.SetItemAsync(DisplayFilterStorageKey, _displayFilter, CancellationToken.None);
+    }
+
+    private async Task OnSearchModeChanged(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<SearchMode>(e.Value?.ToString(), out SearchMode mode))
+        {
+            _searchMode = mode;
+        }
+
+        await Storage.SetItemAsync(SearchModeStorageKey, _searchMode.ToString(), CancellationToken.None);
     }
 
     private void CreateNew()
@@ -114,7 +154,7 @@
 
         try
         {
-            await AppState.ReloadVaultAsync();
+            await AppState.ReloadVaultAsync(CancellationToken.None);
         }
         finally
         {
@@ -127,7 +167,59 @@
         AppState.Lock();
     }
 
-    private List<VaultItemV2> FilteredItems
+    /// <summary>
+    /// Renders the item name with search match highlighting applied.
+    /// </summary>
+    private RenderFragment RenderHighlightedName(VaultItemMatch match)
+    {
+        return RenderHighlightedText(match.Item.Name, match.NameResult.Ranges);
+    }
+
+    /// <summary>
+    /// Renders text with the given match ranges highlighted.
+    /// </summary>
+    private RenderFragment RenderHighlightedText(string text, IReadOnlyList<MatchRange> ranges)
+    {
+        return builder =>
+        {
+            if (ranges.Count == 0)
+            {
+                builder.AddContent(0, text);
+                return;
+            }
+
+            int sequence = 0;
+
+            // Wrap in a span so multiple nodes (text + mark + text) stay as one flex child.
+            builder.OpenElement(sequence++, "span");
+
+            int lastIndex = 0;
+
+            foreach (MatchRange range in ranges)
+            {
+                if (range.Position > lastIndex)
+                {
+                    builder.AddContent(sequence++, text[lastIndex..range.Position]);
+                }
+
+                builder.OpenElement(sequence++, "mark");
+                builder.AddAttribute(sequence++, "class", "search-highlight");
+                builder.AddContent(sequence++, text.Substring(range.Position, range.Length));
+                builder.CloseElement();
+
+                lastIndex = range.Position + range.Length;
+            }
+
+            if (lastIndex < text.Length)
+            {
+                builder.AddContent(sequence++, text[lastIndex..]);
+            }
+
+            builder.CloseElement();
+        };
+    }
+
+    private List<VaultItemMatch> FilteredItems
     {
         get
         {
@@ -136,7 +228,7 @@
                 return [];
             }
 
-            IEnumerable<VaultItemV2> items = Session.Vault.Items;
+            IEnumerable<VaultItemV2> items = Session.Vault.Value.Items;
 
             // Apply type filter.
             if (_displayFilter == "statickey")
@@ -148,20 +240,41 @@
                 items = items.Where(i => i.Type == VaultItemTypeV2.Secret);
             }
 
-            // Apply search filter.
-            if (string.IsNullOrWhiteSpace(AppState.SearchQuery) == false)
+            // No search query: return all items without match data.
+            if (string.IsNullOrWhiteSpace(AppState.SearchQuery))
             {
-                string query = AppState.SearchQuery;
-                items = items.Where(i =>
-                    i.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                    i.Metadata?.Any(m =>
-                        m.Key.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                        m.Value.Contains(query, StringComparison.OrdinalIgnoreCase)
-                    ) == true
-                );
+                return items.Select(i => new VaultItemMatch(i)).ToList();
             }
 
-            return items.ToList();
+            string query = AppState.SearchQuery;
+            var results = new List<VaultItemMatch>();
+
+            foreach (VaultItemV2 item in items)
+            {
+                SearchResult nameResult = SearchHelper.Match(item.Name, query, _searchMode);
+                var metadataMatches = new List<MetadataMatch>();
+
+                if (item.Metadata is not null)
+                {
+                    foreach (MetadataEntryV2 meta in item.Metadata)
+                    {
+                        SearchResult keyResult = SearchHelper.Match(meta.Key, query, _searchMode);
+                        SearchResult valueResult = SearchHelper.Match(meta.Value, query, _searchMode);
+
+                        if (keyResult.IsMatch || valueResult.IsMatch)
+                        {
+                            metadataMatches.Add(new MetadataMatch(meta.Key, meta.Value, keyResult, valueResult));
+                        }
+                    }
+                }
+
+                if (nameResult.IsMatch || metadataMatches.Count > 0)
+                {
+                    results.Add(new VaultItemMatch(item, nameResult, metadataMatches));
+                }
+            }
+
+            return results;
         }
     }
 
@@ -173,33 +286,33 @@
     /// <summary>
     /// Decrypts a secret or generates a static key password and returns the plaintext value.
     /// </summary>
-    private Task<string> GetItemValueAsync(VaultItemV2 item)
+    private Task<string> GetItemValueAsync(VaultItemV2 item, CancellationToken cancellationToken)
     {
         return item.Type switch
         {
-            VaultItemTypeV2.Secret => DecryptSecretAsync(item),
-            VaultItemTypeV2.StaticKey => GenerateStaticKeyAsync(item),
+            VaultItemTypeV2.Secret => DecryptSecretAsync(item, cancellationToken),
+            VaultItemTypeV2.StaticKey => GenerateStaticKeyAsync(item, cancellationToken),
             _ => throw new NotSupportedException($"Unsupported item type: {item.Type}")
         };
     }
 
-    private async Task<string> DecryptSecretAsync(VaultItemV2 item)
+    private async Task<string> DecryptSecretAsync(VaultItemV2 item, CancellationToken cancellationToken)
     {
         if (item.SecretData is null)
         {
             throw new InvalidOperationException("Invalid secret data.");
         }
 
-        return await VaultCrypto.DecryptSecretAsync(item.SecretData, MasterKeyProvider.MasterKey);
+        return await VaultCrypto.DecryptSecretAsync(item.SecretData!.Value, MasterKeyProvider.MasterKey, cancellationToken);
     }
 
-    private async Task<string> GenerateStaticKeyAsync(VaultItemV2 item)
+    private async Task<string> GenerateStaticKeyAsync(VaultItemV2 item, CancellationToken cancellationToken)
     {
         if (item.StaticKeyData is null)
         {
             throw new InvalidOperationException("Invalid static key data.");
         }
 
-        return await VaultCrypto.GenerateStaticKeyAsync(item.StaticKeyData, MasterKeyProvider.MasterKey);
+        return await VaultCrypto.GenerateStaticKeyAsync(item.StaticKeyData!.Value, MasterKeyProvider.MasterKey, cancellationToken);
     }
 }

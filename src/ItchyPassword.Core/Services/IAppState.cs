@@ -29,7 +29,7 @@ public interface IAppState
     /// Attempts to unlock the vault with the provided key.
     /// </summary>
     /// <param name="key">The master key.</param>
-    Task UnlockAsync(byte[] key);
+    Task UnlockAsync(byte[] key, CancellationToken cancellationToken);
 
     /// <summary>
     /// Locks the vault, clears the master key, and resets the application state.
@@ -39,12 +39,12 @@ public interface IAppState
     /// <summary>
     /// Retries the unlock process using the existing master key.
     /// </summary>
-    Task RetryUnlockAsync();
+    Task RetryUnlockAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Reloads the vault from the active read connector without requiring a new master key.
     /// </summary>
-    Task ReloadVaultAsync();
+    Task ReloadVaultAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Navigates to the configuration page if possible.

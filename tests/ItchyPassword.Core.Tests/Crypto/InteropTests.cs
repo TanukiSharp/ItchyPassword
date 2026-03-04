@@ -83,7 +83,7 @@ public class InteropTests : IAsyncLifetime
         byte[] cipherBytes = Convert.FromBase64String(base64Cipher);
 
         // Decrypt with C#
-        byte[] decryptedBytes = await _crypto.DecryptV3Async(cipherBytes, _masterKey);
+        byte[] decryptedBytes = await _crypto.DecryptV3Async(cipherBytes, _masterKey, CancellationToken.None);
         string decryptedText = System.Text.Encoding.UTF8.GetString(decryptedBytes);
 
         Assert.Equal(plaintext, decryptedText);
@@ -97,7 +97,7 @@ public class InteropTests : IAsyncLifetime
         byte[] plaintextBytes = System.Text.Encoding.UTF8.GetBytes(plaintext);
 
         // Encrypt with C#
-        byte[] cipherBytes = await _crypto.EncryptV3Async(plaintextBytes, _masterKey);
+        byte[] cipherBytes = await _crypto.EncryptV3Async(plaintextBytes, _masterKey, CancellationToken.None);
         string base64Cipher = Convert.ToBase64String(cipherBytes);
         string keyArrayString = "[" + string.Join(",", _masterKey) + "]";
 
@@ -134,7 +134,7 @@ public class InteropTests : IAsyncLifetime
         string publicPartArrayString = "[" + string.Join(",", publicPart) + "]";
 
         // Generate in C#
-        byte[] csharpResult = await _crypto.GeneratePasswordV2Async(_masterKey, publicPart);
+        byte[] csharpResult = await _crypto.GeneratePasswordV2Async(_masterKey, publicPart, purpose: "Password", CancellationToken.None);
         string csharpBase64 = Convert.ToBase64String(csharpResult);
 
         // Generate in JS using the loaded crypto.js library

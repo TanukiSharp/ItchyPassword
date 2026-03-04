@@ -70,6 +70,6 @@
         }
 
         VaultConnectorHelper.SetValue(Connector.Configuration, key, val ?? string.Empty);
-        await Connector.SaveConfigurationAsync();
+        await Connector.SaveConfigurationAsync(CancellationToken.None);
     }
 }

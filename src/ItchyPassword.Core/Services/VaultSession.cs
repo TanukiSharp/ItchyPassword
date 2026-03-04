@@ -24,6 +24,11 @@ public class VaultSession
     public VaultV2? Vault { get; set; }
 
     /// <summary>
+    /// Gets the last downloaded or saved vault content as a raw string.
+    /// </summary>
+    public string? LastRawContent { get; private set; }
+
+    /// <summary>
     /// Gets the list of available vault connectors.
     /// </summary>
     public List<IVaultConnector> Connectors { get; } = [];
@@ -56,7 +61,7 @@ public class VaultSession
     /// Loads persisted preferences (e.g. active reader) from local storage.
     /// Safe to call multiple times; only the first call performs work.
     /// </summary>
-    public async Task InitializeAsync()
+    public async Task InitializeAsync(CancellationToken cancellationToken)
     {
         if (_isInitialized)
         {
@@ -65,7 +70,7 @@ public class VaultSession
 
         _isInitialized = true;
 
-        string? savedId = await _storage.GetItemAsync(ReaderStorageKey);
+        string? savedId = await _storage.GetItemAsync(ReaderStorageKey, cancellationToken);
 
         if (Guid.TryParse(savedId, out Guid id) && Connectors.Any(c => c.Id == id))
         {
@@ -74,10 +79,10 @@ public class VaultSession
         else
         {
             // Persistence default.
-            await SaveReaderAsync();
+            await SaveReaderAsync(cancellationToken);
         }
 
-        string? savedWriters = await _storage.GetItemAsync(WriterIdsStorageKey);
+        string? savedWriters = await _storage.GetItemAsync(WriterIdsStorageKey, cancellationToken);
 
         if (string.IsNullOrWhiteSpace(savedWriters) == false)
         {
@@ -93,25 +98,25 @@ public class VaultSession
         }
         else
         {
-            await SaveWritersAsync();
+            await SaveWritersAsync(cancellationToken);
         }
     }
 
     /// <summary>
     /// Persists the reader selection to local storage.
     /// </summary>
-    public async Task SaveReaderAsync()
+    public async Task SaveReaderAsync(CancellationToken cancellationToken)
     {
-        await _storage.SetItemAsync(ReaderStorageKey, ReaderId.ToString());
+        await _storage.SetItemAsync(ReaderStorageKey, ReaderId.ToString(), cancellationToken);
     }
 
     /// <summary>
     /// Persists the writer connector selections to local storage.
     /// </summary>
-    public async Task SaveWritersAsync()
+    public async Task SaveWritersAsync(CancellationToken cancellationToken)
     {
         string value = string.Join(",", _writerIds);
-        await _storage.SetItemAsync(WriterIdsStorageKey, value);
+        await _storage.SetItemAsync(WriterIdsStorageKey, value, cancellationToken);
     }
 
     /// <summary>
@@ -169,7 +174,7 @@ public class VaultSession
     /// Attempts to unlock the vault using the master key from the provider.
     /// Loads the vault from the active read connector, migrating legacy formats if necessary.
     /// </summary>
-    public async Task UnlockAsync(Action<string>? onStatusChanged = null, Action? onVaultAccessGranted = null)
+    public async Task UnlockAsync(Action<string>? onStatusChanged, Action? onVaultAccessGranted, CancellationToken cancellationToken)
     {
         if (_masterKeyProvider.HasMasterKey == false)
         {
@@ -181,7 +186,7 @@ public class VaultSession
             throw new InvalidOperationException("No active vault connector selected.");
         }
 
-        await ReadConnector.LoadConfigurationAsync();
+        await ReadConnector.LoadConfigurationAsync(cancellationToken);
 
         if (ReadConnector.IsConfigured == false)
         {
@@ -190,7 +195,7 @@ public class VaultSession
 
         onStatusChanged?.Invoke("Accessing vault...");
 
-        bool hasAccess = await ReadConnector.AccessAsync();
+        bool hasAccess = await ReadConnector.AccessAsync(cancellationToken);
 
         if (hasAccess == false)
         {
@@ -203,7 +208,8 @@ public class VaultSession
 
         onStatusChanged?.Invoke("Loading vault data...");
 
-        string content = await ReadConnector.LoadVaultAsync();
+        string content = await ReadConnector.LoadVaultAsync(cancellationToken);
+        LastRawContent = content;
 
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -219,12 +225,12 @@ public class VaultSession
                 {
                     onStatusChanged?.Invoke("Migrating vault...");
                     var migrationProgress = new Progress<double>(percent => onStatusChanged?.Invoke($"Migrating vault... {percent:f1}%"));
-                    vault = await _migrationService.MigrateAsync(content, _masterKeyProvider.MasterKey, migrationProgress);
+                    vault = await _migrationService.MigrateAsync(content, _masterKeyProvider.MasterKey, migrationProgress, cancellationToken);
 
                     // Successfully migrated. Save the new format immediately to avoid re-migration next time.
                     Vault = vault;
                     onStatusChanged?.Invoke("Saving migrated vault...");
-                    var results = await SaveVaultAsync();
+                    var results = await SaveVaultAsync(cancellationToken);
 
                     var failures = results.Where(r => r.Success == false).ToList();
                     if (failures.Count > 0)
@@ -245,20 +251,21 @@ public class VaultSession
     /// <summary>
     /// Serializes the current vault and persists it to all enabled write connectors in parallel.
     /// </summary>
-    public async Task<(IVaultConnector Connector, bool Success, string Error)[]> SaveVaultAsync()
+    public async Task<(IVaultConnector Connector, bool Success, string Error)[]> SaveVaultAsync(CancellationToken cancellationToken)
     {
         if (Vault is null)
         {
             return [];
         }
 
-        string json = VaultDataService.SerializeVault(Vault);
+        string json = VaultDataService.SerializeVault(Vault.Value);
+        LastRawContent = json;
 
         var tasks = WriteConnectors.Select(async c =>
         {
             try
             {
-                await c.SaveVaultAsync(json);
+                await c.SaveVaultAsync(json, cancellationToken);
                 return (Connector: c, Success: true, Error: string.Empty);
             }
             catch (Exception ex)

@@ -115,6 +115,7 @@
         {
             item.SetData(new SecretDataV2()
             {
+                Cipher = string.Empty,
                 CryptoVersion = SecretDataConstants.LatestCryptoVersion,
                 Encoding = SecretDataConstants.LatestEncoding,
             });
@@ -180,22 +181,22 @@
             _item.LastModified = DateTimeOffset.UtcNow;
 
             // Check if this item already exists in the vault (re-save scenario).
-            int existingIndex = Session.Vault.Items.FindIndex(i => i.Id == _itemId);
+            int existingIndex = Session.Vault.Value.Items.FindIndex(i => i.Id == _itemId);
 
             if (existingIndex >= 0)
             {
                 // Update the existing entry.
-                Session.Vault.Items[existingIndex] = _item;
+                Session.Vault.Value.Items[existingIndex] = _item;
             }
             else
             {
                 // Add as new entry.
-                Session.Vault.Items.Add(_item);
-                Session.Vault.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
+                Session.Vault.Value.Items.Add(_item);
+                Session.Vault.Value.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));
             }
 
             // Serialize the entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync();
+            var results = await Session.SaveVaultAsync(CancellationToken.None);
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)
@@ -205,7 +206,7 @@
                 // If ALL connectors failed, rollback. If SOME failed, stay on page but don't rollback.
                 if (results.All(r => r.Success == false))
                 {
-                    Session.Vault.Items.Remove(_item);
+                    Session.Vault.Value.Items.Remove(_item);
                 }
 
                 return;

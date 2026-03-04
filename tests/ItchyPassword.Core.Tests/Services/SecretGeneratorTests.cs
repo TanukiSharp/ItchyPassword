@@ -12,7 +12,7 @@ public class SecretGeneratorTests
         var pool = new RandomBytePool(crypto);
         var rules = new SecretGenerationRules();
 
-        string result = await SecretGenerator.GenerateAsync(rules, pool);
+        string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
 
         Assert.False(string.IsNullOrEmpty(result), $"Result should not be empty. Length={result.Length}");
         Assert.Equal(rules.TotalLength, result.Length);
@@ -25,7 +25,7 @@ public class SecretGeneratorTests
         var pool = new RandomBytePool(crypto);
         var rules = new SecretGenerationRules();
 
-        string result = await SecretGenerator.GenerateAsync(rules, pool);
+        string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
 
         Assert.Contains(result, c => char.IsLower(c));
         Assert.Contains(result, c => char.IsUpper(c));
@@ -47,7 +47,7 @@ public class SecretGeneratorTests
             MinSymbols = 3
         };
 
-        string result = await SecretGenerator.GenerateAsync(rules, pool);
+        string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
 
         Assert.Equal(12, result.Length);
 
@@ -67,7 +67,7 @@ public class SecretGeneratorTests
 
         for (int run = 0; run < 50; run++)
         {
-            string result = await SecretGenerator.GenerateAsync(rules, pool);
+            string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
 
             for (int i = 0; i < result.Length; i++)
             {
@@ -86,7 +86,7 @@ public class SecretGeneratorTests
 
         for (int i = 0; i < 20; i++)
         {
-            string result = await SecretGenerator.GenerateAsync(rules, pool);
+            string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
             Assert.False(string.IsNullOrEmpty(result), $"Iteration {i}: result was empty");
             Assert.Equal(rules.TotalLength, result.Length);
         }

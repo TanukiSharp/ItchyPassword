@@ -1,28 +1,60 @@
 @using ItchyPassword.Client.Services
 @using ItchyPassword.Core.Services
+@implements IDisposable
 @inject VaultSession Session
 @inject IAppState AppState
+@inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
+@inject ILocalStorageService LocalStorage
 
 <div @onclick="FocusMasterKeyAsync" class="master-key-overlay">
     <div class="master-key-panel">
         <h2>ItchyPassword</h2>
+
+        <p class="master-key-warning">
+            Your master key is never stored, so if you forget it, your vault cannot be recovered.
+        </p>
 
         <EditForm Model="this" OnValidSubmit="Submit">
             <div class="form-group">
                 <label for="masterKey">Master Key</label>
                 <div class="master-key-input-row">
                     <div class="master-key-input-wrapper">
-                        <input @ref="_masterKeyInput" class="input master-key-input" type="@(_showPassword ? "text" : "password")" id="masterKey" @bind-value="masterKey" @bind-value:event="oninput" placeholder="Enter your master key" required autofocus />
+                        <input @ref="_masterKeyInput" class="input master-key-input" type="@(_showPassword ? "text" : "password")" id="masterKey" value="@_masterKey" @oninput="OnMasterKeyInput" placeholder="Enter your master key" required autofocus />
                         <button type="button" class="master-key-toggle" @onclick="TogglePasswordVisibility" @onclick:stopPropagation title="@(_showPassword ? "Hide master key" : "Show master key")">
                             <img class="themed-icon" src="icons/@(_showPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showPassword ? "Hide" : "Show")" />
                         </button>
                     </div>
-                    <span title="Character count" class="char-count">@masterKey.Length</span>
+                    <span title="Character count" class="char-count">@_masterKey.Length</span>
                 </div>
             </div>
 
-            <button class="button primary master-key-submit" type="submit" @onclick:stopPropagation>
+            <div class="master-key-confirm-details" @onclick:stopPropagation>
+                <button type="button" class="master-key-confirm-toggle" @onclick="OnConfirmToggle">
+                    <span class="master-key-confirm-arrow @(_confirmExpanded ? "expanded" : "")">&#9654;</span>
+                    Confirm Master Key
+                </button>
+                @if (_confirmExpanded)
+                {
+                    <div class="form-group">
+                        <div class="master-key-input-row">
+                            <div class="master-key-input-wrapper">
+                                <input @ref="_confirmKeyInput" class="input master-key-input @ConfirmationCssClass" type="@(_showPassword ? "text" : "password")" id="masterKeyConfirm" value="@_confirmKey" @oninput="OnConfirmKeyInput" placeholder="Re-enter your master key" />
+                            </div>
+                            <span title="Character count" class="char-count">@_confirmKey.Length</span>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (_wasAutoProtected)
+            {
+                <div class="alert-inline-warning auto-protect-message">
+                    Master key cleared after @(AutoProtectSeconds)s of inactivity.
+                </div>
+            }
+
+            <button class="button primary master-key-submit" type="submit" disabled="@IsUnlockDisabled" @onclick:stopPropagation>
                 <span>Unlock</span>
             </button>
         </EditForm>
@@ -30,19 +62,73 @@
 </div>
 
 @code {
-    private string masterKey = string.Empty;
+    private const int AutoProtectSeconds = 30;
+
+    private const string ConfirmExpandedKey = "masterkey-confirm-expanded";
+
+    private string _masterKey = string.Empty;
+    private string _confirmKey = string.Empty;
     private bool _showPassword = false;
+    private bool _wasAutoProtected = false;
+    private bool _confirmExpanded = true;
+    private bool _focusConfirmAfterRender = false;
+    private bool _focusMasterAfterRender = false;
     private ElementReference _masterKeyInput;
+    private ElementReference _confirmKeyInput;
+    private Timer? _autoProtectTimer;
+
+    /// <summary>
+    /// True when the unlock action should be blocked: confirmation panel is open and fields don't match.
+    /// </summary>
+    private bool IsUnlockDisabled => _confirmExpanded && _confirmKey != _masterKey;
+
+    /// <summary>
+    /// CSS class applied to the confirmation input to indicate match status.
+    /// Empty when confirmation has not been started, green when matching, red when mismatched.
+    /// </summary>
+    private string ConfirmationCssClass
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(_confirmKey))
+            {
+                return string.Empty;
+            }
+
+            return _confirmKey == _masterKey ? "confirmation-match" : "confirmation-mismatch";
+        }
+    }
 
     protected override async Task OnInitializedAsync()
     {
         // Load the saved active reader preference from storage.
-        await Session.InitializeAsync();
+        await Session.InitializeAsync(CancellationToken.None);
+
+        // Restore the user's preference for the confirmation panel (default: expanded).
+        string? saved = await LocalStorage.GetItemAsync(ConfirmExpandedKey, CancellationToken.None);
+        if (saved is not null)
+        {
+            _confirmExpanded = saved == "true";
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        await FocusMasterKeyAsync();
+        if (firstRender)
+        {
+            await FocusMasterKeyAsync();
+        }
+
+        if (_focusConfirmAfterRender)
+        {
+            _focusConfirmAfterRender = false;
+            await _confirmKeyInput.FocusAsync();
+        }
+        else if (_focusMasterAfterRender)
+        {
+            _focusMasterAfterRender = false;
+            await FocusMasterKeyAsync();
+        }
     }
 
     private async Task FocusMasterKeyAsync()
@@ -53,11 +139,101 @@
     private void TogglePasswordVisibility()
     {
         _showPassword = !_showPassword;
+        ResetAutoProtectTimer();
+    }
+
+    private void OnMasterKeyInput(ChangeEventArgs e)
+    {
+        _masterKey = e.Value?.ToString() ?? string.Empty;
+        _wasAutoProtected = false;
+        ResetAutoProtectTimer();
+    }
+
+    private void OnConfirmKeyInput(ChangeEventArgs e)
+    {
+        _confirmKey = e.Value?.ToString() ?? string.Empty;
+        _wasAutoProtected = false;
+        ResetAutoProtectTimer();
+    }
+
+    private async Task OnConfirmToggle()
+    {
+        _confirmExpanded = !_confirmExpanded;
+
+        // Clear the confirmation field when collapsing so it doesn't silently block unlock.
+        if (!_confirmExpanded)
+        {
+            _confirmKey = string.Empty;
+            _focusConfirmAfterRender = false;
+            _focusMasterAfterRender = true;
+        }
+        else
+        {
+            _focusConfirmAfterRender = true;
+            _focusMasterAfterRender = false;
+        }
+
+        await LocalStorage.SetItemAsync(ConfirmExpandedKey, _confirmExpanded ? "true" : "false", CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Resets the auto-protect timer. If there is master key input, the timer starts/restarts.
+    /// If both fields are empty, the timer is stopped.
+    /// </summary>
+    private void ResetAutoProtectTimer()
+    {
+        _autoProtectTimer?.Dispose();
+        _autoProtectTimer = null;
+
+        if (string.IsNullOrEmpty(_masterKey) && string.IsNullOrEmpty(_confirmKey))
+        {
+            return;
+        }
+
+        _autoProtectTimer = new Timer(
+            _ => InvokeAsync(AutoProtect),
+            null,
+            TimeSpan.FromSeconds(AutoProtectSeconds),
+            Timeout.InfiniteTimeSpan);
+    }
+
+    /// <summary>
+    /// Clears the master key from both UI fields and memory after inactivity timeout.
+    /// </summary>
+    private void AutoProtect()
+    {
+        _masterKey = string.Empty;
+        _confirmKey = string.Empty;
+        _wasAutoProtected = true;
+
+        // Clear from memory provider as well.
+        MasterKeyProvider.MasterKey = [];
+
+        _autoProtectTimer?.Dispose();
+        _autoProtectTimer = null;
+
+        StateHasChanged();
     }
 
     private async Task Submit()
     {
-        await AppState.UnlockAsync(System.Text.Encoding.UTF8.GetBytes(masterKey));
+        // Block unlock when the confirmation panel is open and fields don't match.
+        if (_confirmExpanded && _confirmKey != _masterKey)
+        {
+            return;
+        }
+
+        // Stop the auto-protect timer on unlock attempt.
+        _autoProtectTimer?.Dispose();
+        _autoProtectTimer = null;
+
+        await AppState.UnlockAsync(System.Text.Encoding.UTF8.GetBytes(_masterKey), CancellationToken.None);
+    }
+
+    public void Dispose()
+    {
+        _autoProtectTimer?.Dispose();
+        _autoProtectTimer = null;
     }
 }
 

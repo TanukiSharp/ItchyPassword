@@ -121,34 +121,34 @@
 
         foreach (IVaultConnector connector in Session.Connectors)
         {
-            await connector.LoadConfigurationAsync();
+            await connector.LoadConfigurationAsync(CancellationToken.None);
         }
     }
 
     private async Task SetReader(IVaultConnector connector)
     {
         Session.ReaderId = connector.Id;
-        await Session.SaveReaderAsync();
+        await Session.SaveReaderAsync(CancellationToken.None);
 
         // Automatically enable as a writer when selected for read.
         if (Session.IsWriter(connector.Id) == false)
         {
             Session.SetWriter(connector.Id, true);
-            await Session.SaveWritersAsync();
+            await Session.SaveWritersAsync(CancellationToken.None);
         }
     }
 
     private async Task SetWriter(IVaultConnector connector, bool enabled)
     {
         Session.SetWriter(connector.Id, enabled);
-        await Session.SaveWritersAsync();
+        await Session.SaveWritersAsync(CancellationToken.None);
     }
 
     private async Task TestAccessAsync(IVaultConnector connector)
     {
         // Call AccessAsync before any await to let the connector's synchronous
         // preamble run on the click call-stack (preserving the browser gesture).
-        Task<bool> accessTask = connector.AccessAsync();
+        Task<bool> accessTask = connector.AccessAsync(CancellationToken.None);
 
         testResults[connector] = (null, "Testing...");
         StateHasChanged();
@@ -168,6 +168,6 @@
         // Since we pre-loaded configuration in OnInitializedAsync, Session.UnlockAsync
         // should reach AccessAsync synchronously, preserving the activation.
 
-        await AppState.RetryUnlockAsync();
+        await AppState.RetryUnlockAsync(CancellationToken.None);
     }
 }

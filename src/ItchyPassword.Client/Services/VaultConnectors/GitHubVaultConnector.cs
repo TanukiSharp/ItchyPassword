@@ -103,21 +103,21 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
     /// <inheritdoc />
-    public async Task LoadConfigurationAsync()
+    public async Task LoadConfigurationAsync(CancellationToken cancellationToken)
     {
         byte[]? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
-        await VaultConnectorHelper.LoadEntriesAsync(Configuration, storage, masterKey, crypto);
+        await VaultConnectorHelper.LoadEntriesAsync(Configuration, storage, masterKey, crypto, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task SaveConfigurationAsync()
+    public async Task SaveConfigurationAsync(CancellationToken cancellationToken)
     {
         byte[]? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
-        await VaultConnectorHelper.SaveEntriesAsync(Configuration, storage, masterKey, crypto);
+        await VaultConnectorHelper.SaveEntriesAsync(Configuration, storage, masterKey, crypto, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccessAsync()
+    public async Task<bool> AccessAsync(CancellationToken cancellationToken)
     {
         if (IsConfigured == false)
         {
@@ -128,7 +128,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
             request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenKey));
-            using HttpResponseMessage response = await http.SendAsync(request);
+            using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
             return response.IsSuccessStatusCode;
         }
         catch
@@ -138,7 +138,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
     /// <inheritdoc />
-    public async Task<string> LoadVaultAsync()
+    public async Task<string> LoadVaultAsync(CancellationToken cancellationToken)
     {
         if (IsConfigured == false)
         {
@@ -154,7 +154,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
 
-        using HttpResponseMessage response = await http.SendAsync(request);
+        using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
 
         if (response.IsSuccessStatusCode == false)
         {
@@ -167,7 +167,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
             throw new Exception($"GitHub API Error: {response.StatusCode}");
         }
 
-        GitHubFileResponse? json = await response.Content.ReadFromJsonAsync<GitHubFileResponse>();
+        GitHubFileResponse? json = await response.Content.ReadFromJsonAsync<GitHubFileResponse>(cancellationToken);
 
         if (json is null)
         {
@@ -184,7 +184,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
     /// <inheritdoc />
-    public async Task SaveVaultAsync(string content)
+    public async Task SaveVaultAsync(string content, CancellationToken cancellationToken)
     {
         if (IsConfigured == false)
         {
@@ -208,10 +208,10 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
-        using HttpResponseMessage response = await http.SendAsync(request);
+        using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
         response.EnsureSuccessStatusCode();
 
-        GitHubUpdateResponse? json = await response.Content.ReadFromJsonAsync<GitHubUpdateResponse>();
+        GitHubUpdateResponse? json = await response.Content.ReadFromJsonAsync<GitHubUpdateResponse>(cancellationToken);
         string newSha = json?.content?.sha ?? string.Empty;
 
         _currentSha = newSha;

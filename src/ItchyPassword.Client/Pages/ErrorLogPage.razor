@@ -1,0 +1,58 @@
+@page "/error-log"
+@using ItchyPassword.Core.Services
+@implements IDisposable
+@inject ErrorLogService ErrorLog
+
+<div class="card page-container">
+    <div class="card-header error-log-header">
+        <h3 class="heading-flush">Error Log</h3>
+        <button class="button secondary" @onclick="ErrorLog.Clear">Clear</button>
+    </div>
+
+    <div class="card-body">
+        @if (ErrorLog.Count == 0)
+        {
+            <p class="error-log-empty">No errors recorded.</p>
+        }
+        else
+        {
+            @foreach (ErrorLogEntry entry in ErrorLog.Entries)
+            {
+                <div class="error-log-entry">
+                    <div class="error-log-entry-header">
+                        <span class="error-log-time">@entry.Timestamp.LocalDateTime.ToString("HH:mm:ss")</span>
+                        @if (string.IsNullOrEmpty(entry.Source) == false)
+                        {
+                            <span class="error-log-source">@entry.Source</span>
+                        }
+                    </div>
+                    <div class="error-log-message">@entry.Message</div>
+                    @if (string.IsNullOrEmpty(entry.Details) == false)
+                    {
+                        <details class="error-log-details">
+                            <summary>Details</summary>
+                            <pre>@entry.Details</pre>
+                        </details>
+                    }
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        ErrorLog.OnErrorLogged += OnErrorLogged;
+    }
+
+    private void OnErrorLogged()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        ErrorLog.OnErrorLogged -= OnErrorLogged;
+    }
+}

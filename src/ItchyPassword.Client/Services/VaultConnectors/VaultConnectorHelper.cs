@@ -20,10 +20,10 @@ internal static class VaultConnectorHelper
     /// <param name="masterKey">The master key bytes used as encryption password.</param>
     /// <param name="crypto">The crypto service.</param>
     /// <returns>The encrypted, base58-encoded value with the "enc:" prefix.</returns>
-    public static async Task<string> EncryptAsync(string plaintext, byte[] masterKey, ICryptoService crypto)
+    public static async Task<string> EncryptAsync(string plaintext, byte[] masterKey, ICryptoService crypto, CancellationToken cancellationToken)
     {
         byte[] input = Encoding.UTF8.GetBytes(plaintext);
-        byte[] encrypted = await crypto.EncryptV3Async(input, masterKey);
+        byte[] encrypted = await crypto.EncryptV3Async(input, masterKey, cancellationToken);
         return EncryptedPrefix + Base58.Encode(encrypted);
     }
 
@@ -35,7 +35,7 @@ internal static class VaultConnectorHelper
     /// <param name="masterKey">The master key bytes used as decryption password.</param>
     /// <param name="crypto">The crypto service.</param>
     /// <returns>The decrypted plaintext value.</returns>
-    public static async Task<string> DecryptIfNeededAsync(string stored, byte[] masterKey, ICryptoService crypto)
+    public static async Task<string> DecryptIfNeededAsync(string stored, byte[] masterKey, ICryptoService crypto, CancellationToken cancellationToken)
     {
         if (stored.StartsWith(EncryptedPrefix, StringComparison.Ordinal) == false)
         {
@@ -44,7 +44,7 @@ internal static class VaultConnectorHelper
 
         string encoded = stored[EncryptedPrefix.Length..];
         byte[] encrypted = Base58.Decode(encoded);
-        byte[] decrypted = await crypto.DecryptV3Async(encrypted, masterKey);
+        byte[] decrypted = await crypto.DecryptV3Async(encrypted, masterKey, cancellationToken);
         return Encoding.UTF8.GetString(decrypted);
     }
 
@@ -60,7 +60,8 @@ internal static class VaultConnectorHelper
         IReadOnlyList<ConfigurationEntry> entries,
         ILocalStorageService storage,
         byte[]? masterKey,
-        ICryptoService crypto)
+        ICryptoService crypto,
+        CancellationToken cancellationToken)
     {
         foreach (ConfigurationEntry entry in entries)
         {
@@ -69,7 +70,7 @@ internal static class VaultConnectorHelper
                 continue;
             }
 
-            string? stored = await storage.GetItemAsync(entry.StorageKey);
+            string? stored = await storage.GetItemAsync(entry.StorageKey, cancellationToken);
 
             if (string.IsNullOrWhiteSpace(stored))
             {
@@ -80,7 +81,7 @@ internal static class VaultConnectorHelper
             {
                 // If decryption fails (VaultDecryptionException),
                 // it propagates up to the UI so we can prompt to recheck the Master Key.
-                entry.Value = await DecryptIfNeededAsync(stored, masterKey, crypto);
+                entry.Value = await DecryptIfNeededAsync(stored, masterKey, crypto, cancellationToken);
             }
             else
             {
@@ -101,7 +102,8 @@ internal static class VaultConnectorHelper
         IReadOnlyList<ConfigurationEntry> entries,
         ILocalStorageService storage,
         byte[]? masterKey,
-        ICryptoService crypto)
+        ICryptoService crypto,
+        CancellationToken cancellationToken)
     {
         foreach (ConfigurationEntry entry in entries)
         {
@@ -123,11 +125,11 @@ internal static class VaultConnectorHelper
 
                 if (string.IsNullOrWhiteSpace(valueToStore) == false)
                 {
-                    valueToStore = await EncryptAsync(valueToStore, masterKey, crypto);
+                    valueToStore = await EncryptAsync(valueToStore, masterKey, crypto, cancellationToken);
                 }
             }
 
-            await storage.SetItemAsync(entry.StorageKey, valueToStore);
+            await storage.SetItemAsync(entry.StorageKey, valueToStore, cancellationToken);
         }
     }
 

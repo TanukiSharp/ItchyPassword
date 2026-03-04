@@ -37,34 +37,34 @@ public interface IVaultConnector
     /// </para>
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains true if the access was successful; otherwise, false.</returns>
-    Task<bool> AccessAsync();
+    Task<bool> AccessAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Loads the vault content from the storage provider.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation. The task result contains the vault content as a string.</returns>
-    Task<string> LoadVaultAsync();
+    Task<string> LoadVaultAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Saves the vault content to the storage provider.
     /// </summary>
     /// <param name="content">The content to save.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task SaveVaultAsync(string content);
+    Task SaveVaultAsync(string content, CancellationToken cancellationToken);
 
     /// <summary>
     /// Loads the configuration for the connector from local storage.
     /// If a master key is available, encrypted secret values are automatically decrypted.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task LoadConfigurationAsync();
+    Task LoadConfigurationAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Saves the current configuration of the connector to local storage.
     /// If a master key is available, secret values are automatically encrypted before persistence.
     /// </summary>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task SaveConfigurationAsync();
+    Task SaveConfigurationAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Gets a value indicating whether a failed access attempt can be retried with a fresh user gesture.
