@@ -61,9 +61,9 @@
 
         foreach (MetadataEntryV2 entry in Item.Metadata)
         {
-            bool isEncrypted = entry.Value.StartsWith("enc:", StringComparison.Ordinal);
+            bool isValueEncrypted = entry.Value.StartsWith("enc:", StringComparison.Ordinal);
 
-            string decryptedValue = isEncrypted && masterKey.Length > 0
+            string decryptedValue = isValueEncrypted && masterKey.Length > 0
                 ? await VaultConnectorHelper.DecryptIfNeededAsync(entry.Value, masterKey, Crypto, CancellationToken.None)
                 : entry.Value;
 
@@ -71,9 +71,9 @@
             {
                 Key = entry.Key,
                 DecryptedValue = decryptedValue,
-                EncryptedValue = isEncrypted ? entry.Value : null,
+                EncryptedValue = isValueEncrypted ? entry.Value : null,
                 NewValue = decryptedValue,
-                IsEncrypted = isEncrypted
+                IsEncrypted = isValueEncrypted
             });
         }
     }

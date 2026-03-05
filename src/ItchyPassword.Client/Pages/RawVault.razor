@@ -22,8 +22,9 @@ else
         <div class="card-body">
             <pre class="raw-vault-json">@(Session.LastRawContent ?? "(no content)")</pre>
 
-            <div class="form-actions">
+            <div class="form-actions form-actions-spread">
                 <button class="button secondary" @onclick="GoBack">Back</button>
+                <span class="text-muted">@ByteSizeFormat.ToHumanReadable(Session.LastRawContent?.Length ?? 0)</span>
             </div>
         </div>
     </div>
@@ -47,4 +48,5 @@ else
     {
         Nav.NavigateTo("/vault");
     }
+
 }

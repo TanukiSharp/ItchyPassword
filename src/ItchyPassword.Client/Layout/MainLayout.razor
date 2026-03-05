@@ -30,7 +30,7 @@
                             @(AppState.Status == AppStatus.Unlocked ? "🔓" : "🔒") Vault
                         </NavLink>
                     </li>
-                    <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static Key</NavLink></li>
+                    <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static key</NavLink></li>
                     <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
                 </ul>
                 <details class="sidebar-debug-section">
@@ -42,7 +42,7 @@
                         }
                     </summary>
                     <ul>
-                        <li><NavLink href="raw-vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">📄 Raw JSON</NavLink></li>
+                        <li><NavLink href="raw-vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">📄 Raw Vault</NavLink></li>
                         <li>
                             <NavLink href="error-log" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
                                 ⚠️ Errors

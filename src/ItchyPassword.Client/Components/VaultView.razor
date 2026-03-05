@@ -71,8 +71,11 @@
                                     @foreach (MetadataMatch metaMatch in match.MetadataMatches)
                                     {
                                         <span class="vault-metadata-tag">
-                                            @RenderHighlightedText(metaMatch.Key, metaMatch.KeyResult.Ranges):
-                                            @RenderHighlightedText(metaMatch.Value, metaMatch.ValueResult.Ranges)
+                                            <span>@RenderHighlightedText(metaMatch.Key, metaMatch.KeyResult.Ranges)</span>
+                                            @if (string.IsNullOrEmpty(metaMatch.Value) == false)
+                                            {
+                                                <span>: @RenderHighlightedText(metaMatch.Value, metaMatch.ValueResult.Ranges)</span>
+                                            }
                                         </span>
                                     }
                                 </div>

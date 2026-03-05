@@ -7,67 +7,72 @@
 @inject IMasterKeyProvider MasterKeyProvider
 
 <div class="grid-2col">
-    <div>
-        <div class="form-group">
-            <label>Public Part</label>
+    <div class="form-group">
+        <label>Public Part</label>
+        <div class="input-with-action">
             <input class="input" value="@_publicPart" @oninput="OnPublicPartInput" minlength="@MinPublicPartLength" placeholder="@($"At least {MinPublicPartLength} characters")" />
         </div>
-
-        <div class="form-group">
-            <label>Alphabet</label>
-            <input class="input @(_hasDuplicateChars ? "input-warning" : string.Empty)" value="@_alphabet" @oninput="OnAlphabetInput" />
-            @if (_hasDuplicateChars)
-            {
-                <div class="alphabet-warning">
-                    <span class="alert-inline-warning">Duplicate characters detected: @_duplicateCharsSummary</span>
-                    <button type="button" class="button secondary button-sm" @onclick="DeduplicateAlphabet" title="Remove duplicate characters from the alphabet.">
-                        Remove duplicates
-                    </button>
-                </div>
-            }
-        </div>
-
-        <div class="form-group">
-            <label>Length</label>
-            <input class="input" type="number" min="@MinLength" value="@_length" @oninput="OnLengthInput" />
-        </div>
-
-        <div class="form-group">
-            <label>Crypto version</label>
-            <select class="input" value="@_cryptoVersion" @onchange="OnCryptoVersionChanged">
-                <option value="2">v2</option>
-                <option value="1">v1 (Legacy)</option>
-            </select>
-        </div>
-
-        <div class="form-group">
-            <label>Encoding version</label>
-            <select class="input" value="@_encodingVersion" @onchange="OnEncodingVersionChanged">
-                <option value="2">v2</option>
-                <option value="1">v1 (Legacy)</option>
-            </select>
-        </div>
-
-        <button type="button" class="button primary button-block" @onclick="() => GenerateAsync()" disabled="@(_isGenerating || _publicPart.Length < MinPublicPartLength || _length < MinLength)">
-            Generate Password
-        </button>
-
-        @if (string.IsNullOrWhiteSpace(_error) == false)
-        {
-            <div class="alert danger alert-inline-sm">@_error</div>
-        }
     </div>
 
-    <div>
-        <div class="form-group">
-            <label>Result</label>
-            <div class="input-with-action">
-                <input class="input" type="text" readonly value="@_result" />
-                <CopyButton Text="@_result" />
-            </div>
+    <div class="form-group">
+        <label>Result</label>
+        <div class="input-with-action">
+            <input class="input" type="text" readonly value="@_result" />
+            <CopyButton Text="@_result" />
         </div>
     </div>
 </div>
+
+<details class="static-key-advanced">
+    <summary class="details-summary">Advanced options</summary>
+    <div class="options-panel">
+        <div class="grid-2col">
+            <div class="form-group">
+                <label>Alphabet</label>
+                <div class="symbol-input-group">
+                    <input class="input @(_hasDuplicateChars ? "input-warning" : string.Empty)" value="@_alphabet" @oninput="OnAlphabetInput" />
+                    <button type="button" class="button secondary symbol-reset-btn"
+                            @onclick="ResetAlphabet" title="Reset to default alphabet">↺</button>
+                </div>
+                @if (_hasDuplicateChars)
+                {
+                    <div class="alphabet-warning">
+                        <span class="alert-inline-warning">Duplicate characters detected: @_duplicateCharsSummary</span>
+                        <button type="button" class="button secondary button-sm" @onclick="DeduplicateAlphabet" title="Remove duplicate characters from the alphabet.">
+                            Remove duplicates
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div class="form-group">
+                <label>Length</label>
+                <input class="input" type="number" min="@MinLength" value="@_length" @oninput="OnLengthInput" />
+            </div>
+
+            <div class="form-group">
+                <label>Crypto version</label>
+                <select class="input" value="@_cryptoVersion" @onchange="OnCryptoVersionChanged">
+                    <option value="2">v2</option>
+                    <option value="1">v1 (Legacy)</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Encoding version</label>
+                <select class="input" value="@_encodingVersion" @onchange="OnEncodingVersionChanged">
+                    <option value="2">v2</option>
+                    <option value="1">v1 (Legacy)</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</details>
+
+@if (string.IsNullOrWhiteSpace(_error) == false)
+{
+    <div class="alert danger alert-inline-sm">@_error</div>
+}
 
 @code {
     [Parameter]
@@ -129,6 +134,16 @@
         {
             _duplicateCharsSummary = string.Empty;
         }
+    }
+
+    /// <summary>
+    /// Resets the alphabet to the default value and re-generates if possible.
+    /// </summary>
+    private async Task ResetAlphabet()
+    {
+        _alphabet = StaticKeyDataConstants.DefaultAlphabet;
+        UpdateAlphabetValidation();
+        await TryAutoGenerateAsync();
     }
 
     /// <summary>
@@ -217,7 +232,6 @@
             cryptoVersion = StaticKeyDataConstants.LatestCryptoVersion;
         }
         _cryptoVersion = cryptoVersion;
-        _result = string.Empty;
         await TryAutoGenerateAsync();
     }
 
@@ -228,7 +242,6 @@
             encodingVersion = StaticKeyDataConstants.LatestEncodingVersion;
         }
         _encodingVersion = encodingVersion;
-        _result = string.Empty;
         await TryAutoGenerateAsync();
     }
 
@@ -261,6 +274,7 @@
     {
         if (_publicPart.Length >= MinPublicPartLength && _length >= MinLength && _alphabet.Length >= 2)
         {
+            _result = string.Empty;
             await GenerateAsync(debounce: true);
         }
         else
