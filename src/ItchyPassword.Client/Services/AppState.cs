@@ -5,11 +5,12 @@ using Microsoft.AspNetCore.Components;
 
 namespace ItchyPassword.Client.Services;
 
-public class AppState(NavigationManager nav, VaultSession session, IMasterKeyProvider keyProvider) : IAppState
+public class AppState(NavigationManager nav, VaultSession session, IMasterKeyProvider keyProvider, ToastService toast) : IAppState
 {
     private readonly NavigationManager _nav = nav;
     private readonly VaultSession _session = session;
     private readonly IMasterKeyProvider _keyProvider = keyProvider;
+    private readonly ToastService _toast = toast;
     private AppStatus _status = AppStatus.Locked;
     private string _statusMessage = string.Empty;
     private string _searchQuery = string.Empty;
@@ -58,6 +59,13 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
 
     public async Task UnlockAsync(byte[] key, CancellationToken cancellationToken)
     {
+        if (key.Length < Core.Constants.MasterKeyConstants.MinimumLength)
+        {
+            Status = AppStatus.Error;
+            StatusMessage = $"Master key must be at least {Core.Constants.MasterKeyConstants.MinimumLength} characters.";
+            NotifyStateChanged();
+            return;
+        }
         if (Status == AppStatus.Unlocking)
         {
             // Already unlocking, maybe attach to existing task if we tracked it,
@@ -115,6 +123,11 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
 
             Status = AppStatus.Unlocked;
             StatusMessage = string.Empty;
+
+            if (_session.LastSignatureStatus != VaultSignatureStatus.Valid)
+            {
+                _toast.Show("⚠️ Vault integrity check failed. ⚠️\nThe vault may have been modified outside the app.", TimeSpan.MaxValue);
+            }
         }
         catch (VaultConnectorNotConfiguredException)
         {

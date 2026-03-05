@@ -7,3 +7,8 @@ public static class SecretDataConstants
     public const int DefaultLength = 64;
     public const string DefaultSymbolAlphabet = "!@#$%^&*()-_=+[]{}|;:',.<>?/`~";
 }
+
+public static class MasterKeyConstants
+{
+    public const int MinimumLength = 16;
+}

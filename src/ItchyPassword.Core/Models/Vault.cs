@@ -122,6 +122,13 @@ public readonly struct VaultV2
     [JsonPropertyName("version")]
     public required int Version { get; init; }
 
+    /// <summary>
+    /// HMAC-SHA512 signature of the canonical vault content (everything except this field), Base58-encoded.
+    /// Used for integrity verification.
+    /// </summary>
+    [JsonPropertyName("signature")]
+    public string? Signature { get; init; }
+
     [JsonPropertyName("items")]
     public required List<VaultItemV2> Items { get; init; }
 }

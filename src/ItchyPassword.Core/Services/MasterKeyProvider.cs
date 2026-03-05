@@ -55,7 +55,7 @@ public class MasterKeyProvider : IMasterKeyProvider, INotifyPropertyChanged
     /// </summary>
     private static bool SequenceEquals(byte[] a, byte[] b)
     {
-        return a.AsSpan().SequenceEqual(b);
+        return CryptographicOperations.FixedTimeEquals(a, b);
     }
 
     /// <inheritdoc />

@@ -12,6 +12,7 @@ public class VaultSession
     private const string WriterIdsStorageKey = "itchypassword_writer_vault_connectors";
 
     private readonly IMasterKeyProvider _masterKeyProvider;
+    private readonly ICryptoService _crypto;
     private readonly VaultMigrationService _migrationService;
     private readonly ILocalStorageService _storage;
 
@@ -22,6 +23,11 @@ public class VaultSession
     /// Gets or sets the currently loaded vault.
     /// </summary>
     public VaultV2? Vault { get; set; }
+
+    /// <summary>
+    /// Gets the signature verification status from the last vault load.
+    /// </summary>
+    public VaultSignatureStatus LastSignatureStatus { get; private set; } = VaultSignatureStatus.Missing;
 
     /// <summary>
     /// Gets the last downloaded or saved vault content as a raw string.
@@ -41,10 +47,11 @@ public class VaultSession
     /// <summary>
     /// Initializes a new instance of the <see cref="VaultSession"/> class.
     /// </summary>
-    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, ILocalStorageService storage, VaultMigrationService migrationService)
+    public VaultSession(IMasterKeyProvider masterKeyProvider, IEnumerable<IVaultConnector> connectors, ILocalStorageService storage, ICryptoService crypto, VaultMigrationService migrationService)
     {
         _masterKeyProvider = masterKeyProvider;
         _storage = storage;
+        _crypto = crypto;
         _migrationService = migrationService;
 
         Connectors.AddRange(connectors);
@@ -214,10 +221,15 @@ public class VaultSession
         if (string.IsNullOrWhiteSpace(content))
         {
             Vault = new VaultV2() { Version = 2, Items = [] };
+            LastSignatureStatus = VaultSignatureStatus.Valid;
         }
         else
         {
-            VaultV2? vault = VaultDataService.DeserializeVault(content);
+            VaultDeserializeResult result = await VaultDataService.DeserializeAndVerifyAsync(
+                content, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
+
+            VaultV2? vault = result.Vault;
+            LastSignatureStatus = result.SignatureStatus;
 
             if (vault is null)
             {
@@ -258,7 +270,7 @@ public class VaultSession
             return [];
         }
 
-        string json = VaultDataService.SerializeVault(Vault.Value);
+        string json = await VaultDataService.SerializeAndSignAsync(Vault.Value, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
         LastRawContent = json;
 
         var tasks = WriteConnectors.Select(async c =>

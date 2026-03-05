@@ -832,6 +832,10 @@ td.text-right,
     text-align: right;
 }
 
+.char-count-too-short {
+    color: var(--danger-color, #dc3545);
+}
+
 .master-key-submit {
     width: 100%;
     margin-top: 1rem;
@@ -890,6 +894,14 @@ td.text-right,
 
 .master-key-confirm-details .form-group {
     margin-top: 0.5rem;
+}
+
+.diceware-hint {
+    color: var(--text-muted);
+    font-size: 0.82em;
+    margin-top: 0.4rem;
+    margin-bottom: 0;
+    padding-left: 0.4rem;
 }
 
 .auto-protect-message {

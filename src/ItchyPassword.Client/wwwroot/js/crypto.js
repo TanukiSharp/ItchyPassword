@@ -202,5 +202,19 @@ window.ItchyPassword.Crypto = {
          const array = new Uint8Array(count);
          window.crypto.getRandomValues(array);
          return array;
+    },
+
+    computeHmacSha512: async function(data, key) {
+        const hmacKey = await window.crypto.subtle.importKey(
+            'raw',
+            key,
+            { name: 'HMAC', hash: { name: 'SHA-512' } },
+            false,
+            ['sign']
+        );
+
+        const signature = await window.crypto.subtle.sign('HMAC', hmacKey, data);
+
+        return new Uint8Array(signature);
     }
 };

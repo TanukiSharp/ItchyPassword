@@ -127,4 +127,9 @@ public sealed class DotNetCryptoService : ICryptoService
     {
         return Task.FromResult(RandomNumberGenerator.GetBytes(count));
     }
+
+    public Task<byte[]> ComputeHmacSha512Async(byte[] data, byte[] key, CancellationToken cancellationToken)
+    {
+        return Task.FromResult(HMACSHA512.HashData(key, data));
+    }
 }

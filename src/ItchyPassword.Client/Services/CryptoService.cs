@@ -72,4 +72,12 @@ public class CryptoService(IJSRuntime js) : ICryptoService
             cancellationToken, count
         );
     }
+
+    public async Task<byte[]> ComputeHmacSha512Async(byte[] data, byte[] key, CancellationToken cancellationToken)
+    {
+        return await js.InvokeAsync<byte[]>(
+            "ItchyPassword.Crypto.computeHmacSha512",
+            cancellationToken, data, key
+        );
+    }
 }

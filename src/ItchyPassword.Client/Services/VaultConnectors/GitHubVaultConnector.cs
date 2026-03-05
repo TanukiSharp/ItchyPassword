@@ -154,7 +154,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         string path = VaultConnectorHelper.GetValue(Configuration, FilePathConfigKey);
         string token = VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenConfigKey);
 
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{owner}/{repository}/contents/{path}");
+        using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repository)}/contents/{Uri.EscapeDataString(path)}");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
 
@@ -208,7 +208,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
             sha = _currentSha,
         };
 
-        using var request = new HttpRequestMessage(HttpMethod.Put, $"https://api.github.com/repos/{owner}/{repository}/contents/{path}");
+        using var request = new HttpRequestMessage(HttpMethod.Put, $"https://api.github.com/repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repository)}/contents/{Uri.EscapeDataString(path)}");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
         request.Content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
 
