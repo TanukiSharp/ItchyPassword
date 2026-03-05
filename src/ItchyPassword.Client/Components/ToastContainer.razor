@@ -1,0 +1,87 @@
+@inject ToastService Toast
+@implements IDisposable
+
+@if (_isVisible)
+{
+    <div class="toast-container">
+        <div class="toast-message @(_isHiding ? "toast-hiding" : "")">
+            <span>@_message</span>
+            <button class="toast-dismiss" @onclick="Dismiss">✕</button>
+        </div>
+    </div>
+}
+
+@code {
+    private string _message = string.Empty;
+    private bool _isVisible;
+    private bool _isHiding;
+    private CancellationTokenSource? _cts;
+
+    private static readonly TimeSpan AnimationDuration = TimeSpan.FromMilliseconds(250);
+
+    protected override void OnInitialized()
+    {
+        Toast.OnShow += ShowToast;
+    }
+
+    public void Dispose()
+    {
+        Toast.OnShow -= ShowToast;
+        _cts?.Cancel();
+        _cts?.Dispose();
+    }
+
+    private void ShowToast(string message, TimeSpan duration)
+    {
+        // Cancel the previous toast. Don't dispose here — the finally block in
+        // HideAfterAsync owns disposal of the CTS it was given.
+        _cts?.Cancel();
+        _cts = new CancellationTokenSource();
+
+        _message = message;
+        _isVisible = true;
+        _isHiding = false;
+        StateHasChanged();
+
+        _ = HideAfterAsync(duration, _cts);
+    }
+
+    private async Task HideAfterAsync(TimeSpan duration, CancellationTokenSource cts)
+    {
+        try
+        {
+            await Task.Delay(duration, cts.Token);
+
+            // Start exit animation, then wait for it to finish.
+            _isHiding = true;
+            await InvokeAsync(StateHasChanged);
+            await Task.Delay(AnimationDuration, cts.Token);
+
+            _isVisible = false;
+            _isHiding = false;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (TaskCanceledException) when (cts.IsCancellationRequested)
+        {
+            // Dismissed or replaced by another toast.
+        }
+        finally
+        {
+            // Only clear the field if this CTS is still the active one.
+            // A newer ShowToast call may have already replaced _cts.
+            if (_cts == cts)
+            {
+                _cts = null;
+            }
+
+            cts.Dispose();
+        }
+    }
+
+    private void Dismiss()
+    {
+        // Cancel only — the finally block in HideAfterAsync will dispose the CTS.
+        _cts?.Cancel();
+        _isVisible = false;
+    }
+}

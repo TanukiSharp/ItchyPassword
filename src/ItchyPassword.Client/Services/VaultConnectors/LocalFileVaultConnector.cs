@@ -14,17 +14,10 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// 2. <see cref="AccessAsync"/> awaits the result via JS interop.
 /// </para>
 /// </summary>
-public class LocalFileVaultConnector : IVaultConnector
+public class LocalFileVaultConnector(IJSRuntime js) : IVaultConnector
 {
-    private readonly IJSRuntime _js;
-
     private bool _hasAccess;
     private bool _hasStoredHandle;
-
-    public LocalFileVaultConnector(IJSRuntime js)
-    {
-        _js = js;
-    }
 
     /// <inheritdoc />
     public Guid Id { get; } = Guid.Parse("a1b2c3d4-0001-0001-0001-000000000001");
@@ -71,6 +64,10 @@ public class LocalFileVaultConnector : IVaultConnector
         }
     }
 
+    public void ClearSecrets()
+    {
+    }
+
     /// <inheritdoc />
     public async Task LoadConfigurationAsync(CancellationToken cancellationToken)
     {
@@ -85,7 +82,7 @@ public class LocalFileVaultConnector : IVaultConnector
         // Restore the file handle from IndexedDB into the JS in-memory variable.
         // Also calls queryPermission() — if the user chose "allow every time",
         // the handle is ready to use without a gesture.
-        _hasStoredHandle = await _js.InvokeAsync<bool>("localFileInterop.restoreHandle", cancellationToken);
+        _hasStoredHandle = await js.InvokeAsync<bool>("localFileInterop.restoreHandle", cancellationToken);
     }
 
     /// <inheritdoc />
@@ -106,13 +103,13 @@ public class LocalFileVaultConnector : IVaultConnector
         // Synchronously initiate the file picker or permission request.
         // This MUST happen before the first await so the browser's transient
         // user activation (from a click handler) is still active.
-        if (_js is IJSInProcessRuntime jsInProcess)
+        if (js is IJSInProcessRuntime jsInProcess)
         {
-            jsInProcess.Invoke<object?>("eval", "localFileInterop.initiateAccess()");
+            jsInProcess.Invoke<object?>("localFileInitiateAccess");
         }
 
         // Now await the async result.
-        string? fileName = await _js.InvokeAsync<string?>("localFileInterop.awaitAccess", cancellationToken);
+        string? fileName = await js.InvokeAsync<string?>("localFileInterop.awaitAccess", cancellationToken);
 
         if (string.IsNullOrWhiteSpace(fileName))
         {
@@ -138,7 +135,7 @@ public class LocalFileVaultConnector : IVaultConnector
             throw new InvalidOperationException("No file selected. Use Access to pick a file first.");
         }
 
-        string? content = await _js.InvokeAsync<string?>("localFileInterop.readFile", cancellationToken);
+        string? content = await js.InvokeAsync<string?>("localFileInterop.readFile", cancellationToken);
         return content ?? string.Empty;
     }
 
@@ -150,7 +147,7 @@ public class LocalFileVaultConnector : IVaultConnector
             throw new InvalidOperationException("No file selected. Use Access to pick a file first.");
         }
 
-        bool success = await _js.InvokeAsync<bool>("localFileInterop.writeFile", cancellationToken, content);
+        bool success = await js.InvokeAsync<bool>("localFileInterop.writeFile", cancellationToken, content);
 
         if (success == false)
         {

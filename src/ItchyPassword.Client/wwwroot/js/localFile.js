@@ -203,3 +203,10 @@ window.localFileInterop = {
         return true;
     }
 };
+
+// Global wrapper for synchronous invocation from Blazor IJSInProcessRuntime.
+// Avoids eval() so a strict Content-Security-Policy can omit 'unsafe-eval'.
+window.localFileInitiateAccess = function () {
+    localFileInterop.initiateAccess();
+    return null;
+};

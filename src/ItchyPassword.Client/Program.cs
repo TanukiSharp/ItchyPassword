@@ -18,6 +18,7 @@ builder.Services.AddScoped<IAppState, AppState>();
 builder.Services.AddScoped<VaultSession>();
 builder.Services.AddScoped<IVaultCryptoService, VaultCryptoService>();
 builder.Services.AddScoped<ClipboardService>();
+builder.Services.AddScoped<ToastService>();
 builder.Services.AddScoped<VaultMigrationService>();
 builder.Services.AddSingleton<ErrorLogService>();
 

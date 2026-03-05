@@ -60,8 +60,8 @@ public class GoogleDriveVaultConnector(
     private const string AppDataScope = "https://www.googleapis.com/auth/drive.appdata";
     private const string DriveFileScope = "https://www.googleapis.com/auth/drive.file";
 
-    private const string StorageModeKey = "StorageMode";
-    private const string FolderIdKey = "FolderId";
+    private const string StorageModeConfigKey = "StorageMode";
+    private const string FolderIdConfigKey = "FolderId";
     private const string AccessTokenStorageKey = "itchypassword_gdrive_access_token";
     private const string RefreshTokenStorageKey = "itchypassword_gdrive_refresh_token";
 
@@ -103,7 +103,7 @@ public class GoogleDriveVaultConnector(
     [
         new ConfigurationEntry
         {
-            Key = StorageModeKey,
+            Key = StorageModeConfigKey,
             Label = "Storage mode",
             Description = """
                 Choose where the vault file is stored in Google Drive.
@@ -121,14 +121,14 @@ public class GoogleDriveVaultConnector(
         },
         new ConfigurationEntry
         {
-            Key = FolderIdKey,
+            Key = FolderIdConfigKey,
             Label = "Folder",
             Description = "Enter a folder name (e.g. \"ItchyPassword\") or a path (e.g. \"MyData/Vaults\"). Created automatically if it does not exist.",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "ItchyPassword",
             StorageKey = "itchypassword_gdrive_folder_id",
             IsRequired = true,
-            VisibleWhenKey = StorageModeKey,
+            VisibleWhenKey = StorageModeConfigKey,
             VisibleWhenValue = "folder",
         },
     ];
@@ -157,6 +157,15 @@ public class GoogleDriveVaultConnector(
 
     /// <inheritdoc />
     public string? AccessFailureMessage { get; private set; }
+
+    /// <summary>
+    /// Clears in-memory OAuth tokens and secret configuration entries.
+    /// </summary>
+    public void ClearSecrets()
+    {
+        _accessToken = string.Empty;
+        _refreshToken = string.Empty;
+    }
 
     /// <inheritdoc />
     public async Task LoadConfigurationAsync(CancellationToken cancellationToken)
@@ -624,7 +633,7 @@ public class GoogleDriveVaultConnector(
 
     private string GetStorageMode()
     {
-        return VaultConnectorHelper.GetValue(Configuration, StorageModeKey);
+        return VaultConnectorHelper.GetValue(Configuration, StorageModeConfigKey);
     }
 
     /// <summary>
@@ -639,7 +648,7 @@ public class GoogleDriveVaultConnector(
             return _resolvedFolderId;
         }
 
-        string configured = VaultConnectorHelper.GetValue(Configuration, FolderIdKey);
+        string configured = VaultConnectorHelper.GetValue(Configuration, FolderIdConfigKey);
 
         if (string.IsNullOrWhiteSpace(configured))
         {

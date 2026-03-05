@@ -18,10 +18,10 @@ namespace ItchyPassword.Client.Services.VaultConnectors;
 /// <param name="masterKeyProvider">The provider for the in-memory master key.</param>
 public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage, ICryptoService crypto, IMasterKeyProvider masterKeyProvider) : IVaultConnector
 {
-    private const string RepositoryOwnerKey = "VaultRepositoryOwner";
-    private const string RepositoryNameKey = "VaultRepositoryName";
-    private const string FilePathKey = "VaultFilePath";
-    private const string PersonalAccessTokenKey = "PersonalAccessToken";
+    private const string RepositoryOwnerConfigKey = "VaultRepositoryOwner";
+    private const string RepositoryNameConfigKey = "VaultRepositoryName";
+    private const string FilePathConfigKey = "VaultFilePath";
+    private const string PersonalAccessTokenConfigKey = "PersonalAccessToken";
 
     private string _currentSha = string.Empty; // Internal SHA tracking
 
@@ -51,7 +51,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     [
         new ConfigurationEntry
         {
-            Key = RepositoryOwnerKey,
+            Key = RepositoryOwnerConfigKey,
             Label = "Repository Owner",
             Description = "The GitHub username or organization that owns the repository.",
             Kind = ConfigurationEntryKind.Text,
@@ -61,7 +61,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         },
         new ConfigurationEntry
         {
-            Key = RepositoryNameKey,
+            Key = RepositoryNameConfigKey,
             Label = "Repository Name",
             Description = "The name of the GitHub repository that stores the vault file.",
             Kind = ConfigurationEntryKind.Text,
@@ -71,7 +71,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         },
         new ConfigurationEntry
         {
-            Key = FilePathKey,
+            Key = FilePathConfigKey,
             Label = "Vault File Path",
             Description = "Path to the vault file inside the repository.",
             Kind = ConfigurationEntryKind.Text,
@@ -82,7 +82,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         },
         new ConfigurationEntry
         {
-            Key = PersonalAccessTokenKey,
+            Key = PersonalAccessTokenConfigKey,
             Label = "Personal Access Token",
             Description = "A GitHub PAT with read/write access to the repository contents.",
             Kind = ConfigurationEntryKind.Secret,
@@ -100,6 +100,10 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         {
             return VaultConnectorHelper.AreRequiredEntriesFilled(Configuration);
         }
+    }
+
+    public void ClearSecrets()
+    {
     }
 
     /// <inheritdoc />
@@ -127,7 +131,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenKey));
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenConfigKey));
             using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
             return response.IsSuccessStatusCode;
         }
@@ -145,10 +149,10 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
             throw new InvalidOperationException("Not configured.");
         }
 
-        string owner = VaultConnectorHelper.GetValue(Configuration, RepositoryOwnerKey);
-        string repository = VaultConnectorHelper.GetValue(Configuration, RepositoryNameKey);
-        string path = VaultConnectorHelper.GetValue(Configuration, FilePathKey);
-        string token = VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenKey);
+        string owner = VaultConnectorHelper.GetValue(Configuration, RepositoryOwnerConfigKey);
+        string repository = VaultConnectorHelper.GetValue(Configuration, RepositoryNameConfigKey);
+        string path = VaultConnectorHelper.GetValue(Configuration, FilePathConfigKey);
+        string token = VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenConfigKey);
 
         using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{owner}/{repository}/contents/{path}");
         request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
@@ -191,10 +195,10 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
             throw new InvalidOperationException("Not configured");
         }
 
-        string owner = VaultConnectorHelper.GetValue(Configuration, RepositoryOwnerKey);
-        string repository = VaultConnectorHelper.GetValue(Configuration, RepositoryNameKey);
-        string path = VaultConnectorHelper.GetValue(Configuration, FilePathKey);
-        string token = VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenKey);
+        string owner = VaultConnectorHelper.GetValue(Configuration, RepositoryOwnerConfigKey);
+        string repository = VaultConnectorHelper.GetValue(Configuration, RepositoryNameConfigKey);
+        string path = VaultConnectorHelper.GetValue(Configuration, FilePathConfigKey);
+        string token = VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenConfigKey);
 
         string base64Content = Convert.ToBase64String(Encoding.UTF8.GetBytes(content));
         var payload = new

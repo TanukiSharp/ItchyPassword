@@ -1,4 +1,5 @@
 @inject ClipboardService Clipboard
+@inject ToastService Toast
 
 <button class="button secondary @CssClass" type="button"
         @onclick="CopyAsync"
@@ -19,23 +20,23 @@
 </button>
 
 @code {
-    /// <summary>
-    /// Static text to copy. Used when <see cref="TextProvider"/> is not set.
-    /// </summary>
-    [Parameter]
-    public string? Text { get; set; }
+        /// <summary>
+        /// Static text to copy. Used when <see cref="TextProvider"/> is not set.
+        /// </summary>
+        [Parameter]
+        public string? Text { get; set; }
 
-    /// <summary>
-    /// Async function that produces the text to copy. Takes priority over <see cref="Text"/> when set.
-    /// </summary>
-    [Parameter]
-    public Func<Task<string>>? TextProvider { get; set; }
+        /// <summary>
+        /// Async function that produces the text to copy. Takes priority over <see cref="Text"/> when set.
+        /// </summary>
+        [Parameter]
+        public Func<Task<string>>? TextProvider { get; set; }
 
-    /// <summary>
-    /// Optional additional CSS class(es) to apply to the button.
-    /// </summary>
-    [Parameter]
-    public string? CssClass { get; set; }
+        /// <summary>
+        /// Optional additional CSS class(es) to apply to the button.
+        /// </summary>
+        [Parameter]
+        public string? CssClass { get; set; }
 
     private enum CopyState { Idle, Busy, Success, Error }
     private CopyState _state = CopyState.Idle;
@@ -80,6 +81,12 @@
 
             await Clipboard.CopyTextAsync(text, CancellationToken.None);
             _state = CopyState.Success;
+            Toast.Show("""
+                ⚠️Secret copied.
+                After pasting, copy any other text to clear your clipboard.
+                """,
+                TimeSpan.FromSeconds(5)
+        );
         }
         catch
         {

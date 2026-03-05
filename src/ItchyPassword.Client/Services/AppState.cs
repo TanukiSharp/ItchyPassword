@@ -1,5 +1,5 @@
-using System.Reflection.Metadata;
 using ItchyPassword.Core.Exceptions;
+using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using Microsoft.AspNetCore.Components;
 
@@ -142,6 +142,20 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     {
         _keyProvider.MasterKey = [];
         _session.Vault = null;
+
+        foreach (IVaultConnector connector in _session.Connectors)
+        {
+            foreach (ConfigurationEntry entry in connector.Configuration)
+            {
+                if (entry.IsEncrypted)
+                {
+                    entry.Value = string.Empty;
+                }
+            }
+
+            connector.ClearSecrets();
+        }
+
         Status = AppStatus.Locked;
         StatusMessage = string.Empty;
         SearchQuery = string.Empty;
