@@ -49,8 +49,9 @@ public interface IVaultConnector
     /// Saves the vault content to the storage provider.
     /// </summary>
     /// <param name="content">The content to save.</param>
+    /// <param name="changeHint">A hint describing the change being made.</param>
     /// <returns>A task that represents the asynchronous operation.</returns>
-    Task SaveVaultAsync(string content, CancellationToken cancellationToken);
+    Task SaveVaultAsync(string content, string changeHint, CancellationToken cancellationToken);
 
     /// <summary>
     /// Loads the configuration for the connector from local storage.

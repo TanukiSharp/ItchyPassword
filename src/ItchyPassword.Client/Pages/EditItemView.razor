@@ -136,7 +136,7 @@ else
             _item.LastModified = DateTime.UtcNow;
 
             // Serialize entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync(CancellationToken.None);
+            var results = await Session.SaveVaultAsync("Update vault via ItchyPassword", CancellationToken.None);
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)
@@ -185,7 +185,7 @@ else
             Session.Vault.Value.Items.Remove(_item);
 
             // Serialize entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync(CancellationToken.None);
+            var results = await Session.SaveVaultAsync("Delete item via ItchyPassword", CancellationToken.None);
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)

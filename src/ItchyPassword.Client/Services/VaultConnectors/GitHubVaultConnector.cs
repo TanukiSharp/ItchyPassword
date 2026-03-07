@@ -188,7 +188,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
     /// <inheritdoc />
-    public async Task SaveVaultAsync(string content, CancellationToken cancellationToken)
+    public async Task SaveVaultAsync(string content, string changeHint, CancellationToken cancellationToken)
     {
         if (IsConfigured == false)
         {
@@ -203,7 +203,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         string base64Content = Convert.ToBase64String(Encoding.UTF8.GetBytes(content));
         var payload = new
         {
-            message = "Update vault via ItchyPassword",
+            message = changeHint,
             content = base64Content,
             sha = _currentSha,
         };

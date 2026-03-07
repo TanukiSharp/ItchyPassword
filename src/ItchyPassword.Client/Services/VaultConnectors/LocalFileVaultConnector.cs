@@ -140,7 +140,7 @@ public class LocalFileVaultConnector(IJSRuntime js) : IVaultConnector
     }
 
     /// <inheritdoc />
-    public async Task SaveVaultAsync(string content, CancellationToken cancellationToken)
+    public async Task SaveVaultAsync(string content, string changeHint, CancellationToken cancellationToken)
     {
         if (_hasAccess == false)
         {

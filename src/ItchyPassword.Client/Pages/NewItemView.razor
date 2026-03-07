@@ -196,7 +196,7 @@
             }
 
             // Serialize the entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync(CancellationToken.None);
+            var results = await Session.SaveVaultAsync("Create new item via ItchyPassword", CancellationToken.None);
             var failures = results.Where(r => r.Success == false).ToList();
 
             if (failures.Count > 0)

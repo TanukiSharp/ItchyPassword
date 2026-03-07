@@ -52,6 +52,8 @@ public class GoogleDriveVaultConnector(
     private const string ClientId = "959481970115-4l07fa7bjv8l2dhkodtsl23q6hl1d70r.apps.googleusercontent.com";
     private static readonly string ClientSecret = string.Concat("GOCSPX-", "68HFVtr7r1pNlAMtitFjnVcnw7Hv");
     private const string VaultFileName = "vault.json";
+    private const string HistoryFileName = "history.txt";
+    private const int MaxHistoryEntries = 500;
     private const string DriveApiBase = "https://www.googleapis.com/drive/v3";
     private const string DriveUploadBase = "https://www.googleapis.com/upload/drive/v3";
     private const string GoogleTokenEndpoint = "https://oauth2.googleapis.com/token";
@@ -72,7 +74,8 @@ public class GoogleDriveVaultConnector(
     private readonly IJSRuntime _js = js;
 
     private bool _configLoaded;
-    private string? _cachedFileId;
+    private readonly DriveFile _vaultFile = new(VaultFileName, "application/json");
+    private readonly DriveFile _historyFile = new(HistoryFileName, "text/plain");
     private string? _resolvedFolderId;
     private string _accessToken = string.Empty;
     private string _refreshToken = string.Empty;
@@ -334,60 +337,66 @@ public class GoogleDriveVaultConnector(
         await LoadConfigurationAsync(cancellationToken);
 
         string accessToken = await GetOrRefreshAccessTokenAsync(cancellationToken);
-        string? fileId = await FindVaultFileAsync(accessToken, cancellationToken);
+        DriveStorageMode storageMode = GetStorageMode();
+        string? folderId = storageMode == DriveStorageMode.UserFolder
+            ? await GetResolvedFolderIdAsync(accessToken, cancellationToken)
+            : null;
 
-        if (string.IsNullOrWhiteSpace(fileId))
+        // Pre-cache file IDs for both vault and history in parallel.
+        await Task.WhenAll(
+            _vaultFile.FindAsync(_http, accessToken, storageMode, folderId, cancellationToken),
+            _historyFile.FindAsync(_http, accessToken, storageMode, folderId, cancellationToken)
+        );
+
+        if (string.IsNullOrWhiteSpace(_vaultFile.FileId))
         {
             // No vault file exists yet — return empty so the app creates a new vault.
             return string.Empty;
         }
 
-        _cachedFileId = fileId;
-
-        // Download file content.
-        using var request = new HttpRequestMessage(HttpMethod.Get, $"{DriveApiBase}/files/{fileId}?alt=media");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, cancellationToken);
-
-        return await response.Content.ReadAsStringAsync(cancellationToken);
+        return await _vaultFile.DownloadAsync(_http, accessToken, cancellationToken);
     }
 
     /// <inheritdoc />
-    public async Task SaveVaultAsync(string content, CancellationToken cancellationToken)
+    public async Task SaveVaultAsync(string content, string changeHint, CancellationToken cancellationToken)
     {
         // Ensure configuration is loaded. Writer connectors may not have
         // been explicitly loaded or accessed before save is called.
         await LoadConfigurationAsync(cancellationToken);
 
         string accessToken = await GetOrRefreshAccessTokenAsync(cancellationToken);
+        DriveStorageMode storageMode = GetStorageMode();
+        string? folderId = storageMode == DriveStorageMode.UserFolder
+            ? await GetResolvedFolderIdAsync(accessToken, cancellationToken)
+            : null;
 
-        if (string.IsNullOrWhiteSpace(_cachedFileId))
-        {
-            // Try to find existing file first.
-            _cachedFileId = await FindVaultFileAsync(accessToken, cancellationToken);
-        }
+        // Parallel batch 1: find vault file (if not cached) and download history content.
+        Task findVaultTask = string.IsNullOrWhiteSpace(_vaultFile.FileId)
+            ? _vaultFile.FindAsync(_http, accessToken, storageMode, folderId, cancellationToken)
+            : Task.CompletedTask;
 
-        if (string.IsNullOrWhiteSpace(_cachedFileId))
+        Task<string> downloadHistoryTask = DownloadHistoryAsync(accessToken, storageMode, folderId, cancellationToken);
+
+        await Task.WhenAll(findVaultTask, downloadHistoryTask);
+
+        string existingHistory = await downloadHistoryTask;
+        string updatedHistory = BuildHistoryContent(existingHistory, changeHint);
+
+        // Parallel batch 2: upload vault and history concurrently.
+        // Vault upload is critical (must throw on failure).
+        // History upload is best-effort (failures are swallowed).
+        Task vaultTask = _vaultFile.UploadAsync(_http, accessToken, content, storageMode, folderId, cancellationToken);
+        Task historyTask = _historyFile.UploadAsync(_http, accessToken, updatedHistory, storageMode, folderId, cancellationToken);
+
+        await vaultTask;
+
+        try
         {
-            // Create a new file.
-            _cachedFileId = await CreateVaultFileAsync(accessToken, content, cancellationToken);
+            await historyTask;
         }
-        else
+        catch
         {
-            try
-            {
-                // Update existing file.
-                await UpdateVaultFileAsync(accessToken, _cachedFileId, content, cancellationToken);
-            }
-            catch (HttpRequestException ex) when ((int?)ex.StatusCode == 404)
-            {
-                // File no longer exists (deleted externally, or stale ID).
-                // Clear the cache and create a new file.
-                _cachedFileId = null;
-                _cachedFileId = await CreateVaultFileAsync(accessToken, content, cancellationToken);
-            }
+            // History update is non-fatal — vault integrity is more important.
         }
     }
 
@@ -474,13 +483,13 @@ public class GoogleDriveVaultConnector(
             }
 
             // Verify the token has the scope required for the current storage mode.
-            string json = await response.Content.ReadAsStringAsync(cancellationToken);
-            using JsonDocument doc = JsonDocument.Parse(json);
+            await using Stream stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+            using JsonDocument doc = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
 
             if (doc.RootElement.TryGetProperty("scope", out JsonElement scopeElement))
             {
                 string grantedScopes = scopeElement.GetString() ?? string.Empty;
-                string requiredFragment = GetStorageMode() == "appdata" ? "drive.appdata" : "drive.file";
+                string requiredFragment = GetStorageMode() == DriveStorageMode.AppData ? "drive.appdata" : "drive.file";
 
                 if (grantedScopes.Contains(requiredFragment, StringComparison.OrdinalIgnoreCase) == false)
                 {
@@ -502,102 +511,48 @@ public class GoogleDriveVaultConnector(
     }
 
     /// <summary>
-    /// Searches for the vault file in Google Drive.
+    /// Downloads the history file content, finding it first if its file ID is not cached.
+    /// Returns <see cref="string.Empty"/> if the file does not exist.
     /// </summary>
-    private async Task<string?> FindVaultFileAsync(string accessToken, CancellationToken cancellationToken)
+    private async Task<string> DownloadHistoryAsync(string accessToken, DriveStorageMode storageMode, string? folderId, CancellationToken cancellationToken)
     {
-        string storageMode = GetStorageMode();
-
-        string? folderId = storageMode == "folder"
-            ? await GetResolvedFolderIdAsync(accessToken, cancellationToken)
-            : null;
-
-        string query = storageMode == "appdata"
-            ? $"name = '{VaultFileName}' and 'appDataFolder' in parents and trashed = false"
-            : $"name = '{VaultFileName}' and '{folderId}' in parents and trashed = false";
-
-        string spaces = storageMode == "appdata" ? "appDataFolder" : "drive";
-
-        string encodedQuery = Uri.EscapeDataString(query);
-        string url = $"{DriveApiBase}/files?q={encodedQuery}&spaces={spaces}&fields=files(id,name)&pageSize=1";
-
-        using var request = new HttpRequestMessage(HttpMethod.Get, url);
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, cancellationToken);
-
-        string rawJson = await response.Content.ReadAsStringAsync(cancellationToken);
-
-        DriveFileListResponse? result = JsonSerializer.Deserialize<DriveFileListResponse>(rawJson);
-
-        if (result?.Files is { Count: > 0 } && string.IsNullOrWhiteSpace(result.Files[0].Id) == false)
+        try
         {
-            return result.Files[0].Id;
-        }
+            if (string.IsNullOrWhiteSpace(_historyFile.FileId))
+            {
+                await _historyFile.FindAsync(_http, accessToken, storageMode, folderId, cancellationToken);
+            }
 
-        return null;
+            return await _historyFile.DownloadAsync(_http, accessToken, cancellationToken);
+        }
+        catch
+        {
+            // History download failure is non-fatal — we'll create a fresh file.
+            return string.Empty;
+        }
     }
 
     /// <summary>
-    /// Creates a new vault file in Google Drive using a multipart upload.
+    /// Builds the updated history file content by prepending a new timestamped entry
+    /// to the existing content and trimming to <see cref="MaxHistoryEntries"/> entries.
+    /// Newest entries appear at the top of the file.
     /// </summary>
-    private async Task<string> CreateVaultFileAsync(string accessToken, string content, CancellationToken cancellationToken)
+    private static string BuildHistoryContent(string existingContent, string changeHint)
     {
-        string storageMode = GetStorageMode();
+        List<string> entries = string.IsNullOrWhiteSpace(existingContent)
+            ? []
+            : [.. existingContent.Split('\n', StringSplitOptions.RemoveEmptyEntries)];
 
-        string? folderId = storageMode == "folder"
-            ? await GetResolvedFolderIdAsync(accessToken, cancellationToken)
-            : null;
+        string newEntry = $"{DateTime.UtcNow:O} {changeHint}";
+        entries.Insert(0, newEntry);
 
-        List<string> parents = storageMode == "appdata"
-            ? ["appDataFolder"]
-            : [folderId!];
-
-        var metadata = new { name = VaultFileName, parents };
-        string metadataJson = JsonSerializer.Serialize(metadata);
-
-        using var multipart = new MultipartContent("related");
-        var metadataPart = new StringContent(metadataJson, Encoding.UTF8, "application/json");
-        multipart.Add(metadataPart);
-
-        var contentPart = new StringContent(content, Encoding.UTF8, "application/json");
-        multipart.Add(contentPart);
-
-        using var request = new HttpRequestMessage(HttpMethod.Post, $"{DriveUploadBase}/files?uploadType=multipart&fields=id");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        request.Content = multipart;
-
-        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, cancellationToken);
-
-        DriveFileResponse? result = await response.Content.ReadFromJsonAsync<DriveFileResponse>(cancellationToken);
-        string? fileId = result?.Id;
-
-        if (string.IsNullOrWhiteSpace(fileId))
+        // Trim oldest entries (at the end) to respect the maximum.
+        if (entries.Count > MaxHistoryEntries)
         {
-            throw new InvalidOperationException("Google Drive created the vault file but did not return a valid file ID.");
+            entries.RemoveRange(MaxHistoryEntries, entries.Count - MaxHistoryEntries);
         }
 
-        return fileId;
-    }
-
-    /// <summary>
-    /// Updates the content of an existing vault file in Google Drive.
-    /// </summary>
-    private async Task UpdateVaultFileAsync(string accessToken, string fileId, string content, CancellationToken cancellationToken)
-    {
-        if (string.IsNullOrWhiteSpace(fileId) || fileId.Length < 5)
-        {
-            throw new InvalidOperationException($"Invalid Google Drive file ID: '{fileId}'. Cannot update.");
-        }
-
-        using var request = new HttpRequestMessage(new HttpMethod("PATCH"), $"{DriveUploadBase}/files/{fileId}?uploadType=media");
-        request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-        request.Content = new StringContent(content, Encoding.UTF8, "application/json");
-
-        using HttpResponseMessage response = await _http.SendAsync(request, cancellationToken);
-        await EnsureDriveSuccessAsync(response, cancellationToken);
+        return string.Join('\n', entries);
     }
 
     /// <summary>
@@ -631,9 +586,10 @@ public class GoogleDriveVaultConnector(
             "No valid Google Drive access token. Please use 'Test access' in Settings to sign in.");
     }
 
-    private string GetStorageMode()
+    private DriveStorageMode GetStorageMode()
     {
-        return VaultConnectorHelper.GetValue(Configuration, StorageModeConfigKey);
+        string value = VaultConnectorHelper.GetValue(Configuration, StorageModeConfigKey);
+        return value == "folder" ? DriveStorageMode.UserFolder : DriveStorageMode.AppData;
     }
 
     /// <summary>
@@ -719,8 +675,7 @@ public class GoogleDriveVaultConnector(
         using HttpResponseMessage searchResponse = await _http.SendAsync(searchRequest, cancellationToken);
         await EnsureDriveSuccessAsync(searchResponse, cancellationToken);
 
-        string json = await searchResponse.Content.ReadAsStringAsync(cancellationToken);
-        DriveFileListResponse? result = JsonSerializer.Deserialize<DriveFileListResponse>(json);
+        DriveFileListResponse? result = await searchResponse.Content.ReadFromJsonAsync<DriveFileListResponse>(cancellationToken);
 
         if (result?.Files is { Count: > 0 } && string.IsNullOrWhiteSpace(result.Files[0].Id) == false)
         {
@@ -770,7 +725,8 @@ public class GoogleDriveVaultConnector(
         throw new HttpRequestException(
             $"Google Drive API {(int)response.StatusCode} {response.ReasonPhrase}: {body}",
             inner: null,
-            response.StatusCode);
+            response.StatusCode
+        );
     }
 
     /// <summary>
@@ -865,7 +821,7 @@ public class GoogleDriveVaultConnector(
     /// </summary>
     private string GetRequiredScopes()
     {
-        return GetStorageMode() == "appdata" ? AppDataScope : DriveFileScope;
+        return GetStorageMode() == DriveStorageMode.AppData ? AppDataScope : DriveFileScope;
     }
 
     /// <summary>
@@ -890,6 +846,154 @@ public class GoogleDriveVaultConnector(
 
         string queryString = string.Join("&", parameters.Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}"));
         return $"{GoogleAuthEndpoint}?{queryString}";
+    }
+
+    /// <summary>
+    /// Defines where files are stored in Google Drive.
+    /// </summary>
+    private enum DriveStorageMode
+    {
+        /// <summary>
+        /// Hidden app-data folder, invisible to the user in Google Drive UI.
+        /// </summary>
+        AppData,
+
+        /// <summary>
+        /// User-visible folder chosen by the user.
+        /// </summary>
+        UserFolder,
+    }
+
+    /// <summary>
+    /// Encapsulates Google Drive file operations (find, download, create, update) for a single
+    /// named file. Reused for both <c>vault.json</c> and <c>history.txt</c> to avoid duplicating
+    /// Drive API interaction logic.
+    /// </summary>
+    private sealed class DriveFile(string fileName, string contentType)
+    {
+        /// <summary>
+        /// Gets the cached Google Drive file ID, or <see langword="null"/> if not yet resolved.
+        /// </summary>
+        public string? FileId { get; private set; }
+
+        /// <summary>
+        /// Searches for the file by name in the configured Drive location and caches its ID.
+        /// </summary>
+        public async Task FindAsync(HttpClient http, string accessToken, DriveStorageMode storageMode, string? folderId, CancellationToken cancellationToken)
+        {
+            string query = storageMode == DriveStorageMode.AppData
+                ? $"name = '{fileName}' and 'appDataFolder' in parents and trashed = false"
+                : $"name = '{fileName}' and '{folderId}' in parents and trashed = false";
+
+            string spaces = storageMode == DriveStorageMode.AppData ? "appDataFolder" : "drive";
+            string encodedQuery = Uri.EscapeDataString(query);
+            string url = $"{DriveApiBase}/files?q={encodedQuery}&spaces={spaces}&fields=files(id,name)&pageSize=1";
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, url);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
+            await EnsureDriveSuccessAsync(response, cancellationToken);
+
+            DriveFileListResponse? result = await response.Content.ReadFromJsonAsync<DriveFileListResponse>(cancellationToken);
+
+            FileId = result?.Files is { Count: > 0 } && string.IsNullOrWhiteSpace(result.Files[0].Id) == false
+                ? result.Files[0].Id
+                : null;
+        }
+
+        /// <summary>
+        /// Downloads the file content from Google Drive.
+        /// Returns <see cref="string.Empty"/> if the file ID is not cached.
+        /// </summary>
+        public async Task<string> DownloadAsync(HttpClient http, string accessToken, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(FileId))
+            {
+                return string.Empty;
+            }
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"{DriveApiBase}/files/{FileId}?alt=media");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+            using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
+            await EnsureDriveSuccessAsync(response, cancellationToken);
+
+            return await response.Content.ReadAsStringAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Uploads file content to Google Drive — creates the file if it does not
+        /// exist, or updates it in-place. Handles 404 on update by re-creating.
+        /// </summary>
+        public async Task UploadAsync(HttpClient http, string accessToken, string content, DriveStorageMode storageMode, string? folderId, CancellationToken cancellationToken)
+        {
+            if (string.IsNullOrWhiteSpace(FileId))
+            {
+                // File does not exist yet — create it.
+                await CreateAsync(http, accessToken, content, storageMode, folderId, cancellationToken);
+                return;
+            }
+
+            try
+            {
+                await UpdateAsync(http, accessToken, content, cancellationToken);
+            }
+            catch (HttpRequestException ex) when ((int?)ex.StatusCode == 404)
+            {
+                // File was deleted externally — re-create.
+                FileId = null;
+                await CreateAsync(http, accessToken, content, storageMode, folderId, cancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// Creates a new file in Google Drive using a multipart upload.
+        /// </summary>
+        private async Task CreateAsync(HttpClient http, string accessToken, string content, DriveStorageMode storageMode, string? folderId, CancellationToken cancellationToken)
+        {
+            List<string> parents = storageMode == DriveStorageMode.AppData
+                ? ["appDataFolder"]
+                : [folderId!];
+
+            var metadata = new { name = fileName, parents };
+            string metadataJson = JsonSerializer.Serialize(metadata);
+
+            using var multipart = new MultipartContent("related");
+            var metadataPart = new StringContent(metadataJson, Encoding.UTF8, "application/json");
+            multipart.Add(metadataPart);
+
+            var contentPart = new StringContent(content, Encoding.UTF8, contentType);
+            multipart.Add(contentPart);
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, $"{DriveUploadBase}/files?uploadType=multipart&fields=id");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Content = multipart;
+
+            using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
+            await EnsureDriveSuccessAsync(response, cancellationToken);
+
+            DriveFileResponse? result = await response.Content.ReadFromJsonAsync<DriveFileResponse>(cancellationToken);
+            FileId = result?.Id;
+
+            if (string.IsNullOrWhiteSpace(FileId))
+            {
+                throw new InvalidOperationException($"Google Drive created '{fileName}' but did not return a valid file ID.");
+            }
+        }
+
+        /// <summary>
+        /// Updates the content of an existing file in Google Drive.
+        /// </summary>
+        private async Task UpdateAsync(HttpClient http, string accessToken, string content, CancellationToken cancellationToken)
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Patch, $"{DriveUploadBase}/files/{FileId}?uploadType=media");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+            request.Content = new StringContent(content, Encoding.UTF8, contentType);
+
+            using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
+            await EnsureDriveSuccessAsync(response, cancellationToken);
+        }
     }
 
     /// <summary>

@@ -242,7 +242,7 @@ public class VaultSession
                     // Successfully migrated. Save the new format immediately to avoid re-migration next time.
                     Vault = vault;
                     onStatusChanged?.Invoke("Saving migrated vault...");
-                    var results = await SaveVaultAsync(cancellationToken);
+                    var results = await SaveVaultAsync("Migration of vault from v1 to v2", cancellationToken);
 
                     var failures = results.Where(r => r.Success == false).ToList();
                     if (failures.Count > 0)
@@ -263,7 +263,7 @@ public class VaultSession
     /// <summary>
     /// Serializes the current vault and persists it to all enabled write connectors in parallel.
     /// </summary>
-    public async Task<(IVaultConnector Connector, bool Success, string Error)[]> SaveVaultAsync(CancellationToken cancellationToken)
+    public async Task<(IVaultConnector Connector, bool Success, string Error)[]> SaveVaultAsync(string changeHint, CancellationToken cancellationToken)
     {
         if (Vault is null)
         {
@@ -277,7 +277,7 @@ public class VaultSession
         {
             try
             {
-                await c.SaveVaultAsync(json, cancellationToken);
+                await c.SaveVaultAsync(json, changeHint, cancellationToken);
                 return (Connector: c, Success: true, Error: string.Empty);
             }
             catch (Exception ex)
