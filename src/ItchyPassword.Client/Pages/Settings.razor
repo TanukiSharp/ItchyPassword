@@ -27,9 +27,9 @@
     </div>
 
     <div class="card-body">
-        @if (IsLocked)
+        @if (IsNotLoaded)
         {
-            <p class="text-muted">Unlock the vault to change connector roles.</p>
+            <p class="text-muted">Load the vault to change connector roles.</p>
         }
 
         @foreach (IVaultConnector connector in Session.Connectors)
@@ -43,7 +43,7 @@
                     <RichSelect TValue="ConnectorRole"
                                 Value="@currentRole"
                                 Options="@BuildRoleOptions(connector, currentRole)"
-                                Disabled="@(IsLocked || isBusy)"
+                                Disabled="@(IsNotLoaded || isBusy)"
                                 ValueChanged="@(role => SetRoleAsync(captured, role))" />
                 </div>
                 <p class="text-muted connector-description">@connector.Description</p>
@@ -69,16 +69,16 @@
         }
 
         <div class="settings-actions">
-            @if (CanUnlock)
+            @if (CanLoad)
             {
-                <button class="button primary" disabled="@(isUnlocking || isBusy)" @onclick="UnlockAndGo">
-                    @if (isUnlocking)
+                <button class="button primary" disabled="@(isLoading || isBusy)" @onclick="LoadAndGo">
+                    @if (isLoading)
                     {
-                        <span>Unlocking...</span>
+                        <span>Loading...</span>
                     }
                     else
                     {
-                        <span>Unlock & Go to Vault</span>
+                        <span>Load & Go to Vault</span>
                     }
                 </button>
             }
@@ -117,14 +117,14 @@
     private string modalHint = string.Empty;
     private List<ModalAction> modalActions = [];
 
-    // Use AppState for status message in case unlocking fails here.
+    // Use AppState for status message in case loading fails here.
     private string actionMessage => AppState.Status == AppStatus.Error ? AppState.StatusMessage : string.Empty;
     private bool isActionError => AppState.Status == AppStatus.Error;
 
-    private bool isUnlocking => AppState.Status == AppStatus.Unlocking || AppState.Status == AppStatus.LoadingVault;
+    private bool isLoading => AppState.Status == AppStatus.Loading || AppState.Status == AppStatus.LoadingVault;
 
-    private bool CanUnlock => MasterKeyProvider.HasMasterKey;
-    private bool IsLocked => MasterKeyProvider.HasMasterKey == false;
+    private bool CanLoad => MasterKeyProvider.HasMasterKey;
+    private bool IsNotLoaded => MasterKeyProvider.HasMasterKey == false;
 
     protected override void OnInitialized()
     {
@@ -592,8 +592,8 @@
         StateHasChanged();
     }
 
-    private async Task UnlockAndGo()
+    private async Task LoadAndGo()
     {
-        await AppState.RetryUnlockAsync(CancellationToken.None);
+        await AppState.RetryLoadAsync(CancellationToken.None);
     }
 }

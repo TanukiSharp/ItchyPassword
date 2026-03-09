@@ -11,10 +11,10 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     private readonly VaultSession _session = session;
     private readonly IMasterKeyProvider _keyProvider = keyProvider;
     private readonly ToastService _toast = toast;
-    private AppStatus _status = AppStatus.Locked;
+    private AppStatus _status = AppStatus.NotLoaded;
     private string _statusMessage = string.Empty;
     private string _searchQuery = string.Empty;
-    private Task? _currentUnlockTask;
+    private Task? _currentLoadTask;
 
     public event Action? OnChange;
 
@@ -57,7 +57,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         }
     }
 
-    public async Task UnlockAsync(byte[] key, CancellationToken cancellationToken)
+    public async Task LoadAsync(byte[] key, CancellationToken cancellationToken)
     {
         if (key.Length < Core.Constants.MasterKeyConstants.MinimumLength)
         {
@@ -66,34 +66,34 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             NotifyStateChanged();
             return;
         }
-        if (Status == AppStatus.Unlocking)
+        if (Status == AppStatus.Loading)
         {
-            // Already unlocking, maybe attach to existing task if we tracked it,
+            // Already loading, maybe attach to existing task if we tracked it,
             // or just return. For now, we'll start a new one or ignore if same key.
             // But usually this means user re-submitted form.
         }
 
         _keyProvider.MasterKey = key;
-        await StartUnlockFlowAsync(cancellationToken);
+        await StartLoadFlowAsync(cancellationToken);
     }
 
-    public async Task RetryUnlockAsync(CancellationToken cancellationToken)
+    public async Task RetryLoadAsync(CancellationToken cancellationToken)
     {
         if (!_keyProvider.HasMasterKey)
         {
-            Lock();
+            Unload();
             return;
         }
 
-        await StartUnlockFlowAsync(cancellationToken);
+        await StartLoadFlowAsync(cancellationToken);
     }
 
-    private async Task StartUnlockFlowAsync(CancellationToken cancellationToken)
+    private async Task StartLoadFlowAsync(CancellationToken cancellationToken)
     {
-        Status = AppStatus.Unlocking;
+        Status = AppStatus.Loading;
         StatusMessage = "Accessing vault...";
 
-        // Navigate immediately to vault view which will show spinner based on Unlocking status
+        // Navigate immediately to vault view which will show spinner based on Loading status.
         if (_nav.Uri.Contains("/vault") == false)
         {
             _nav.NavigateTo("/vault");
@@ -104,7 +104,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             // We capture the task to ensure we can await it if needed,
             // but primarily to ensure the fire-and-forget nature doesn't swallow exceptions
             // before we handle them.
-            _currentUnlockTask = _session.UnlockAsync(
+            _currentLoadTask = _session.LoadAsync(
                 msg =>
                 {
                     StatusMessage = msg;
@@ -113,15 +113,15 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                 () =>
                 {
                     Status = AppStatus.LoadingVault;
-                    // Message will be updated by UnlockAsync's status callback immediately after this
+                    // Message will be updated by LoadAsync's status callback immediately after this.
                     NotifyStateChanged();
                 },
                 cancellationToken
             );
 
-            await _currentUnlockTask;
+            await _currentLoadTask;
 
-            Status = AppStatus.Unlocked;
+            Status = AppStatus.Loaded;
             StatusMessage = string.Empty;
 
             if (_session.LastSignatureStatus != VaultSignatureStatus.Valid)
@@ -138,20 +138,20 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         catch (Exception ex)
         {
             Status = AppStatus.Error;
-            StatusMessage = "Failed to unlock vault. " + ex.Message;
+            StatusMessage = "Failed to load vault. " + ex.Message;
             if (ex is VaultDecryptionException)
             {
-                 StatusMessage = "Failed to unlock vault. Master Key is likely incorrect.";
+                 StatusMessage = "Failed to load vault. Master Key is likely incorrect.";
             }
-            // Stay on current page (likely /vault) to show error
+            // Stay on current page (likely /vault) to show error.
         }
         finally
         {
-            _currentUnlockTask = null;
+            _currentLoadTask = null;
         }
     }
 
-    public void Lock()
+    public void Unload()
     {
         _keyProvider.MasterKey = [];
         _session.Vault = null;
@@ -169,7 +169,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             connector.ClearSecrets();
         }
 
-        Status = AppStatus.Locked;
+        Status = AppStatus.NotLoaded;
         StatusMessage = string.Empty;
         SearchQuery = string.Empty;
         _nav.NavigateTo("/");
@@ -177,9 +177,9 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
 
     public async Task ReloadVaultAsync(CancellationToken cancellationToken)
     {
-        if (Status == AppStatus.Unlocked && _keyProvider.HasMasterKey)
+        if (Status == AppStatus.Loaded && _keyProvider.HasMasterKey)
         {
-            await StartUnlockFlowAsync(cancellationToken);
+            await StartLoadFlowAsync(cancellationToken);
         }
     }
 

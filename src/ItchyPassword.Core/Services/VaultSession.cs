@@ -186,10 +186,10 @@ public class VaultSession
     }
 
     /// <summary>
-    /// Attempts to unlock the vault using the master key from the provider.
+    /// Attempts to load the vault using the master key from the provider.
     /// Loads the vault from the Main connector, migrating legacy formats if necessary.
     /// </summary>
-    public async Task UnlockAsync(Action<string>? onStatusChanged, Action? onVaultAccessGranted, CancellationToken cancellationToken)
+    public async Task LoadAsync(Action<string>? onStatusChanged, Action? onVaultAccessGranted, CancellationToken cancellationToken)
     {
         if (_masterKeyProvider.HasMasterKey == false)
         {

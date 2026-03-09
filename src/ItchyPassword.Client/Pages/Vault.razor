@@ -6,7 +6,7 @@
 @inject NavigationManager Nav
 @inject VaultSession Session
 
-@if (AppState.Status == AppStatus.Unlocking || AppState.Status == AppStatus.LoadingVault)
+@if (AppState.Status == AppStatus.Loading || AppState.Status == AppStatus.LoadingVault)
 {
     <div class="page-centered">
         <div class="loading-spinner"></div>
@@ -16,7 +16,7 @@
 else if (AppState.Status == AppStatus.Error)
 {
     <div class="vault-error">
-        <h3>Failed to Unlock</h3>
+        <h3>Failed to Load</h3>
         <p>@AppState.StatusMessage</p>
         <div class="button-row">
             @if (Session.MainConnector?.CanRetryAccess == true)
@@ -30,7 +30,7 @@ else if (AppState.Status == AppStatus.Error)
         </div>
     </div>
 }
-else if (AppState.Status == AppStatus.Unlocked)
+else if (AppState.Status == AppStatus.Loaded)
 {
     <VaultView />
 }
@@ -40,7 +40,7 @@ else if (AppState.Status == AppStatus.Unlocked)
     {
         AppState.OnChange += StateHasChanged;
 
-        if (AppState.Status == AppStatus.Locked)
+        if (AppState.Status == AppStatus.NotLoaded)
         {
             Nav.NavigateTo("/");
         }
@@ -53,12 +53,12 @@ else if (AppState.Status == AppStatus.Unlocked)
 
     private async Task RetryAccess()
     {
-        await AppState.RetryUnlockAsync(CancellationToken.None);
+        await AppState.RetryLoadAsync(CancellationToken.None);
     }
 
     private void GoHome()
     {
-        AppState.Lock();
+        AppState.Unload();
     }
 
     private void GoToSettings()

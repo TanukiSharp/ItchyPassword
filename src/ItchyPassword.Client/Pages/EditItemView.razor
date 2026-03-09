@@ -79,7 +79,7 @@ else
 
     protected override void OnInitialized()
     {
-        if (AppState.Status != AppStatus.Unlocked)
+        if (AppState.Status != AppStatus.Loaded)
         {
             Nav.NavigateTo("/");
             return;

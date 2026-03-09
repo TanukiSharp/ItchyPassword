@@ -5,7 +5,7 @@
 @inject IAppState AppState
 @inject NavigationManager Nav
 
-@if (AppState.Status == AppStatus.Locked)
+@if (AppState.Status == AppStatus.NotLoaded)
 {
     <MasterKeyView />
 }
@@ -24,7 +24,7 @@
 
     private void CheckRedirect()
     {
-        if (AppState.Status == AppStatus.Unlocked || AppState.Status == AppStatus.Unlocking || AppState.Status == AppStatus.Error)
+        if (AppState.Status == AppStatus.Loaded || AppState.Status == AppStatus.Loading || AppState.Status == AppStatus.Error)
         {
             Nav.NavigateTo("/vault");
         }

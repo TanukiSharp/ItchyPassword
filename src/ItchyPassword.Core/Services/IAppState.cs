@@ -26,20 +26,20 @@ public interface IAppState
     event Action OnChange;
 
     /// <summary>
-    /// Attempts to unlock the vault with the provided key.
+    /// Attempts to load the vault with the provided key.
     /// </summary>
     /// <param name="key">The master key.</param>
-    Task UnlockAsync(byte[] key, CancellationToken cancellationToken);
+    Task LoadAsync(byte[] key, CancellationToken cancellationToken);
 
     /// <summary>
-    /// Locks the vault, clears the master key, and resets the application state.
+    /// Unloads the vault, clears the master key, and resets the application state.
     /// </summary>
-    void Lock();
+    void Unload();
 
     /// <summary>
-    /// Retries the unlock process using the existing master key.
+    /// Retries the load process using the existing master key.
     /// </summary>
-    Task RetryUnlockAsync(CancellationToken cancellationToken);
+    Task RetryLoadAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Reloads the vault from the active read connector without requiring a new master key.

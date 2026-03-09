@@ -4,10 +4,10 @@
 @inject IAppState AppState
 @inject NavigationManager Nav
 
-@if (AppState.Status != AppStatus.Unlocked || Session.Vault is null)
+@if (AppState.Status != AppStatus.Loaded || Session.Vault is null)
 {
     <div class="page-centered">
-        <p>Vault is not unlocked.</p>
+        <p>Vault is not loaded.</p>
         <button class="button secondary" @onclick="GoHome">Back to Login</button>
     </div>
 }
@@ -33,7 +33,7 @@ else
 @code {
     protected override void OnInitialized()
     {
-        if (AppState.Status != AppStatus.Unlocked)
+        if (AppState.Status != AppStatus.Loaded)
         {
             Nav.NavigateTo("/");
         }

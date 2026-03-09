@@ -1,4 +1,4 @@
-znamespace ItchyPassword.Core.Services;
+namespace ItchyPassword.Core.Services;
 
 /// <summary>
 /// Represents the high-level state of the application.
@@ -8,13 +8,13 @@ public enum AppStatus
     /// <summary>
     /// User has not provided a master key. (Start state)
     /// </summary>
-    Locked,
+    NotLoaded,
 
     /// <summary>
     /// Master key provided, currently attempting to authenticate with the vault connector.
     /// Menu should remain hidden during this phase to avoid flickering.
     /// </summary>
-    Unlocking,
+    Loading,
 
     /// <summary>
     /// Vault access granted, currently loading or migrating vault data.
@@ -25,7 +25,7 @@ public enum AppStatus
     /// <summary>
     /// Vault is successfully loaded and decrypted.
     /// </summary>
-    Unlocked,
+    Loaded,
 
     /// <summary>
     /// Master key provided but no reader connector is configured/valid.
@@ -34,7 +34,7 @@ public enum AppStatus
     SetupRequired,
 
     /// <summary>
-    /// An error occurred during the unlock process (e.g. decryption failed, network error).
+    /// An error occurred during the load process (e.g. decryption failed, network error).
     /// </summary>
     Error
 }

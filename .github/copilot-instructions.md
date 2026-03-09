@@ -14,7 +14,7 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 ## Architectural Patterns
 
 ### State Management (`VaultSession` / `IMasterKeyProvider` / `UiState`)
-- **VaultSession**: Manages the active `Vault`, the list of `VaultConnectors`, and connector preferences (reader/writer selection). Uses `INotifyPropertyChanged` to update UI components when state changes (e.g., locking/unlocking via `IsUnlocked`).
+- **VaultSession**: Manages the active `Vault`, the list of `VaultConnectors`, and connector preferences (reader/writer selection). Uses `INotifyPropertyChanged` to update UI components when state changes (e.g., loading/unloading via `Status`).
 - **IMasterKeyProvider / MasterKeyProvider**: Owns the in-memory Master Key. Standalone service so that components needing only the key don't depend on the full session. `MasterKeyProvider` implements `INotifyPropertyChanged`.
 - **UiState**: Lightweight property bag for cross-page UI state (e.g., `SearchQuery`) that survives navigation.
 - **Persistence**: State itself is transient. Configuration is persisted via `LocalStorageService`, but secrets are not. If something secret is stored (token) it is encrypted with the user's master key.
@@ -41,7 +41,7 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 - **File Locking**: If build fails with file lock errors (~"process cannot access file"), run `dotnet clean` first or kill lingering `dotnet` processes.
 
 ### Navigation Flow
-1. **`/` (Index)**: Checks if unlocked. If not, shows `MasterKeyView`.
+1. **`/` (Index)**: Checks if loaded. If not, shows `MasterKeyView`.
 2. **Master Key**:
     - User inputs Master Key.
     - Key is stored in `IMasterKeyProvider`.
@@ -54,7 +54,7 @@ ItchyPassword is a privacy-first, offline-capable password manager built with **
 
 ### Blazor Components
 - **Dependency Injection**: Inject services (`VaultSession`, `IMasterKeyProvider`, `UiState`, `NavigationManager`, etc.) at the top of `.razor` files.
-- **Async Interactions**: Prefer `async Task` for UI event handlers (e.g., `UnlockAsync`).
+- **Async Interactions**: Prefer `async Task` for UI event handlers (e.g., `LoadAsync`).
 - **Styles**: Use standard CSS or the project's custom variables (`var(--text-muted)`).
 - **Notifications**: Updates to `VaultSession` or `MasterKeyProvider` should trigger UI refreshes automatically via binding or `StateHasChanged` if needed (though `INotifyPropertyChanged` logic in components is preferred if implemented).
 

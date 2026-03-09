@@ -57,8 +57,8 @@
                 </div>
             }
 
-            <button class="button primary master-key-submit" type="submit" disabled="@IsUnlockDisabled" @onclick:stopPropagation>
-                <span>Unlock</span>
+            <button class="button primary master-key-submit" type="submit" disabled="@IsLoadDisabled" @onclick:stopPropagation>
+                <span>Load Vault</span>
             </button>
         </EditForm>
     </div>
@@ -81,10 +81,10 @@
     private Timer? _autoProtectTimer;
 
     /// <summary>
-    /// True when the unlock action should be blocked:
+    /// True when the load action should be blocked:
     /// master key too short, or confirmation panel is open and fields don't match.
     /// </summary>
-    private bool IsUnlockDisabled => _masterKey.Length < MasterKeyConstants.MinimumLength
+    private bool IsLoadDisabled => _masterKey.Length < MasterKeyConstants.MinimumLength
         || (_confirmExpanded && _confirmKey != _masterKey);
 
     /// <summary>
@@ -165,7 +165,7 @@
     {
         _confirmExpanded = !_confirmExpanded;
 
-        // Clear the confirmation field when collapsing so it doesn't silently block unlock.
+        // Clear the confirmation field when collapsing so it doesn't silently block loading.
         if (!_confirmExpanded)
         {
             _confirmKey = string.Empty;
@@ -222,17 +222,17 @@
 
     private async Task Submit()
     {
-        // Block unlock when the confirmation panel is open and fields don't match.
+        // Block loading when the confirmation panel is open and fields don't match.
         if (_confirmExpanded && _confirmKey != _masterKey)
         {
             return;
         }
 
-        // Stop the auto-protect timer on unlock attempt.
+        // Stop the auto-protect timer on load attempt.
         _autoProtectTimer?.Dispose();
         _autoProtectTimer = null;
 
-        await AppState.UnlockAsync(System.Text.Encoding.UTF8.GetBytes(_masterKey), CancellationToken.None);
+        await AppState.LoadAsync(System.Text.Encoding.UTF8.GetBytes(_masterKey), CancellationToken.None);
     }
 
     public void Dispose()

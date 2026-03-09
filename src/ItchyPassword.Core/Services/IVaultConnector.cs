@@ -87,7 +87,7 @@ public interface IVaultConnector
 
     /// <summary>
     /// Clears any connector-specific in-memory secrets (e.g. OAuth tokens stored in private fields).
-    /// /// Called when the vault is locked so that sensitive material does not linger in memory.
+    /// Called when the vault is unloaded so that sensitive material does not linger in memory.
     /// Encrypted configuration entries are cleared separately by the caller;
     /// this method only needs to handle secrets not stored in <see cref="Configuration"/>.
     /// </summary>
