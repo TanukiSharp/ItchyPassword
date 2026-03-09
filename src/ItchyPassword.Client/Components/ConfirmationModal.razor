@@ -1,0 +1,67 @@
+@namespace ItchyPassword.Client.Components
+
+@if (IsVisible)
+{
+    <div class="modal-backdrop" @onclick="OnCancel">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>@Title</h3>
+            </div>
+            <div class="modal-body">
+                <p>@Message</p>
+                @if (AdditionalContent is not null)
+                {
+                    @AdditionalContent
+                }
+            </div>
+            <div class="modal-actions">
+                @if (Actions is not null)
+                {
+                    @foreach (ModalAction action in Actions)
+                    {
+                        <button class="@action.CssClass" @onclick="action.OnClick">@action.Label</button>
+                    }
+                }
+                <button class="button secondary" @onclick="OnCancel">Cancel</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>
+    /// Whether the modal is currently visible.
+    /// </summary>
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    /// <summary>
+    /// The modal title.
+    /// </summary>
+    [Parameter]
+    public string Title { get; set; } = string.Empty;
+
+    /// <summary>
+    /// The main message displayed in the modal body.
+    /// </summary>
+    [Parameter]
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Optional additional content rendered below the message (e.g. informational labels).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? AdditionalContent { get; set; }
+
+    /// <summary>
+    /// The action buttons to display (excluding Cancel, which is always shown).
+    /// </summary>
+    [Parameter]
+    public IReadOnlyList<ModalAction>? Actions { get; set; }
+
+    /// <summary>
+    /// Callback invoked when the user clicks Cancel or the backdrop.
+    /// </summary>
+    [Parameter]
+    public EventCallback OnCancel { get; set; }
+}

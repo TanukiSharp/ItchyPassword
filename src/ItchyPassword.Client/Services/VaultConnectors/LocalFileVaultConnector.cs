@@ -92,12 +92,12 @@ public class LocalFileVaultConnector(IJSRuntime js) : IVaultConnector
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccessAsync(CancellationToken cancellationToken)
+    public async Task<ConnectorAccessResult> AccessAsync(CancellationToken cancellationToken)
     {
         // Already accessed this session.
         if (_hasAccess)
         {
-            return true;
+            return ConnectorAccessResult.ReadWrite;
         }
 
         // Synchronously initiate the file picker or permission request.
@@ -118,13 +118,13 @@ public class LocalFileVaultConnector(IJSRuntime js) : IVaultConnector
                 AccessFailureMessage = "The browser needs your permission to access the vault file. Click Retry to grant access.";
             }
 
-            return false;
+            return ConnectorAccessResult.None;
         }
 
         AccessFailureMessage = null;
 
         _hasAccess = true;
-        return true;
+        return ConnectorAccessResult.ReadWrite;
     }
 
     /// <inheritdoc />

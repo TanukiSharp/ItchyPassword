@@ -121,23 +121,46 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
     /// <inheritdoc />
-    public async Task<bool> AccessAsync(CancellationToken cancellationToken)
+    public async Task<ConnectorAccessResult> AccessAsync(CancellationToken cancellationToken)
     {
         if (IsConfigured == false)
         {
-            return false;
+            return ConnectorAccessResult.None;
         }
 
         try
         {
-            using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.github.com/user");
-            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenConfigKey));
+            string owner = VaultConnectorHelper.GetValue(Configuration, RepositoryOwnerConfigKey);
+            string repository = VaultConnectorHelper.GetValue(Configuration, RepositoryNameConfigKey);
+            string token = VaultConnectorHelper.GetValue(Configuration, PersonalAccessTokenConfigKey);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"https://api.github.com/repos/{Uri.EscapeDataString(owner)}/{Uri.EscapeDataString(repository)}");
+            request.Headers.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            request.Headers.Accept.Add(new System.Net.Http.Headers.MediaTypeWithQualityHeaderValue("application/vnd.github.v3+json"));
+
             using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);
-            return response.IsSuccessStatusCode;
+
+            if (response.IsSuccessStatusCode == false)
+            {
+                return ConnectorAccessResult.None;
+            }
+
+            GitHubRepoResponse? repo = await response.Content.ReadFromJsonAsync<GitHubRepoResponse>(cancellationToken);
+
+            if (repo?.permissions is null)
+            {
+                return ConnectorAccessResult.None;
+            }
+
+            return new ConnectorAccessResult
+            {
+                CanRead = repo.permissions.pull,
+                CanWrite = repo.permissions.push,
+            };
         }
         catch
         {
-            return false;
+            return ConnectorAccessResult.None;
         }
     }
 
@@ -222,6 +245,17 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
 #pragma warning disable IDE1006 // Naming Styles
+    private class GitHubRepoPermissions
+    {
+        public bool pull { get; init; }
+        public bool push { get; init; }
+    }
+
+    private class GitHubRepoResponse
+    {
+        public GitHubRepoPermissions? permissions { get; init; }
+    }
+
     private class GitHubFileResponse
     {
         public required string content { get; init; }

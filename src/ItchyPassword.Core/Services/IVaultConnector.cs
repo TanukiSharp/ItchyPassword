@@ -36,8 +36,8 @@ public interface IVaultConnector
     /// browser gesture simply by calling this method on the click call-stack.
     /// </para>
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result contains true if the access was successful; otherwise, false.</returns>
-    Task<bool> AccessAsync(CancellationToken cancellationToken);
+    /// <returns>A task that represents the asynchronous operation. The task result describes the read/write capabilities granted by the provider.</returns>
+    Task<ConnectorAccessResult> AccessAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Loads the vault content from the storage provider.

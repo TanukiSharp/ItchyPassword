@@ -1,4 +1,4 @@
-namespace ItchyPassword.Core.Services;
+znamespace ItchyPassword.Core.Services;
 
 /// <summary>
 /// Represents the high-level state of the application.
