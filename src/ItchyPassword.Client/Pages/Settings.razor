@@ -40,11 +40,17 @@
             <div class="connector-card">
                 <div class="connector-header">
                     <h3 class="heading-flush">@connector.Name</h3>
-                    <RichSelect TValue="ConnectorRole"
-                                Value="@currentRole"
-                                Options="@BuildRoleOptions(connector, currentRole)"
-                                Disabled="@(IsNotLoaded || isBusy)"
-                                ValueChanged="@(role => SetRoleAsync(captured, role))" />
+                    <div class="connector-role-controls">
+                        @if (_busyConnector == captured)
+                        {
+                            <div class="loading-spinner-sm"></div>
+                        }
+                        <RichSelect TValue="ConnectorRole"
+                                    Value="@currentRole"
+                                    Options="@BuildRoleOptions(connector, currentRole)"
+                                    Disabled="@(IsNotLoaded || _busyConnector is not null)"
+                                    ValueChanged="@(role => SetRoleAsync(captured, role))" />
+                    </div>
                 </div>
                 <p class="text-muted connector-description">@connector.Description</p>
 
@@ -56,7 +62,7 @@
                     <VaultConnectorSettings Connector="connector" />
 
                     <div class="connector-test">
-                        <button class="button secondary small" disabled="@isBusy" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
+                        <button class="button secondary small" disabled="@(_busyConnector is not null)" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
                         @if (testResults.TryGetValue(connector.Id, out (bool? Success, string Message) result))
                         {
                             <span class="@(result.Success is null ? "" : result.Success.Value ? "text-success" : "text-danger") test-result">
@@ -71,7 +77,7 @@
         <div class="settings-actions">
             @if (CanLoad)
             {
-                <button class="button primary" disabled="@(isLoading || isBusy)" @onclick="LoadAndGo">
+                <button class="button primary" disabled="@(isLoading || _busyConnector is not null)" @onclick="LoadAndGo">
                     @if (isLoading)
                     {
                         <span>Loading...</span>
@@ -108,7 +114,7 @@
     private Dictionary<Guid, (bool? Success, string Message)> testResults = new();
     private Dictionary<Guid, ConnectorAccessResult> lastAccessResults = new();
     private string redirectMessage = string.Empty;
-    private bool isBusy;
+    private IVaultConnector? _busyConnector;
 
     // Modal state.
     private bool modalVisible;
@@ -262,7 +268,7 @@
             return;
         }
 
-        isBusy = true;
+        _busyConnector = connector;
         StateHasChanged();
 
         try
@@ -285,7 +291,7 @@
             {
                 case VaultComparisonStatus.Identical:
                     await ApplyMainAsync(connector);
-                    isBusy = false;
+                    _busyConnector = null;
                     return;
 
                 case VaultComparisonStatus.RemoteEmpty:
@@ -297,14 +303,14 @@
                         return;
                     }
                     await ApplyMainAsync(connector);
-                    isBusy = false;
+                    _busyConnector = null;
                     return;
 
                 case VaultComparisonStatus.LocalEmpty:
                     // Nothing local to lose — load remote vault.
                     await Session.LoadVaultFromContentAsync(remoteContent, CancellationToken.None);
                     await ApplyMainAsync(connector);
-                    isBusy = false;
+                    _busyConnector = null;
                     return;
 
                 case VaultComparisonStatus.Different:
@@ -320,7 +326,7 @@
         {
             if (modalVisible == false)
             {
-                isBusy = false;
+                _busyConnector = null;
             }
 
             StateHasChanged();
@@ -400,7 +406,7 @@
     /// </summary>
     private async Task EnableBackupAsync(IVaultConnector connector)
     {
-        isBusy = true;
+        _busyConnector = connector;
         StateHasChanged();
 
         try
@@ -431,7 +437,7 @@
                 case VaultComparisonStatus.Identical:
                     Session.SetRole(connector.Id, ConnectorRole.Backup);
                     await Session.SaveRolesAsync(CancellationToken.None);
-                    isBusy = false;
+                    _busyConnector = null;
                     return;
 
                 case VaultComparisonStatus.RemoteEmpty:
@@ -444,7 +450,7 @@
                     }
                     Session.SetRole(connector.Id, ConnectorRole.Backup);
                     await Session.SaveRolesAsync(CancellationToken.None);
-                    isBusy = false;
+                    _busyConnector = null;
                     return;
 
                 case VaultComparisonStatus.LocalEmpty:
@@ -464,7 +470,7 @@
         {
             if (modalVisible == false)
             {
-                isBusy = false;
+                _busyConnector = null;
             }
 
             StateHasChanged();
@@ -550,7 +556,7 @@
     private void DismissModal()
     {
         modalVisible = false;
-        isBusy = false;
+        _busyConnector = null;
         modalTitle = string.Empty;
         modalMessage = string.Empty;
         modalHint = string.Empty;
@@ -564,7 +570,7 @@
         // preamble run on the click call-stack (preserving the browser gesture).
         Task<ConnectorAccessResult> accessTask = connector.AccessAsync(CancellationToken.None);
 
-        isBusy = true;
+        _busyConnector = connector;
         testResults[connector.Id] = (null, "Testing...");
         StateHasChanged();
 
@@ -588,7 +594,7 @@
             testResults[connector.Id] = (false, "Access denied.");
         }
 
-        isBusy = false;
+        _busyConnector = null;
         StateHasChanged();
     }
 
