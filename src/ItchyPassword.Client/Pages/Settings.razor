@@ -23,18 +23,18 @@
 <div class="card page-container">
     <div class="card-header">
         <h2>Vault Connectors</h2>
-        <p class="text-muted">Configure where your vault is stored. You can write to multiple locations for backup.</p>
+        <p class="text-muted">Configure where your vault is stored. Only one connector is active at a time.</p>
     </div>
 
     <div class="card-body">
         @if (IsNotLoaded)
         {
-            <p class="text-muted">Load the vault to change connector roles.</p>
+            <p class="text-muted">Load the vault to switch between connectors.</p>
         }
 
         @foreach (IVaultConnector connector in Session.Connectors)
         {
-            ConnectorRole currentRole = GetRole(connector);
+            bool isActive = Session.IsActiveConnector(connector.Id);
             IVaultConnector captured = connector;
 
             <div class="connector-card">
@@ -45,11 +45,19 @@
                         {
                             <div class="loading-spinner-sm"></div>
                         }
-                        <RichSelect TValue="ConnectorRole"
-                                    Value="@currentRole"
-                                    Options="@BuildRoleOptions(connector, currentRole)"
-                                    Disabled="@(IsNotLoaded || _busyConnector is not null)"
-                                    ValueChanged="@(role => SetRoleAsync(captured, role))" />
+
+                        @if (isActive)
+                        {
+                            <span class="badge active">Active</span>
+                        }
+                        else if (IsNotLoaded == false)
+                        {
+                            <button class="button secondary small"
+                                    disabled="@(_busyConnector is not null)"
+                                    @onclick="@(() => ActivateConnectorAsync(captured))">
+                                Activate
+                            </button>
+                        }
                     </div>
                 </div>
                 <p class="text-muted connector-description">@connector.Description</p>
@@ -101,18 +109,10 @@
                    Title="@modalTitle"
                    Message="@modalMessage"
                    Actions="@modalActions"
-                   OnCancel="@DismissModal">
-    <AdditionalContent>
-        @if (string.IsNullOrWhiteSpace(modalHint) == false)
-        {
-            <p class="modal-read-only-hint">@modalHint</p>
-        }
-    </AdditionalContent>
-</ConfirmationModal>
+                   OnCancel="@DismissModal" />
 
 @code {
     private Dictionary<Guid, (bool? Success, string Message)> testResults = new();
-    private Dictionary<Guid, ConnectorAccessResult> lastAccessResults = new();
     private string redirectMessage = string.Empty;
     private IVaultConnector? _busyConnector;
 
@@ -120,7 +120,6 @@
     private bool modalVisible;
     private string modalTitle = string.Empty;
     private string modalMessage = string.Empty;
-    private string modalHint = string.Empty;
     private List<ModalAction> modalActions = [];
 
     // Use AppState for status message in case loading fails here.
@@ -161,396 +160,47 @@
     }
 
     /// <summary>
-    /// Returns the current role of a connector from session state.
+    /// Switches the active connector. Always warns the user that data on the
+    /// new connector may differ and existing unsaved changes could be lost.
     /// </summary>
-    private ConnectorRole GetRole(IVaultConnector connector)
+    private async Task ActivateConnectorAsync(IVaultConnector connector)
     {
-        return Session.GetRole(connector.Id);
-    }
-
-    /// <summary>
-    /// Builds the dropdown options for a connector, with contextual hints and disabled states.
-    /// </summary>
-    private List<RichSelectOption<ConnectorRole>> BuildRoleOptions(IVaultConnector connector, ConnectorRole currentRole)
-    {
-        bool hasAccess = lastAccessResults.TryGetValue(connector.Id, out ConnectorAccessResult access);
-
-        // Main option.
-        bool mainDisabled = currentRole == ConnectorRole.Main;
-        string mainHint = "Read and write — your primary vault";
-        if (mainDisabled == false && hasAccess && access.CanRead == false)
-        {
-            mainDisabled = true;
-            mainHint = "No read access — use Import instead";
-        }
-        else if (mainDisabled == false && hasAccess && access.CanWrite == false)
-        {
-            mainDisabled = true;
-            mainHint = "Read-only — use Import to load data";
-        }
-
-        // Backup option.
-        bool backupDisabled = false;
-        string backupHint = "Write-only backup destination";
-        if (currentRole == ConnectorRole.Main)
-        {
-            backupDisabled = true;
-            backupHint = "Cannot downgrade — set another connector as Main first";
-        }
-        else if (hasAccess && access.CanWrite == false)
-        {
-            backupDisabled = true;
-            backupHint = "No write access";
-        }
-
-        // Disabled option.
-        bool disabledDisabled = false;
-        string disabledHint = "Not used";
-        if (currentRole == ConnectorRole.Main)
-        {
-            disabledDisabled = true;
-            disabledHint = "Cannot disable — set another connector as Main first";
-        }
-
-
-        return
-        [
-            new RichSelectOption<ConnectorRole>(ConnectorRole.Main, "Main", mainHint, mainDisabled),
-            new RichSelectOption<ConnectorRole>(ConnectorRole.Backup, "Backup", backupHint, backupDisabled),
-            new RichSelectOption<ConnectorRole>(ConnectorRole.Disabled, "Disabled", disabledHint, disabledDisabled),
-        ];
-    }
-
-    /// <summary>
-    /// Handles a role change from the dropdown.
-    /// </summary>
-    private async Task SetRoleAsync(IVaultConnector connector, ConnectorRole newRole)
-    {
-        ConnectorRole currentRole = GetRole(connector);
-
-        if (newRole == currentRole)
+        if (Session.IsActiveConnector(connector.Id))
         {
             return;
         }
 
-        switch (newRole)
-        {
-            case ConnectorRole.Main:
-                await PromoteToMainAsync(connector);
-                break;
-
-            case ConnectorRole.Backup:
-                if (currentRole == ConnectorRole.Disabled)
-                {
-                    await EnableBackupAsync(connector);
-                }
-                // Main → Backup is blocked by the dropdown (disabled option).
-                break;
-
-            case ConnectorRole.Disabled:
-                Session.SetRole(connector.Id, ConnectorRole.Disabled);
-                await Session.SaveRolesAsync(CancellationToken.None);
-                break;
-        }
-
-        StateHasChanged();
-    }
-
-    /// <summary>
-    /// Promotes a connector to Main. Downgrades the old Main to Backup.
-    /// </summary>
-    private async Task PromoteToMainAsync(IVaultConnector connector)
-    {
-        // Shortcut: connector is already a Backup \u2014 vaults are in sync by design.
-        if (Session.GetRole(connector.Id) == ConnectorRole.Backup)
-        {
-            await ApplyMainAsync(connector);
-            return;
-        }
-
-        _busyConnector = connector;
-        StateHasChanged();
-
-        try
-        {
-            await connector.LoadConfigurationAsync(CancellationToken.None);
-
-            ConnectorAccessResult access = await connector.AccessAsync(CancellationToken.None);
-            lastAccessResults[connector.Id] = access;
-
-            if (access.CanRead == false || access.CanWrite == false)
-            {
-                Toast.Show($"Cannot set {connector.Name} as Main — requires read and write access.", TimeSpan.FromSeconds(5));
-                return;
-            }
-
-            string remoteContent = await connector.LoadVaultAsync(CancellationToken.None);
-            VaultComparisonResult comparison = VaultDataService.CompareVaultSignatures(Session.LastRawContent, remoteContent);
-
-            switch (comparison.Status)
-            {
-                case VaultComparisonStatus.Identical:
-                    await ApplyMainAsync(connector);
-                    _busyConnector = null;
-                    return;
-
-                case VaultComparisonStatus.RemoteEmpty:
-                    // Remote is empty — push current vault silently.
-                    var pushResult = await Session.PushVaultToAsync(connector, $"Initial sync from {Session.MainConnector!.Name}", CancellationToken.None);
-                    if (pushResult.Success == false)
-                    {
-                        Toast.Show($"Failed to sync to {connector.Name}: {pushResult.Error}", TimeSpan.FromSeconds(5));
-                        return;
-                    }
-                    await ApplyMainAsync(connector);
-                    _busyConnector = null;
-                    return;
-
-                case VaultComparisonStatus.LocalEmpty:
-                    // Nothing local to lose — load remote vault.
-                    await Session.LoadVaultFromContentAsync(remoteContent, CancellationToken.None);
-                    await ApplyMainAsync(connector);
-                    _busyConnector = null;
-                    return;
-
-                case VaultComparisonStatus.Different:
-                    ShowMainConflictModal(connector, access, comparison, remoteContent);
-                    return;
-            }
-        }
-        catch (Exception ex)
-        {
-            Toast.Show($"Error promoting to Main: {ex.Message}", TimeSpan.FromSeconds(5));
-        }
-        finally
-        {
-            if (modalVisible == false)
-            {
-                _busyConnector = null;
-            }
-
-            StateHasChanged();
-        }
-    }
-
-    private void ShowMainConflictModal(
-        IVaultConnector connector,
-        ConnectorAccessResult access,
-        VaultComparisonResult comparison,
-        string remoteContent)
-    {
-        string remoteLabel = $"{comparison.RemoteItemCount} item(s)";
-        string localLabel = comparison.LocalItemCount == 0
-            ? "empty"
-            : $"{comparison.LocalItemCount} item(s)";
-
-        modalTitle = "Vault Data Conflict";
-        modalMessage = $"Current vault: {localLabel}.\n{connector.Name}: {remoteLabel}.";
-        modalHint = string.Empty;
+        modalTitle = "Switch Connector";
+        modalMessage = $"Switching to {connector.Name} will reload the vault from that connector. Any unsaved changes will be lost and data may differ from your current vault.";
         modalActions =
         [
-            new ModalAction($"Use {connector.Name} vault data", "button danger", async () =>
+            new ModalAction($"Switch to {connector.Name}", "button danger", async () =>
             {
+                DismissModal();
+                _busyConnector = connector;
+                StateHasChanged();
+
                 try
                 {
-                    await Session.LoadVaultFromContentAsync(remoteContent, CancellationToken.None);
-                    await ApplyMainAsync(connector);
+                    Session.SetActiveConnector(connector.Id);
+                    await Session.SaveActiveConnectorAsync(CancellationToken.None);
+                    await AppState.RetryLoadAsync(CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
-                    Toast.Show($"Failed to load remote vault: {ex.Message}", TimeSpan.FromSeconds(5));
+                    Toast.Show($"Failed to switch: {ex.Message}", TimeSpan.FromSeconds(5));
                 }
                 finally
                 {
-                    DismissModal();
-                }
-            }),
-            new ModalAction($"Overwrite {connector.Name} with current data", "button primary", async () =>
-            {
-                try
-                {
-                    var pushResult = await Session.PushVaultToAsync(connector, $"Overwrite from {Session.MainConnector!.Name} promotion", CancellationToken.None);
-                    if (pushResult.Success == false)
-                    {
-                        Toast.Show($"Failed to overwrite {connector.Name}: {pushResult.Error}", TimeSpan.FromSeconds(5));
-                        return;
-                    }
-                    await ApplyMainAsync(connector);
-                }
-                catch (Exception ex)
-                {
-                    Toast.Show($"Failed to overwrite: {ex.Message}", TimeSpan.FromSeconds(5));
-                }
-                finally
-                {
-                    DismissModal();
+                    _busyConnector = null;
+                    StateHasChanged();
                 }
             }),
         ];
 
         modalVisible = true;
         StateHasChanged();
-    }
-
-    /// <summary>
-    /// Applies the Main role. Old Main auto-downgrades to Backup (stays active).
-    /// </summary>
-    private async Task ApplyMainAsync(IVaultConnector connector)
-    {
-        Session.SetRole(connector.Id, ConnectorRole.Main);
-        await Session.SaveRolesAsync(CancellationToken.None);
-    }
-
-    /// <summary>
-    /// Enables a connector as a Backup writer with vault comparison.
-    /// </summary>
-    private async Task EnableBackupAsync(IVaultConnector connector)
-    {
-        _busyConnector = connector;
-        StateHasChanged();
-
-        try
-        {
-            await connector.LoadConfigurationAsync(CancellationToken.None);
-
-            ConnectorAccessResult access = await connector.AccessAsync(CancellationToken.None);
-            lastAccessResults[connector.Id] = access;
-
-            if (access.CanWrite == false)
-            {
-                Toast.Show($"No write access to {connector.Name}.", TimeSpan.FromSeconds(5));
-                return;
-            }
-
-            // Write-only connector — cannot compare vaults.
-            if (access.CanRead == false)
-            {
-                ShowWriteOnlyBackupModal(connector);
-                return;
-            }
-
-            string remoteContent = await connector.LoadVaultAsync(CancellationToken.None);
-            VaultComparisonResult comparison = VaultDataService.CompareVaultSignatures(Session.LastRawContent, remoteContent);
-
-            switch (comparison.Status)
-            {
-                case VaultComparisonStatus.Identical:
-                    Session.SetRole(connector.Id, ConnectorRole.Backup);
-                    await Session.SaveRolesAsync(CancellationToken.None);
-                    _busyConnector = null;
-                    return;
-
-                case VaultComparisonStatus.RemoteEmpty:
-                    // Silent overwrite - no remote data to lose.
-                    var pushResult = await Session.PushVaultToAsync(connector, "Initial sync from backup enable", CancellationToken.None);
-                    if (pushResult.Success == false)
-                    {
-                        Toast.Show($"Failed to sync to {connector.Name}: {pushResult.Error}", TimeSpan.FromSeconds(5));
-                        return;
-                    }
-                    Session.SetRole(connector.Id, ConnectorRole.Backup);
-                    await Session.SaveRolesAsync(CancellationToken.None);
-                    _busyConnector = null;
-                    return;
-
-                case VaultComparisonStatus.LocalEmpty:
-                    ShowBackupOverwriteModal(connector, comparison, isLocalEmpty: true);
-                    return;
-
-                case VaultComparisonStatus.Different:
-                    ShowBackupOverwriteModal(connector, comparison, isLocalEmpty: false);
-                    return;
-            }
-        }
-        catch (Exception ex)
-        {
-            Toast.Show($"Error enabling backup: {ex.Message}", TimeSpan.FromSeconds(5));
-        }
-        finally
-        {
-            if (modalVisible == false)
-            {
-                _busyConnector = null;
-            }
-
-            StateHasChanged();
-        }
-    }
-
-    private void ShowWriteOnlyBackupModal(IVaultConnector connector)
-    {
-        modalTitle = "Write-Only Connector";
-        modalMessage = $"{connector.Name} is write-only — vault content cannot be compared. Enabling it as a backup will overwrite its current data with your current vault.";
-        modalHint = string.Empty;
-        modalActions =
-        [
-            new ModalAction($"Overwrite {connector.Name} with current data", "button danger", async () =>
-            {
-                try
-                {
-                    var pushResult = await Session.PushVaultToAsync(connector, "Write-only backup enable", CancellationToken.None);
-                    if (pushResult.Success == false)
-                    {
-                        Toast.Show($"Failed to overwrite {connector.Name}: {pushResult.Error}", TimeSpan.FromSeconds(5));
-                        return;
-                    }
-                    Session.SetRole(connector.Id, ConnectorRole.Backup);
-                    await Session.SaveRolesAsync(CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    Toast.Show($"Failed to overwrite: {ex.Message}", TimeSpan.FromSeconds(5));
-                }
-                finally
-                {
-                    DismissModal();
-                }
-            }),
-        ];
-
-        modalVisible = true;
-        StateHasChanged();
-    }
-
-    private void ShowBackupOverwriteModal(IVaultConnector connector, VaultComparisonResult comparison, bool isLocalEmpty)
-    {
-        string localLabel = isLocalEmpty ? "empty" : $"{comparison.LocalItemCount} item(s)";
-        string remoteLabel = $"{comparison.RemoteItemCount} item(s)";
-        string overwriteLabel = isLocalEmpty
-            ? $"Overwrite {connector.Name} with current (empty) data"
-            : $"Overwrite {connector.Name} with current data";
-
-        modalTitle = "Vault Data Conflict";
-        modalMessage = $"Current vault: {localLabel}.\n{connector.Name}: {remoteLabel}.";
-        modalHint = string.Empty;
-        modalActions =
-        [
-            new ModalAction(overwriteLabel, "button danger", async () =>
-            {
-                try
-                {
-                    var pushResult = await Session.PushVaultToAsync(connector, "Overwrite from backup enable", CancellationToken.None);
-                    if (pushResult.Success == false)
-                    {
-                        Toast.Show($"Failed to overwrite {connector.Name}: {pushResult.Error}", TimeSpan.FromSeconds(5));
-                        return;
-                    }
-                    Session.SetRole(connector.Id, ConnectorRole.Backup);
-                    await Session.SaveRolesAsync(CancellationToken.None);
-                }
-                catch (Exception ex)
-                {
-                    Toast.Show($"Failed to overwrite: {ex.Message}", TimeSpan.FromSeconds(5));
-                }
-                finally
-                {
-                    DismissModal();
-                }
-            }),
-        ];
-
-        modalVisible = true;
-        StateHasChanged();
+        await Task.CompletedTask;
     }
 
     private void DismissModal()
@@ -559,7 +209,6 @@
         _busyConnector = null;
         modalTitle = string.Empty;
         modalMessage = string.Empty;
-        modalHint = string.Empty;
         modalActions = [];
         StateHasChanged();
     }
@@ -568,31 +217,17 @@
     {
         // Call AccessAsync before any await to let the connector's synchronous
         // preamble run on the click call-stack (preserving the browser gesture).
-        Task<ConnectorAccessResult> accessTask = connector.AccessAsync(CancellationToken.None);
+        Task<bool> accessTask = connector.AccessAsync(CancellationToken.None);
 
         _busyConnector = connector;
         testResults[connector.Id] = (null, "Testing...");
         StateHasChanged();
 
-        ConnectorAccessResult result = await accessTask;
-        lastAccessResults[connector.Id] = result;
+        bool hasAccess = await accessTask;
 
-        if (result.CanRead && result.CanWrite)
-        {
-            testResults[connector.Id] = (true, "Read: ✓ | Write: ✓");
-        }
-        else if (result.CanRead)
-        {
-            testResults[connector.Id] = (true, "Read: ✓ | Write: ✗");
-        }
-        else if (result.CanWrite)
-        {
-            testResults[connector.Id] = (true, "Read: ✗ | Write: ✓");
-        }
-        else
-        {
-            testResults[connector.Id] = (false, "Access denied.");
-        }
+        testResults[connector.Id] = hasAccess
+            ? (true, "Access granted ?")
+            : (false, "Access denied.");
 
         _busyConnector = null;
         StateHasChanged();

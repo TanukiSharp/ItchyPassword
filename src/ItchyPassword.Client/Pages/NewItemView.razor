@@ -196,19 +196,12 @@
             }
 
             // Serialize the entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync("Create new item via ItchyPassword", CancellationToken.None);
-            var failures = results.Where(r => r.Success == false).ToList();
+            var (success, error) = await Session.SaveVaultAsync("Create new item via ItchyPassword", CancellationToken.None);
 
-            if (failures.Count > 0)
+            if (success == false)
             {
-                _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
-
-                // If ALL connectors failed, rollback. If SOME failed, stay on page but don't rollback.
-                if (results.All(r => r.Success == false))
-                {
-                    Session.Vault.Value.Items.Remove(_item);
-                }
-
+                _error = error;
+                Session.Vault.Value.Items.Remove(_item);
                 return;
             }
 

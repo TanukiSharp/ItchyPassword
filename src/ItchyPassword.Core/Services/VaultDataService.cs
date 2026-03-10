@@ -116,64 +116,6 @@ public static class VaultDataService
         return JsonSerializer.Serialize(signed, _saveOptions);
     }
 
-    /// <summary>
-    /// Compares two vault contents by their HMAC signatures (string equality, no cryptographic operations).
-    /// </summary>
-    /// <param name="localContent">The current in-memory (last-saved) vault content, or null/empty if no vault is loaded.</param>
-    /// <param name="remoteContent">The vault content downloaded from a remote connector, or null/empty if the remote has no data.</param>
-    /// <returns>A comparison result indicating how the two vaults relate.</returns>
-    public static VaultComparisonResult CompareVaultSignatures(string? localContent, string? remoteContent)
-    {
-        bool localEmpty = string.IsNullOrWhiteSpace(localContent);
-        bool remoteEmpty = string.IsNullOrWhiteSpace(remoteContent);
-
-        if (localEmpty && remoteEmpty)
-        {
-            return new VaultComparisonResult(VaultComparisonStatus.Identical, 0, 0);
-        }
-
-        if (remoteEmpty)
-        {
-            int localCount = CountItems(localContent!);
-            return new VaultComparisonResult(VaultComparisonStatus.RemoteEmpty, localCount, 0);
-        }
-
-        if (localEmpty)
-        {
-            int remoteCount = CountItems(remoteContent!);
-            return new VaultComparisonResult(VaultComparisonStatus.LocalEmpty, 0, remoteCount);
-        }
-
-        // Fast path: raw content is byte-for-byte identical.
-        if (string.Equals(localContent, remoteContent, StringComparison.Ordinal))
-        {
-            return new VaultComparisonResult(VaultComparisonStatus.Identical, 0, 0);
-        }
-
-        // Parse both to compare signatures.
-        VaultV2? localVault = DeserializeVault(localContent!);
-        VaultV2? remoteVault = DeserializeVault(remoteContent!);
-
-        string? localSig = localVault?.Signature;
-        string? remoteSig = remoteVault?.Signature;
-
-        int localItems = localVault?.Items.Count ?? 0;
-        int remoteItems = remoteVault?.Items.Count ?? 0;
-
-        if (localSig is not null && remoteSig is not null && string.Equals(localSig, remoteSig, StringComparison.Ordinal))
-        {
-            return new VaultComparisonResult(VaultComparisonStatus.Identical, localItems, remoteItems);
-        }
-
-        return new VaultComparisonResult(VaultComparisonStatus.Different, localItems, remoteItems);
-    }
-
-    private static int CountItems(string jsonContent)
-    {
-        VaultV2? vault = DeserializeVault(jsonContent);
-        return vault?.Items.Count ?? 0;
-    }
-
     private static async Task<VaultSignatureStatus> VerifySignatureAsync(
         VaultV2 vault,
         byte[] masterKey,

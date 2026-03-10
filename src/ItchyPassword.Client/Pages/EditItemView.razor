@@ -135,14 +135,12 @@ else
             // Update Timestamp
             _item.LastModified = DateTime.UtcNow;
 
-            // Serialize entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync("Update vault via ItchyPassword", CancellationToken.None);
-            var failures = results.Where(r => r.Success == false).ToList();
+            // Serialize entire vault and persist to the active connector.
+            var (success, error) = await Session.SaveVaultAsync("Update vault via ItchyPassword", CancellationToken.None);
 
-            if (failures.Count > 0)
+            if (success == false)
             {
-                _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
-                // If ANY failed, stay on page to show error
+                _error = error;
                 return;
             }
 
@@ -184,13 +182,12 @@ else
         {
             Session.Vault.Value.Items.Remove(_item);
 
-            // Serialize entire vault and persist to all write connectors.
-            var results = await Session.SaveVaultAsync("Delete item via ItchyPassword", CancellationToken.None);
-            var failures = results.Where(r => r.Success == false).ToList();
+            // Serialize entire vault and persist to the active connector.
+            var (deleteSuccess, deleteError) = await Session.SaveVaultAsync("Delete item via ItchyPassword", CancellationToken.None);
 
-            if (failures.Count > 0)
+            if (deleteSuccess == false)
             {
-                _error = "Partial save failure: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}"));
+                _error = deleteError;
                 // Attempt to revert memory state because persistence failed
                 Session.Vault.Value.Items.Add(_item);
                 Session.Vault.Value.Items.Sort((a, b) => StringComparer.OrdinalIgnoreCase.Compare(a.Name, b.Name));

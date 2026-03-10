@@ -31,13 +31,13 @@ public interface IVaultConnector
     /// Attempts to access the vault storage provider using the current configuration.
     /// <para>
     /// Connectors that rely on browser APIs requiring a transient user activation
-    /// (e.g. File System Access API) should perform the gesture-dependent operation
-    /// synchronously before the first <c>await</c>, so that callers preserve the
-    /// browser gesture simply by calling this method on the click call-stack.
+    /// should perform the gesture-dependent operation synchronously before the first
+    /// <c>await</c>, so that callers preserve the browser gesture simply by calling
+    /// this method on the click call-stack.
     /// </para>
     /// </summary>
-    /// <returns>A task that represents the asynchronous operation. The task result describes the read/write capabilities granted by the provider.</returns>
-    Task<ConnectorAccessResult> AccessAsync(CancellationToken cancellationToken);
+    /// <returns>A task that represents the asynchronous operation. The task result is <c>true</c> if full read/write access was granted; otherwise <c>false</c>.</returns>
+    Task<bool> AccessAsync(CancellationToken cancellationToken);
 
     /// <summary>
     /// Loads the vault content from the storage provider.

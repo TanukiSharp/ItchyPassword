@@ -121,11 +121,11 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
     }
 
     /// <inheritdoc />
-    public async Task<ConnectorAccessResult> AccessAsync(CancellationToken cancellationToken)
+    public async Task<bool> AccessAsync(CancellationToken cancellationToken)
     {
         if (IsConfigured == false)
         {
-            return ConnectorAccessResult.None;
+            return false;
         }
 
         try
@@ -142,25 +142,21 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
 
             if (response.IsSuccessStatusCode == false)
             {
-                return ConnectorAccessResult.None;
+                return false;
             }
 
             GitHubRepoResponse? repo = await response.Content.ReadFromJsonAsync<GitHubRepoResponse>(cancellationToken);
 
             if (repo?.permissions is null)
             {
-                return ConnectorAccessResult.None;
+                return false;
             }
 
-            return new ConnectorAccessResult
-            {
-                CanRead = repo.permissions.pull,
-                CanWrite = repo.permissions.push,
-            };
+            return repo.permissions.pull && repo.permissions.push;
         }
         catch
         {
-            return ConnectorAccessResult.None;
+            return false;
         }
     }
 

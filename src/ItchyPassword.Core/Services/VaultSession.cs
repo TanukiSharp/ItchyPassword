@@ -4,12 +4,11 @@ using ItchyPassword.Core.Models;
 namespace ItchyPassword.Core.Services;
 
 /// <summary>
-/// Manages the current vault session: the loaded vault data and connector role assignments.
+/// Manages the current vault session: the loaded vault data and active connector selection.
 /// </summary>
 public class VaultSession
 {
-    private const string MainConnectorStorageKey = "itchypassword_main_vault_connector";
-    private const string BackupConnectorIdsStorageKey = "itchypassword_backup_vault_connectors";
+    private const string ActiveConnectorStorageKey = "itchypassword_main_vault_connector";
 
     private readonly IMasterKeyProvider _masterKeyProvider;
     private readonly ICryptoService _crypto;
@@ -17,8 +16,7 @@ public class VaultSession
     private readonly ILocalStorageService _storage;
 
     private bool _isInitialized;
-    private Guid _mainConnectorId;
-    private readonly HashSet<Guid> _backupConnectorIds = [];
+    private Guid _activeConnectorId;
 
     /// <summary>
     /// Gets or sets the currently loaded vault.
@@ -41,24 +39,13 @@ public class VaultSession
     public List<IVaultConnector> Connectors { get; } = [];
 
     /// <summary>
-    /// Gets the connector assigned the Main role.
+    /// Gets the currently active connector, or <c>null</c> if none is selected.
     /// </summary>
-    public IVaultConnector? MainConnector
+    public IVaultConnector? ActiveConnector
     {
         get
         {
-            return Connectors.FirstOrDefault(c => c.Id == _mainConnectorId);
-        }
-    }
-
-    /// <summary>
-    /// Gets the connectors assigned the Backup role.
-    /// </summary>
-    public IEnumerable<IVaultConnector> BackupConnectors
-    {
-        get
-        {
-            return Connectors.Where(c => _backupConnectorIds.Contains(c.Id));
+            return Connectors.FirstOrDefault(c => c.Id == _activeConnectorId);
         }
     }
 
@@ -77,12 +64,12 @@ public class VaultSession
         if (Connectors.Count > 0)
         {
             // Default to the first connector; InitializeAsync will override with the saved preference.
-            SetRole(Connectors[0].Id, ConnectorRole.Main);
+            _activeConnectorId = Connectors[0].Id;
         }
     }
 
     /// <summary>
-    /// Loads persisted role assignments from local storage.
+    /// Loads the persisted active connector selection from local storage.
     /// Safe to call multiple times; only the first call performs work.
     /// </summary>
     public async Task InitializeAsync(CancellationToken cancellationToken)
@@ -94,100 +81,46 @@ public class VaultSession
 
         _isInitialized = true;
 
-        string? savedMainId = await _storage.GetItemAsync(MainConnectorStorageKey, cancellationToken);
+        string? savedId = await _storage.GetItemAsync(ActiveConnectorStorageKey, cancellationToken);
 
-        if (Guid.TryParse(savedMainId, out Guid id) && Connectors.Any(c => c.Id == id))
+        if (Guid.TryParse(savedId, out Guid id) && Connectors.Any(c => c.Id == id))
         {
-            _mainConnectorId = id;
+            _activeConnectorId = id;
         }
         else
         {
             // Persist the default.
-            await SaveRolesAsync(cancellationToken);
-        }
-
-        string? savedBackupIds = await _storage.GetItemAsync(BackupConnectorIdsStorageKey, cancellationToken);
-
-        if (string.IsNullOrWhiteSpace(savedBackupIds) == false)
-        {
-            _backupConnectorIds.Clear();
-
-            foreach (string part in savedBackupIds.Split(',', StringSplitOptions.RemoveEmptyEntries))
-            {
-                if (Guid.TryParse(part.Trim(), out Guid backupId)
-                    && backupId != _mainConnectorId
-                    && Connectors.Any(c => c.Id == backupId))
-                {
-                    _backupConnectorIds.Add(backupId);
-                }
-            }
-        }
-        else
-        {
-            await SaveRolesAsync(cancellationToken);
+            await SaveActiveConnectorAsync(cancellationToken);
         }
     }
 
     /// <summary>
-    /// Persists the current role assignments (main connector and backup set) to local storage.
+    /// Persists the active connector selection to local storage.
     /// </summary>
-    public async Task SaveRolesAsync(CancellationToken cancellationToken)
+    public async Task SaveActiveConnectorAsync(CancellationToken cancellationToken)
     {
-        await _storage.SetItemAsync(MainConnectorStorageKey, _mainConnectorId.ToString(), cancellationToken);
-        string value = string.Join(",", _backupConnectorIds);
-        await _storage.SetItemAsync(BackupConnectorIdsStorageKey, value, cancellationToken);
+        await _storage.SetItemAsync(ActiveConnectorStorageKey, _activeConnectorId.ToString(), cancellationToken);
     }
 
     /// <summary>
-    /// Returns the role assigned to a connector.
+    /// Returns whether the given connector is the active one.
     /// </summary>
-    public ConnectorRole GetRole(Guid id)
+    public bool IsActiveConnector(Guid id)
     {
-        if (id == _mainConnectorId)
-        {
-            return ConnectorRole.Main;
-        }
-
-        if (_backupConnectorIds.Contains(id))
-        {
-            return ConnectorRole.Backup;
-        }
-
-        return ConnectorRole.Disabled;
+        return id == _activeConnectorId;
     }
 
     /// <summary>
-    /// Assigns a role to a connector. Setting Main auto-removes the connector from backups.
-    /// Setting Disabled is silently ignored for the Main connector.
+    /// Sets the active connector.
     /// </summary>
-    public void SetRole(Guid id, ConnectorRole role)
+    public void SetActiveConnector(Guid id)
     {
-        switch (role)
-        {
-            case ConnectorRole.Main:
-                _mainConnectorId = id;
-                _backupConnectorIds.Remove(id);
-                break;
-
-            case ConnectorRole.Backup:
-                _backupConnectorIds.Add(id);
-                break;
-
-            case ConnectorRole.Disabled:
-                // Prevent disabling the main connector.
-                if (id == _mainConnectorId)
-                {
-                    return;
-                }
-
-                _backupConnectorIds.Remove(id);
-                break;
-        }
+        _activeConnectorId = id;
     }
 
     /// <summary>
     /// Attempts to load the vault using the master key from the provider.
-    /// Loads the vault from the Main connector, migrating legacy formats if necessary.
+    /// Loads the vault from the active connector, migrating legacy formats if necessary.
     /// </summary>
     public async Task LoadAsync(Action<string>? onStatusChanged, Action? onVaultAccessGranted, CancellationToken cancellationToken)
     {
@@ -196,26 +129,26 @@ public class VaultSession
             throw new InvalidOperationException("Master key not provided.");
         }
 
-        if (MainConnector is null)
+        if (ActiveConnector is null)
         {
             throw new InvalidOperationException("No active vault connector selected.");
         }
 
-        await MainConnector.LoadConfigurationAsync(cancellationToken);
+        await ActiveConnector.LoadConfigurationAsync(cancellationToken);
 
-        if (MainConnector.IsConfigured == false)
+        if (ActiveConnector.IsConfigured == false)
         {
             throw new VaultConnectorNotConfiguredException("Connector not configured.");
         }
 
         onStatusChanged?.Invoke("Accessing vault...");
 
-        ConnectorAccessResult accessResult = await MainConnector.AccessAsync(cancellationToken);
+        bool hasAccess = await ActiveConnector.AccessAsync(cancellationToken);
 
-        if (accessResult.CanRead == false)
+        if (hasAccess == false)
         {
-            string errorMessage = MainConnector.AccessFailureMessage
-                ?? $"Could not access {MainConnector.Name}.";
+            string errorMessage = ActiveConnector.AccessFailureMessage
+                ?? $"Could not access {ActiveConnector.Name}.";
             throw new InvalidOperationException(errorMessage);
         }
 
@@ -223,7 +156,7 @@ public class VaultSession
 
         onStatusChanged?.Invoke("Loading vault data...");
 
-        string content = await MainConnector.LoadVaultAsync(cancellationToken);
+        string content = await ActiveConnector.LoadVaultAsync(cancellationToken);
         LastRawContent = content;
 
         if (string.IsNullOrWhiteSpace(content))
@@ -250,12 +183,11 @@ public class VaultSession
                     // Successfully migrated. Save the new format immediately to avoid re-migration next time.
                     Vault = vault;
                     onStatusChanged?.Invoke("Saving migrated vault...");
-                    var results = await SaveVaultAsync("Migration of vault from v1 to v2", cancellationToken);
+                    (bool success, string error) = await SaveVaultAsync("Migration of vault from v1 to v2", cancellationToken);
 
-                    var failures = results.Where(r => r.Success == false).ToList();
-                    if (failures.Count > 0)
+                    if (success == false)
                     {
-                        throw new InvalidOperationException("Migration successful, but failed to save: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}")));
+                        throw new InvalidOperationException($"Migration successful, but failed to save: {error}");
                     }
                 }
                 else
@@ -270,7 +202,7 @@ public class VaultSession
 
     /// <summary>
     /// Serializes the current vault and pushes it to a single specified connector.
-    /// Does not modify role assignments — only writes data.
+    /// Does not modify the active connector selection — only writes data.
     /// </summary>
     /// <param name="connector">The target connector to push to.</param>
     /// <param name="changeHint">A description of the change being made.</param>
@@ -297,84 +229,25 @@ public class VaultSession
     }
 
     /// <summary>
-    /// Replaces the current vault with data from already-downloaded content.
-    /// Deserializes, verifies signature, and handles empty/legacy content.
+    /// Serializes the current vault and persists it to the active connector.
     /// </summary>
-    /// <param name="content">Raw vault JSON from a connector.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    public async Task LoadVaultFromContentAsync(string content, CancellationToken cancellationToken)
+    public async Task<(bool Success, string Error)> SaveVaultAsync(string changeHint, CancellationToken cancellationToken)
     {
-        if (_masterKeyProvider.HasMasterKey == false)
+        if (Vault is null || ActiveConnector is null)
         {
-            throw new InvalidOperationException("Master key not provided.");
+            return (false, "No vault loaded or no active connector.");
         }
 
-        LastRawContent = content;
-
-        if (string.IsNullOrWhiteSpace(content))
+        try
         {
-            Vault = new VaultV2() { Version = 2, Items = [] };
-            LastSignatureStatus = VaultSignatureStatus.Valid;
-            return;
+            string json = await VaultDataService.SerializeAndSignAsync(Vault.Value, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
+            LastRawContent = json;
+            await ActiveConnector.SaveVaultAsync(json, changeHint, cancellationToken);
+            return (true, string.Empty);
         }
-
-        VaultDeserializeResult result = await VaultDataService.DeserializeAndVerifyAsync(
-            content, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
-
-        VaultV2? vault = result.Vault;
-        LastSignatureStatus = result.SignatureStatus;
-
-        if (vault is null)
+        catch (Exception ex)
         {
-            if (VaultMigrationService.IsLegacyVault(content))
-            {
-                vault = await _migrationService.MigrateAsync(content, _masterKeyProvider.MasterKey, null, cancellationToken);
-                Vault = vault;
-
-                // Save the migrated vault to all active connectors.
-                var results = await SaveVaultAsync("Migration of vault from v1 to v2", cancellationToken);
-                var failures = results.Where(r => r.Success == false).ToList();
-
-                if (failures.Count > 0)
-                {
-                    throw new InvalidOperationException("Migration successful, but failed to save: " + string.Join(", ", failures.Select(f => $"{f.Connector.Name}: {f.Error}")));
-                }
-
-                return;
-            }
-
-            throw new Exceptions.VaultFormatException();
+            return (false, ex.Message);
         }
-
-        Vault = vault ?? new VaultV2 { Version = 2, Items = [] };
-    }
-
-    /// <summary>
-    /// Serializes the current vault and persists it to all active connectors in parallel.
-    /// </summary>
-    public async Task<(IVaultConnector Connector, bool Success, string Error)[]> SaveVaultAsync(string changeHint, CancellationToken cancellationToken)
-    {
-        if (Vault is null)
-        {
-            return [];
-        }
-
-        string json = await VaultDataService.SerializeAndSignAsync(Vault.Value, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
-        LastRawContent = json;
-
-        var tasks = Connectors.Where(c => c.Id == _mainConnectorId || _backupConnectorIds.Contains(c.Id)).Select(async c =>
-        {
-            try
-            {
-                await c.SaveVaultAsync(json, changeHint, cancellationToken);
-                return (Connector: c, Success: true, Error: string.Empty);
-            }
-            catch (Exception ex)
-            {
-                return (Connector: c, Success: false, Error: ex.Message);
-            }
-        });
-
-        return await Task.WhenAll(tasks);
     }
 }
