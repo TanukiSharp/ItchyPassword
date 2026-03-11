@@ -76,7 +76,7 @@
 
 @code {
     [Parameter]
-    public required VaultItemV2 Item { get; init; }
+    public VaultItemV2? Item { get; init; }
 
     private string _publicPart = string.Empty;
     private string _alphabet = StaticKeyDataConstants.DefaultAlphabet;
@@ -86,7 +86,6 @@
 
     private readonly Debouncer _debouncer = new();
     private string _result = string.Empty;
-    private bool _isGenerating = false;
     private string _error = string.Empty;
 
     private bool _hasDuplicateChars = false;
@@ -97,16 +96,17 @@
 
     protected override async Task OnInitializedAsync()
     {
-        StaticKeyDataV2 parameters = Item.StaticKeyData!.Value;
-
-        _publicPart = parameters.PublicPart;
-        _encodingVersion = parameters.EncodingVersion;
-        _length = parameters.Length;
-        _cryptoVersion = parameters.CryptoVersion;
-
-        if (string.IsNullOrEmpty(parameters.Alphabet) == false)
+        if (Item?.StaticKeyData is { } parameters)
         {
-            _alphabet = parameters.Alphabet;
+            _publicPart = parameters.PublicPart;
+            _encodingVersion = parameters.EncodingVersion;
+            _length = parameters.Length;
+            _cryptoVersion = parameters.CryptoVersion;
+
+            if (string.IsNullOrEmpty(parameters.Alphabet) == false)
+            {
+                _alphabet = parameters.Alphabet;
+            }
         }
 
         UpdateAlphabetValidation();
@@ -166,8 +166,6 @@
             }
         }
 
-        _isGenerating = true;
-
         try
         {
             var data = new StaticKeyDataV2
@@ -181,16 +179,12 @@
 
             _result = await VaultCrypto.GenerateStaticKeyAsync(data, MasterKeyProvider.MasterKey, CancellationToken.None);
 
-            // Sync updated config to the item.
-            Item.SetData(data);
+            // Sync updated config to the item when editing a vault entry.
+            Item?.SetData(data);
         }
         catch (Exception ex)
         {
             _error = ex.Message;
-        }
-        finally
-        {
-            _isGenerating = false;
         }
     }
 

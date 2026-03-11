@@ -25,7 +25,6 @@ public class VaultCryptoServiceTests
         string plaintext = "Hello World";
         var result = await _service.EncryptSecretAsync(plaintext, _masterKey, "base58", CancellationToken.None);
 
-        Assert.NotNull(result);
         Assert.False(string.IsNullOrWhiteSpace(result.Cipher));
         Assert.Equal(SecretDataConstants.LatestCryptoVersion, result.CryptoVersion);
         Assert.Equal(SecretDataConstants.LatestEncoding, result.Encoding);

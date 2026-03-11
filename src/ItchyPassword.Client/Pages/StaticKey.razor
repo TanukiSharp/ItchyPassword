@@ -1,0 +1,36 @@
+@page "/static-key"
+@using ItchyPassword.Client.Services
+@inject IMasterKeyProvider MasterKeyProvider
+@inject NavigationManager Nav
+
+<PageTitle>Static Key Generator</PageTitle>
+
+<h1>Static Key</h1>
+
+<div class="card page-container">
+    <div class="card-header">
+        <h2>Generator</h2>
+        <p class="text-muted">Generate passwords deterministically using only your <strong>master key</strong> and a public part.</p>
+    </div>
+
+    <div class="card-body">
+        @if (MasterKeyProvider.HasMasterKey == false)
+        {
+            <div class="alert warning">
+                You must enter your Master Key first.
+                <button class="button small secondary" @onclick="GoToLogin">Enter Master Key</button>
+            </div>
+        }
+        else
+        {
+            <StaticKeyEditor />
+        }
+    </div>
+</div>
+
+@code {
+    private void GoToLogin()
+    {
+        Nav.NavigateTo("/");
+    }
+}

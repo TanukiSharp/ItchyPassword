@@ -36,29 +36,6 @@ public static class AlphabetValidator
     }
 
     /// <summary>
-    /// Returns <c>true</c> if the <paramref name="alphabet"/> contains duplicate characters.
-    /// </summary>
-    public static bool HasDuplicates(string alphabet)
-    {
-        if (string.IsNullOrEmpty(alphabet))
-        {
-            return false;
-        }
-
-        HashSet<char> seen = new(alphabet.Length);
-
-        foreach (char c in alphabet)
-        {
-            if (seen.Add(c) == false)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    /// <summary>
     /// Removes duplicate characters from the <paramref name="alphabet"/>, keeping the first occurrence of each.
     /// </summary>
     public static string Deduplicate(string alphabet)

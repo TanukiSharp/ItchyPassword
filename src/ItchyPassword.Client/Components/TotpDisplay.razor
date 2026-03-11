@@ -1,4 +1,5 @@
 @using ItchyPassword.Core.Services
+@inject IJSRuntime JS
 @implements IDisposable
 
 <div class="totp-display">
@@ -18,7 +19,7 @@
         </div>
         <div class="totp-timer">
             <div class="totp-timer-bar">
-                <div class="totp-timer-fill" style="width: @(_remainingSeconds * 100 / 30)%"></div>
+                <div class="totp-timer-fill" @ref="_fillRef"></div>
             </div>
             <span class="totp-timer-text">@_remainingSeconds s</span>
         </div>
@@ -35,6 +36,9 @@
     private string _currentCode = string.Empty;
     private int _remainingSeconds = 30;
     private string _error = string.Empty;
+    private bool _isResetting;
+    private bool _hasRendered;
+    private ElementReference _fillRef;
     private Timer? _timer;
 
     protected override void OnInitialized()
@@ -43,11 +47,26 @@
         _timer = new Timer(OnTick, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _hasRendered = true;
+            int percentage = _remainingSeconds * 100 / 30;
+            await JS.InvokeVoidAsync("domInterop.setWidthAnimated", _fillRef, percentage, false);
+        }
+    }
+
     private void OnTick(object? state)
     {
-        InvokeAsync(() =>
+        _ = InvokeAsync(async () =>
         {
             Refresh();
+            if (_hasRendered)
+            {
+                int percentage = _remainingSeconds * 100 / 30;
+                await JS.InvokeVoidAsync("domInterop.setWidthAnimated", _fillRef, percentage, _isResetting);
+            }
             StateHasChanged();
         });
     }
@@ -57,13 +76,16 @@
         try
         {
             _currentCode = TotpGenerator.GenerateCode(Secret);
-            _remainingSeconds = TotpGenerator.GetRemainingSeconds();
+            int remaining = TotpGenerator.GetRemainingSeconds();
+            _isResetting = remaining > _remainingSeconds;
+            _remainingSeconds = remaining;
             _error = string.Empty;
         }
         catch (Exception ex)
         {
             _currentCode = string.Empty;
             _remainingSeconds = 0;
+            _isResetting = false;
             _error = $"Invalid TOTP secret: {ex.Message}";
         }
     }

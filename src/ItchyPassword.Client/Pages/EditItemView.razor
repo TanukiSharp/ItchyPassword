@@ -51,7 +51,7 @@ else
                         @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
                     </button>
                     <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
-                    <button class="button danger" type="button" @onclick="DeleteAsync" disabled="@_isSaving" style="margin-left: auto;">Delete</button>
+                    <button class="button danger ml-auto" type="button" @onclick="DeleteAsync" disabled="@_isSaving">Delete</button>
                 </div>
             </EditForm>
 
@@ -136,7 +136,7 @@ else
             _item.LastModified = DateTime.UtcNow;
 
             // Serialize entire vault and persist to the active connector.
-            var (success, error) = await Session.SaveVaultAsync("Update vault via ItchyPassword", CancellationToken.None);
+            var (success, error) = await Session.SaveVaultAsync($"Updated '{_item.Name}'", CancellationToken.None);
 
             if (success == false)
             {
@@ -183,7 +183,7 @@ else
             Session.Vault.Value.Items.Remove(_item);
 
             // Serialize entire vault and persist to the active connector.
-            var (deleteSuccess, deleteError) = await Session.SaveVaultAsync("Delete item via ItchyPassword", CancellationToken.None);
+            var (deleteSuccess, deleteError) = await Session.SaveVaultAsync($"Deleted '{_item.Name}'", CancellationToken.None);
 
             if (deleteSuccess == false)
             {

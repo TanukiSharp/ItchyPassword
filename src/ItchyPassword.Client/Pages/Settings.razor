@@ -48,11 +48,11 @@
 
                         @if (isActive)
                         {
-                            <span class="badge active">Active</span>
+                            <span class="badge active">✓ Active</span>
                         }
                         else if (IsNotLoaded == false)
                         {
-                            <button class="button secondary small"
+                            <button class="button primary small"
                                     disabled="@(_busyConnector is not null)"
                                     @onclick="@(() => ActivateConnectorAsync(captured))">
                                 Activate
@@ -70,7 +70,7 @@
                     <VaultConnectorSettings Connector="connector" />
 
                     <div class="connector-test">
-                        <button class="button secondary small" disabled="@(_busyConnector is not null)" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
+                        <button class="button primary small" disabled="@(_busyConnector is not null)" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
                         @if (testResults.TryGetValue(connector.Id, out (bool? Success, string Message) result))
                         {
                             <span class="@(result.Success is null ? "" : result.Success.Value ? "text-success" : "text-danger") test-result">
@@ -171,7 +171,7 @@
         }
 
         modalTitle = "Switch Connector";
-        modalMessage = $"Switching to {connector.Name} will reload the vault from that connector. Any unsaved changes will be lost and data may differ from your current vault.";
+        modalMessage = $"Switching to {connector.Name} will reload the vault from that data source. Any unsaved changes will be lost and data may differ from your current vault.";
         modalActions =
         [
             new ModalAction($"Switch to {connector.Name}", "button danger", async () =>
@@ -226,7 +226,7 @@
         bool hasAccess = await accessTask;
 
         testResults[connector.Id] = hasAccess
-            ? (true, "Access granted ?")
+            ? (true, "Access granted.")
             : (false, "Access denied.");
 
         _busyConnector = null;

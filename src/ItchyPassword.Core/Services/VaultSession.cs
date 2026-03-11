@@ -183,7 +183,7 @@ public class VaultSession
                     // Successfully migrated. Save the new format immediately to avoid re-migration next time.
                     Vault = vault;
                     onStatusChanged?.Invoke("Saving migrated vault...");
-                    (bool success, string error) = await SaveVaultAsync("Migration of vault from v1 to v2", cancellationToken);
+                    (bool success, string error) = await SaveVaultAsync($"Migrated vault from v1 to v2", cancellationToken);
 
                     if (success == false)
                     {
@@ -197,34 +197,6 @@ public class VaultSession
             }
 
             Vault = vault ?? new VaultV2 { Version = 2, Items = [] };
-        }
-    }
-
-    /// <summary>
-    /// Serializes the current vault and pushes it to a single specified connector.
-    /// Does not modify the active connector selection — only writes data.
-    /// </summary>
-    /// <param name="connector">The target connector to push to.</param>
-    /// <param name="changeHint">A description of the change being made.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>A tuple indicating success and an error message on failure.</returns>
-    public async Task<(bool Success, string Error)> PushVaultToAsync(IVaultConnector connector, string changeHint, CancellationToken cancellationToken)
-    {
-        if (Vault is null)
-        {
-            return (false, "No vault loaded.");
-        }
-
-        try
-        {
-            string json = await VaultDataService.SerializeAndSignAsync(Vault.Value, _masterKeyProvider.MasterKey, _crypto, cancellationToken);
-            await connector.SaveVaultAsync(json, changeHint, cancellationToken);
-            LastRawContent = json;
-            return (true, string.Empty);
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
         }
     }
 

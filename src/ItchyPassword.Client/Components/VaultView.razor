@@ -56,7 +56,7 @@
                             <span class="vault-item-name">
                                 @if (match.Item.IsLegacy())
                                 {
-                                    <span title="This item uses legacy settings. Edit and save to upgrade." style="cursor: help; margin-right: 4px;">⚠️</span>
+                                    <span class="legacy-indicator" title="This item uses legacy settings. Edit and save to upgrade.">⚠️</span>
                                 }
                                 @if (match.Item.Type == VaultItemTypeV2.StaticKey)
                                 {

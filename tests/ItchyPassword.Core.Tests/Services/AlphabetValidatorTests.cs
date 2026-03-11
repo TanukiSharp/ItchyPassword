@@ -47,26 +47,6 @@ public sealed class AlphabetValidatorTests
         Assert.Empty(result);
     }
 
-    // ───── HasDuplicates ─────
-
-    [Fact]
-    public void HasDuplicates_NoDuplicates_ReturnsFalse()
-    {
-        Assert.False(AlphabetValidator.HasDuplicates("abcdef"));
-    }
-
-    [Fact]
-    public void HasDuplicates_WithDuplicates_ReturnsTrue()
-    {
-        Assert.True(AlphabetValidator.HasDuplicates("aab"));
-    }
-
-    [Fact]
-    public void HasDuplicates_Empty_ReturnsFalse()
-    {
-        Assert.False(AlphabetValidator.HasDuplicates(""));
-    }
-
     // ───── Deduplicate ─────
 
     [Fact]
@@ -104,6 +84,6 @@ public sealed class AlphabetValidatorTests
     {
         // The default alphabet from StaticKeyDataConstants should have no duplicates.
         string defaultAlphabet = "!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[]^_`abcdefghijklmnopqrstuvwxyz{|}~";
-        Assert.False(AlphabetValidator.HasDuplicates(defaultAlphabet));
+        Assert.Empty(AlphabetValidator.FindDuplicates(defaultAlphabet));
     }
 }

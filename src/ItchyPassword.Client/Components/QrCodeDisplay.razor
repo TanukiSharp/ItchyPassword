@@ -1,4 +1,5 @@
 @using QRCoder
+@inject IJSRuntime JS
 
 <div class="qrcode-container">
     @if (string.IsNullOrWhiteSpace(Text))
@@ -10,9 +11,9 @@
         <div class="qrcode-controls">
             <label class="qrcode-size-label">Size</label>
             <input type="range" min="100" max="500" step="1" value="@_displaySize"
-                   @oninput="OnDisplaySizeChanged" class="qrcode-slider" />
+                   @oninput="OnDisplaySizeChangedAsync" class="qrcode-slider" />
         </div>
-        <div class="qrcode-svg-wrapper" style="max-width: @(_displaySize)px; aspect-ratio: 1;">
+        <div class="qrcode-svg-wrapper" @ref="_wrapperRef">
             @((MarkupString)_svg)
         </div>
     }
@@ -22,6 +23,7 @@
     private string _text = string.Empty;
     private string _svg = string.Empty;
     private int _displaySize = 200;
+    private ElementReference _wrapperRef;
 
     [Parameter]
     public required string Text { get; init; }
@@ -37,11 +39,12 @@
         _svg = GenerateSvg(Text);
     }
 
-    private void OnDisplaySizeChanged(ChangeEventArgs e)
+    private async Task OnDisplaySizeChangedAsync(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int value))
         {
             _displaySize = value;
+            await JS.InvokeVoidAsync("domInterop.setStyle", _wrapperRef, "max-width", $"{value}px");
         }
     }
 

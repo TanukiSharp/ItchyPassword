@@ -15,21 +15,6 @@ public class VaultConnectorNotConfiguredException : Exception
     }
 }
 
-public class VaultAccessDeniedException : Exception
-{
-    public VaultAccessDeniedException() : base("Access to the vault connector was denied.")
-    {
-    }
-
-    public VaultAccessDeniedException(string message) : base(message)
-    {
-    }
-
-    public VaultAccessDeniedException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
-}
-
 public class VaultFormatException : Exception
 {
     public VaultFormatException() : base("The vault format is invalid.")
