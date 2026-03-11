@@ -102,8 +102,9 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         }
     }
 
-    public void ClearSecrets()
+    public Task ClearSecretsAsync()
     {
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

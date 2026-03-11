@@ -91,5 +91,5 @@ public interface IVaultConnector
     /// Encrypted configuration entries are cleared separately by the caller;
     /// this method only needs to handle secrets not stored in <see cref="Configuration"/>.
     /// </summary>
-    void ClearSecrets();
+    Task ClearSecretsAsync();
 }

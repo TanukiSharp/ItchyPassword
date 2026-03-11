@@ -81,7 +81,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     {
         if (!_keyProvider.HasMasterKey)
         {
-            Unload();
+            await UnloadAsync();
             return;
         }
 
@@ -151,7 +151,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         }
     }
 
-    public void Unload()
+    public async Task UnloadAsync()
     {
         _keyProvider.MasterKey = [];
         _session.Vault = null;
@@ -166,7 +166,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                 }
             }
 
-            connector.ClearSecrets();
+            await connector.ClearSecretsAsync();
         }
 
         Status = AppStatus.NotLoaded;

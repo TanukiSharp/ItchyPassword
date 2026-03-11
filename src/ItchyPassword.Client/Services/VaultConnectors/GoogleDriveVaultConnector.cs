@@ -164,10 +164,12 @@ public class GoogleDriveVaultConnector(
     /// <summary>
     /// Clears in-memory OAuth tokens and secret configuration entries.
     /// </summary>
-    public void ClearSecrets()
+    public Task ClearSecretsAsync()
     {
         _accessToken = string.Empty;
         _refreshToken = string.Empty;
+
+        return Task.CompletedTask;
     }
 
     /// <inheritdoc />

@@ -25,7 +25,7 @@ else if (AppState.Status == AppStatus.Error)
                     Retry
                 </button>
             }
-            <button class="button secondary" @onclick="GoHome">Back to Login</button>
+            <button class="button secondary" @onclick="GoHomeAsync">Back to Login</button>
             <button class="button secondary" @onclick="GoToSettings">Configure</button>
         </div>
     </div>
@@ -56,9 +56,9 @@ else if (AppState.Status == AppStatus.Loaded)
         await AppState.RetryLoadAsync(CancellationToken.None);
     }
 
-    private void GoHome()
+    private async Task GoHomeAsync()
     {
-        AppState.Unload();
+        await AppState.UnloadAsync();
     }
 
     private void GoToSettings()

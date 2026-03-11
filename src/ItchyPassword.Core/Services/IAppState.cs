@@ -34,7 +34,7 @@ public interface IAppState
     /// <summary>
     /// Unloads the vault, clears the master key, and resets the application state.
     /// </summary>
-    void Unload();
+    Task UnloadAsync();
 
     /// <summary>
     /// Retries the load process using the existing master key.

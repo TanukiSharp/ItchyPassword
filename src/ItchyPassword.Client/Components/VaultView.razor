@@ -25,7 +25,7 @@
             <button class="button icon-button primary" @onclick="CreateNew" title="Create a new vault item.">
                 <img class="themed-icon" src="icons/plus-dark.svg" width="16" height="16" alt="New item" />
             </button>
-            <button class="button secondary vault-unload-btn" @onclick="UnloadVault" title="Clears the master key and unloads all vault data.">Unload vault</button>
+            <button class="button secondary vault-unload-btn" @onclick="UnloadVaultAsync" title="Clears the master key and unloads all vault data.">Unload vault</button>
         </div>
     </div>
 
@@ -165,9 +165,9 @@
         }
     }
 
-    private void UnloadVault()
+    private async Task UnloadVaultAsync()
     {
-        AppState.Unload();
+        await AppState.UnloadAsync();
     }
 
     /// <summary>
