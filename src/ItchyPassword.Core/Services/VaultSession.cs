@@ -8,7 +8,7 @@ namespace ItchyPassword.Core.Services;
 /// </summary>
 public class VaultSession
 {
-    private const string ActiveConnectorStorageKey = "itchypassword_main_vault_connector";
+    private const string ActiveConnectorStorageKey = "main_vault_connector";
 
     private readonly IMasterKeyProvider _masterKeyProvider;
     private readonly ICryptoService _crypto;

@@ -2,7 +2,7 @@
 
 @if (IsVisible)
 {
-    <div class="modal-backdrop" @onclick="OnCancel">
+    <div class="modal-backdrop" @onclick="OnCancelClick">
         <div class="modal-card" @onclick:stopPropagation="true">
             <div class="modal-header">
                 <h3>@Title</h3>
@@ -19,16 +19,30 @@
                 {
                     @foreach (ModalAction action in Actions)
                     {
-                        <button class="@action.CssClass" @onclick="action.OnClick">@action.Label</button>
+                        <button class="@action.CssClass modal-action-btn" disabled="@IsWorking" @onclick="() => HandleClick(action)">
+                            <div class="modal-action-content">
+                                <span class="modal-action-label">@action.Label</span>
+                                @if (action.Description is not null)
+                                {
+                                    <span class="modal-action-desc">@action.Description</span>
+                                }
+                            </div>
+                            @if (IsWorking && action == _workingAction)
+                            {
+                                <div class="loading-spinner-sm"></div>
+                            }
+                        </button>
                     }
                 }
-                <button class="button secondary" @onclick="OnCancel">Cancel</button>
+                <button class="button secondary modal-action-btn" disabled="@IsWorking" @onclick="OnCancelClick">Cancel</button>
             </div>
         </div>
     </div>
 }
 
 @code {
+    private bool IsWorking => _workingAction is not null;
+    private ModalAction? _workingAction;
     /// <summary>
     /// Whether the modal is currently visible.
     /// </summary>
@@ -64,4 +78,35 @@
     /// </summary>
     [Parameter]
     public EventCallback OnCancel { get; set; }
+
+    private async Task HandleClick(ModalAction action)
+    {
+        if (IsWorking)
+        {
+            return;
+        }
+
+        _workingAction = action;
+        StateHasChanged();
+
+        try
+        {
+            await action.OnClick();
+        }
+        finally
+        {
+            _workingAction = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnCancelClick()
+    {
+        if (IsWorking)
+        {
+            return;
+        }
+
+        await OnCancel.InvokeAsync();
+    }
 }

@@ -64,8 +64,8 @@ public class GoogleDriveVaultConnector(
 
     private const string StorageModeConfigKey = "StorageMode";
     private const string FolderIdConfigKey = "FolderId";
-    private const string AccessTokenStorageKey = "itchypassword_gdrive_access_token";
-    private const string RefreshTokenStorageKey = "itchypassword_gdrive_refresh_token";
+    private const string AccessTokenStorageKey = "gdrive_access_token";
+    private const string RefreshTokenStorageKey = "gdrive_refresh_token";
 
     private readonly HttpClient _http = http;
     private readonly ILocalStorageService _storage = storage;
@@ -115,7 +115,7 @@ public class GoogleDriveVaultConnector(
                 """,
             Kind = ConfigurationEntryKind.Dropdown,
             DefaultValue = "appdata",
-            StorageKey = "itchypassword_gdrive_storage_mode",
+            StorageKey = "gdrive_storage_mode",
             Options =
             [
                 new DropdownOption("appdata", "App data"),
@@ -129,7 +129,7 @@ public class GoogleDriveVaultConnector(
             Description = "Enter a folder name (e.g. \"ItchyPassword\") or a path (e.g. \"MyData/Vaults\"). Created automatically if it does not exist.",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "ItchyPassword",
-            StorageKey = "itchypassword_gdrive_folder_id",
+            StorageKey = "gdrive_folder_id",
             IsRequired = true,
             VisibleWhenKey = StorageModeConfigKey,
             VisibleWhenValue = "folder",

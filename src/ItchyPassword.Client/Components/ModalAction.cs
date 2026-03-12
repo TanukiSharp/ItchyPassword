@@ -6,4 +6,5 @@ namespace ItchyPassword.Client.Components;
 /// <param name="Label">Text displayed on the button.</param>
 /// <param name="CssClass">CSS class(es) applied to the button (e.g. "button primary", "button danger").</param>
 /// <param name="OnClick">Async callback invoked when the button is clicked.</param>
-public record ModalAction(string Label, string CssClass, Func<Task> OnClick);
+/// <param name="Description">Optional supplementary text displayed below the label.</param>
+public record ModalAction(string Label, string? Description, string CssClass, Func<Task> OnClick);
