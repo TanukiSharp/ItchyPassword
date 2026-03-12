@@ -8,7 +8,7 @@
           content="default-src 'none';
                    script-src 'self' 'wasm-unsafe-eval';
                    style-src 'self';
-                   connect-src 'self' https://api.github.com https://www.googleapis.com https://oauth2.googleapis.com;
+                   connect-src 'self' https://api.github.com https://www.googleapis.com https://oauth2.googleapis.com https:;
                    img-src 'self' data:;
                    font-src 'self';
                    base-uri 'self';
@@ -27,6 +27,8 @@
     <script src="js/crypto.js"></script>
     <!-- Google Drive Vault Connector (OAuth popup interop) -->
     <script src="js/googleDrive.js"></script>
+    <!-- SOLID Pod Vault Connector (OAuth popup interop + DPoP) -->
+    <script src="js/solid.js"></script>
     <!-- DOM interop (CSP-compliant style manipulation) -->
     <script src="js/dom.js"></script>
 </head>
