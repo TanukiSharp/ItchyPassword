@@ -171,15 +171,51 @@
         }
 
         modalTitle = "Switch Connector";
-        modalMessage = $"Switching to {connector.Name} will reload the vault from that data source. Any unsaved changes will be lost and data may differ from your current vault.";
-        modalActions =
-        [
-            new ModalAction($"Switch to {connector.Name}", "button danger", async () =>
-            {
-                DismissModal();
-                _busyConnector = connector;
-                StateHasChanged();
+        modalMessage = $"How would you like to initialize the vault for {connector.Name}?";
+        modalActions = [];
 
+        if (Session.Vault is not null)
+        {
+            modalActions.Add(new ModalAction(
+                $"Export to {connector.Name}",
+                $"Overwrite data in {connector.Name} vault with the current data of the application.",
+                "button danger",
+                async () =>
+                {
+                    try
+                    {
+                        Session.SetActiveConnector(connector.Id);
+                        await Session.SaveActiveConnectorAsync(CancellationToken.None);
+
+                        var (success, error) = await Session.SaveVaultAsync($"Exported vault to {connector.Name}", CancellationToken.None);
+                        if (success)
+                        {
+                            Toast.Show($"Successfully exported vault to {connector.Name}", TimeSpan.FromSeconds(5));
+                            await AppState.RetryLoadAsync(CancellationToken.None);
+                        }
+                        else
+                        {
+                            Toast.Show($"Failed to export: {error}", TimeSpan.FromSeconds(5));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Toast.Show($"Failed to export: {ex.Message}", TimeSpan.FromSeconds(5));
+                    }
+                    finally
+                    {
+                        DismissModal();
+                    }
+                }
+            ));
+        }
+
+        modalActions.Add(new ModalAction(
+            $"Import from {connector.Name}",
+            $"Load the vault stored in {connector.Name} in the application.",
+            "button primary",
+            async () =>
+            {
                 try
                 {
                     Session.SetActiveConnector(connector.Id);
@@ -192,11 +228,10 @@
                 }
                 finally
                 {
-                    _busyConnector = null;
-                    StateHasChanged();
+                    DismissModal();
                 }
-            }),
-        ];
+            }
+        ));
 
         modalVisible = true;
         StateHasChanged();
@@ -227,7 +262,7 @@
 
         testResults[connector.Id] = hasAccess
             ? (true, "Access granted.")
-            : (false, "Access denied.");
+            : (false, "Access denied. " + connector.AccessFailureMessage);
 
         _busyConnector = null;
         StateHasChanged();

@@ -24,6 +24,5 @@ builder.Services.AddSingleton<ErrorLogService>();
 
 builder.Services.AddScoped<IVaultConnector, GitHubVaultConnector>();
 builder.Services.AddScoped<IVaultConnector, GoogleDriveVaultConnector>();
-builder.Services.AddScoped<IVaultConnector, SolidVaultConnector>();
 
 await builder.Build().RunAsync();
