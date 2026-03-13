@@ -1,45 +1,71 @@
 <Project>
 
-  <!-- Inject git commit hash at build time -->
-  <Target Name="GenerateGitCommitHash" BeforeTargets="CoreCompile">
-    <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
-      <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
-    </Exec>
-    <PropertyGroup>
-      <GitCommitHash Condition="'$(GitCommitHash)' == ''">unknown</GitCommitHash>
-    </PropertyGroup>
-    <WriteLinesToFile
-      File="$(IntermediateOutputPath)AppVersion.g.cs"
-      Lines="namespace ItchyPassword.Client%3B%0A%0Apublic static partial class AppVersion%0A{%0A    public const string GitCommitHash = &quot;$(GitCommitHash)&quot;%3B%0A}"
-      Overwrite="true"
-      Encoding="UTF-8" />
-    <ItemGroup>
-      <Compile Include="$(IntermediateOutputPath)AppVersion.g.cs" />
-    </ItemGroup>
-  </Target>
+    <!-- Rewrites <base href> in the published index.html for GitHub Pages sub-path deployment -->
+    <UsingTask TaskName="UpdateBaseHref"
+               TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildBinPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <FilePath ParameterType="System.String" Required="true" />
+            <BasePath ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Text.RegularExpressions" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+          var content = File.ReadAllText(FilePath);
+          var updated = Regex.Replace(
+              content,
+              @"<base href=""[^""]*""\s*/>",
+              $"<base href=\"{BasePath}\" />");
+          File.WriteAllText(FilePath, updated);
+        ]]>
+            </Code>
+        </Task>
+    </UsingTask>
 
-  <Target Name="CleanBeforePublish" BeforeTargets="Build" Condition="'$(PublishDir)' != ''">
-    <RemoveDir Directories="$(PublishDir)" />
-    <Message Importance="high" Text="Cleaned publish output directory: $(PublishDir)" />
-  </Target>
+    <!-- Inject git commit hash at build time -->
+    <Target Name="GenerateGitCommitHash" BeforeTargets="CoreCompile">
+        <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
+            <Output TaskParameter="ConsoleOutput" PropertyName="GitCommitHash" />
+        </Exec>
+        <PropertyGroup>
+            <GitCommitHash Condition="'$(GitCommitHash)' == ''">unknown</GitCommitHash>
+        </PropertyGroup>
+        <WriteLinesToFile
+          File="$(IntermediateOutputPath)AppVersion.g.cs"
+          Lines="namespace ItchyPassword.Client%3B%0A%0Apublic static partial class AppVersion%0A{%0A    public const string GitCommitHash = &quot;$(GitCommitHash)&quot;%3B%0A}"
+          Overwrite="true"
+          Encoding="UTF-8" />
+        <ItemGroup>
+            <Compile Include="$(IntermediateOutputPath)AppVersion.g.cs" />
+        </ItemGroup>
+    </Target>
 
-  <Target Name="CopyToDocsVNext" AfterTargets="Publish">
-    <PropertyGroup>
-      <DocsVNextDir>$(MSBuildThisFileDirectory)..\..\docs\vnext\</DocsVNextDir>
-      <PublishWwwrootDir>$(PublishDir)wwwroot\</PublishWwwrootDir>
-    </PropertyGroup>
+    <Target Name="CleanBeforePublish" BeforeTargets="Build" Condition="'$(PublishDir)' != ''">
+        <RemoveDir Directories="$(PublishDir)" />
+        <Message Importance="high" Text="Cleaned publish output directory: $(PublishDir)" />
+    </Target>
 
-    <RemoveDir Directories="$(DocsVNextDir)" />
+    <Target Name="CopyToDocsVNext" AfterTargets="Publish">
+        <PropertyGroup>
+            <DocsVNextDir>$(MSBuildThisFileDirectory)..\..\docs\vnext\</DocsVNextDir>
+            <PublishWwwrootDir>$(PublishDir)wwwroot\</PublishWwwrootDir>
+        </PropertyGroup>
 
-    <ItemGroup>
-      <PublishFiles Include="$(PublishWwwrootDir)**\*" />
-    </ItemGroup>
+        <RemoveDir Directories="$(DocsVNextDir)" />
 
-    <Warning Condition="'@(PublishFiles)' == ''" Text="No published web assets found at '$(PublishWwwrootDir)'; docs/vnext was not updated." />
+        <ItemGroup>
+            <PublishFiles Include="$(PublishWwwrootDir)**\*" />
+        </ItemGroup>
 
-    <Copy Condition="'@(PublishFiles)' != ''" SourceFiles="@(PublishFiles)" DestinationFiles="@(PublishFiles->'$(DocsVNextDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+        <Warning Condition="'@(PublishFiles)' == ''" Text="No published web assets found at '$(PublishWwwrootDir)'; docs/vnext was not updated." />
 
-    <Message Importance="high" Text="Published assets copied to docs/vnext." />
-  </Target>
+        <Copy Condition="'@(PublishFiles)' != ''" SourceFiles="@(PublishFiles)" DestinationFiles="@(PublishFiles->'$(DocsVNextDir)%(RecursiveDir)%(Filename)%(Extension)')" />
+
+        <UpdateBaseHref Condition="'@(PublishFiles)' != ''" FilePath="$(DocsVNextDir)index.html" BasePath="/ItchyPassword/vnext/" />
+
+        <Message Importance="high" Text="Published assets copied to docs/vnext." />
+    </Target>
 
 </Project>
