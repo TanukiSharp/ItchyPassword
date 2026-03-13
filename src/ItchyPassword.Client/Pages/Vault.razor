@@ -16,7 +16,7 @@
 else if (AppState.Status == AppStatus.Error)
 {
     <div class="vault-error">
-        <h3>Failed to Load</h3>
+        <h3>Failed to load</h3>
         <p>@AppState.StatusMessage</p>
         <div class="button-row">
             @if (Session.ActiveConnector?.CanRetryAccess == true)
