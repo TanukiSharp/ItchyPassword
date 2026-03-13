@@ -10,59 +10,56 @@
 @inject ErrorLogService ErrorLog
 
 <div class="app-layout">
-    @if (IsSidebarVisible)
-    {
-        <div class="mobile-toggle-bar">
-            <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
-            <span class="mobile-title">ItchyPassword</span>
-        </div>
+    <div class="mobile-toggle-bar">
+        <button class="hamburger-btn" @onclick="ToggleSidebar">☰</button>
+        <span class="mobile-title">ItchyPassword</span>
+    </div>
 
-        <aside class="sidebar @(sidebarOpen ? "open" : "")">
-            <div class="sidebar-header">
-                <h2>ItchyPassword</h2>
-                <button class="close-sidebar-btn" @onclick="ToggleSidebar">✕</button>
-            </div>
-            <nav>
+    <aside class="sidebar @(sidebarOpen ? "open" : "")">
+        <div class="sidebar-header">
+            <h2>ItchyPassword</h2>
+            <button class="close-sidebar-btn" @onclick="ToggleSidebar">✕</button>
+        </div>
+        <nav>
+            <ul>
+                <li><NavLink href="empty" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🫣 Empty</NavLink></li>
+                <li>
+                    <NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
+                        @(AppState.Status == AppStatus.Loaded ? "🔓" : "🔒") Vault
+                    </NavLink>
+                </li>
+                <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static key</NavLink></li>
+                <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
+            </ul>
+            <details class="sidebar-debug-section">
+                <summary class="sidebar-debug-toggle">
+                    🛠️ Debug
+                    @if (ErrorLog.Count > 0)
+                    {
+                        <span class="sidebar-badge">@ErrorLog.Count</span>
+                    }
+                </summary>
                 <ul>
-                    <li><NavLink href="empty" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🫣 Empty</NavLink></li>
+                    <li><NavLink href="raw-vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">📄 Raw Vault</NavLink></li>
                     <li>
-                        <NavLink href="vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
-                            @(AppState.Status == AppStatus.Loaded ? "🔓" : "🔒") Vault
+                        <NavLink href="error-log" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
+                            ⚠️ Errors
+                            @if (ErrorLog.Count > 0)
+                            {
+                                <span class="sidebar-badge">@ErrorLog.Count</span>
+                            }
                         </NavLink>
                     </li>
-                    <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static key</NavLink></li>
-                    <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
                 </ul>
-                <details class="sidebar-debug-section">
-                    <summary class="sidebar-debug-toggle">
-                        🛠️ Debug
-                        @if (ErrorLog.Count > 0)
-                        {
-                            <span class="sidebar-badge">@ErrorLog.Count</span>
-                        }
-                    </summary>
-                    <ul>
-                        <li><NavLink href="raw-vault" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">📄 Raw Vault</NavLink></li>
-                        <li>
-                            <NavLink href="error-log" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">
-                                ⚠️ Errors
-                                @if (ErrorLog.Count > 0)
-                                {
-                                    <span class="sidebar-badge">@ErrorLog.Count</span>
-                                }
-                            </NavLink>
-                        </li>
-                    </ul>
-                </details>
-            </nav>
-            <ThemeSelector />
-            <div class="sidebar-version">@AppVersion.FullVersion</div>
-        </aside>
+            </details>
+        </nav>
+        <ThemeSelector />
+        <div class="sidebar-version">@AppVersion.FullVersion</div>
+    </aside>
 
-        @if (sidebarOpen)
-        {
-            <div class="sidebar-overlay" @onclick="CloseSidebar"></div>
-        }
+    @if (sidebarOpen)
+    {
+        <div class="sidebar-overlay" @onclick="CloseSidebar"></div>
     }
 
     <main class="main-content">
@@ -74,11 +71,6 @@
 
 @code {
     private bool sidebarOpen = false;
-
-    private bool IsSidebarVisible =>
-        AppState.Status == AppStatus.Loaded ||
-        AppState.Status == AppStatus.SetupRequired ||
-        AppState.Status == AppStatus.LoadingVault;
 
     protected override void OnInitialized()
     {
