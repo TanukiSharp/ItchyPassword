@@ -822,6 +822,14 @@ td.text-right,
     line-height: 1.4;
 }
 
+.master-key-version {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    opacity: 0.6;
+    margin-top: 1.5rem;
+    text-align: center;
+}
+
 .confirmation-match {
     border-color: var(--success-color, #28a745) !important;
     box-shadow: 0 0 0 1px var(--success-color, #28a745);
@@ -1366,7 +1374,7 @@ td.text-right,
     }
 
     .main-content {
-        padding-top: var(--spacing-md);
+        padding: 0;
         width: 100%;
         margin-top: 0;
         flex: 1;
@@ -1402,6 +1410,36 @@ td.text-right,
 
     .sidebar-overlay.active { /* Use .active if needed, but simple block does it */
         display: block;
+    }
+
+    /* Increase touch targets — minimum 44px (2.75rem) recommended for mobile. */
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        min-height: 2.75rem;
+        padding: 0.65rem var(--spacing-sm);
+    }
+
+    button, .button, input[type="submit"] {
+        min-height: 2.75rem;
+        padding: 0.65rem var(--spacing-md);
+    }
+
+    .icon-button,
+    .icon-btn,
+    .vault-item-action-btn {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .vault-table th,
+    .vault-table td {
+        padding: 1rem 0.5rem;
+    }
+
+    .vault-filter-select {
+        min-height: 2.75rem;
+        padding: 0.65rem 0.5rem;
     }
 
     .grid-3col {

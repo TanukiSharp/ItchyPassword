@@ -16,7 +16,10 @@
 // When the SPA loads at /solid-oauth-callback, relay code/state to the opener
 // via BroadcastChannel and close the window BEFORE Blazor loads.
 (function () {
-    if (window.location.pathname !== '/solid-oauth-callback') {
+    // Use endsWith so the check works both at the root (/solid-oauth-callback)
+    // and under a subpath (e.g. /itchypassword/solid-oauth-callback on GitHub Pages).
+    var path = window.location.pathname.replace(/\/$/, '');
+    if (!path.endsWith('/solid-oauth-callback')) {
         return;
     }
 
