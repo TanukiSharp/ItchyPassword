@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <title>OAuth Callback</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background: #1e1e1e;
+            color: #ccc;
+        }
+    </style>
+</head>
+<body>
+    <p>Signing in&hellip;</p>
+    <!-- Delegates to the interception logic in googleDrive.js which checks
+         window.location.pathname and relays the OAuth code via BroadcastChannel.
+         This page exists so /google-oauth-callback resolves on static hosts
+         (like GitHub Pages) that have no SPA fallback. -->
+    <script src="../js/googleDrive.js"></script>
+</body>
+</html>
