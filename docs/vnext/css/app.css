@@ -565,10 +565,8 @@ tr:hover td { background-color: var(--hover-overlay); }
 .vault-filter-select {
     display: inline-block;
     width: auto;
-    min-width: 10rem;
     margin-bottom: 0;
     padding: 0.35rem 0.5rem;
-    font-size: 0.85rem;
 }
 
 .vault-item-count {
@@ -1033,6 +1031,19 @@ td.text-right,
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Keep the name column flexible and the actions column pinned to its content width. */
+.vault-table td:first-child {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
+.vault-table th:last-child,
+.vault-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
 .vault-actions-group {
     display: inline-flex;
     gap: 0.35rem;
@@ -1412,17 +1423,23 @@ td.text-right,
         display: block;
     }
 
-    /* Increase touch targets — minimum 44px (2.75rem) recommended for mobile. */
+    /* Increase font size and touch targets — 1.2rem / 44px minimum for mobile. */
+    body {
+        font-size: 1.2rem;
+    }
+
     input:not([type="checkbox"]):not([type="radio"]),
     select,
     textarea {
         min-height: 2.75rem;
         padding: 0.65rem var(--spacing-sm);
+        font-size: 1.2rem;
     }
 
-    button, .button, input[type="submit"] {
+    button, .button, select, input[type="submit"] {
         min-height: 2.75rem;
         padding: 0.65rem var(--spacing-md);
+        font-size: 1.2rem;
     }
 
     .icon-button,
@@ -1435,6 +1452,11 @@ td.text-right,
     .vault-table th,
     .vault-table td {
         padding: 1rem 0.5rem;
+    }
+
+    .vault-table thead th {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
     }
 
     .vault-filter-select {
@@ -1649,6 +1671,24 @@ td.text-right,
 .sidebar-debug-toggle:hover {
     background-color: var(--bg-color);
     color: var(--text-color);
+}
+
+/* Sidebar action — behaves like a nav link but triggers an action instead of navigating. */
+.sidebar-action-link {
+    all: unset;
+    display: block;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sidebar-action-link:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
 }
 
 /* ── Sidebar Badge ───────────────────────────────────────────────── */
