@@ -28,7 +28,7 @@ public class MasterKeyProvider : IMasterKeyProvider, INotifyPropertyChanged
                 bool hadMasterKey = HasMasterKey;
 
                 // Zero out the old key material before replacing it.
-                CryptographicOperations.ZeroMemory(_masterKey);
+                Array.Clear(_masterKey, 0, _masterKey.Length);
 
                 _masterKey = value;
                 OnPropertyChanged();
