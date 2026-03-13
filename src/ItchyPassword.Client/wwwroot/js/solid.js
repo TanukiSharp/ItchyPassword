@@ -59,6 +59,12 @@ window.solidInterop = {
     /** @type {Promise<string|null>|null} Pending sign-in result promise. */
     _signInPromise: null,
 
+    /** @type {HTMLIFrameElement|null} Hidden iframe used for silent OIDC re-authentication. */
+    _silentFrame: null,
+
+    /** @type {Promise<string|null>|null} Pending silent sign-in result promise. */
+    _silentSignInPromise: null,
+
     // -------------------------------------------------------------------------
     // DPoP helpers
     // -------------------------------------------------------------------------
@@ -252,6 +258,75 @@ window.solidInterop = {
 
         const result = await this._signInPromise;
         this._signInPromise = null;
+        return result;
+    },
+
+    // -------------------------------------------------------------------------
+    // Silent popup management (prompt=none)
+    // -------------------------------------------------------------------------
+
+    /**
+     * Creates a hidden <iframe> for silent OIDC re-authentication (prompt=none).
+     * Unlike a popup, iframes require no user gesture and have no visible presence
+     * on any platform, including mobile browsers.
+     * If the provider blocks iframe loading via X-Frame-Options / CSP the frame just
+     * never posts back, and awaitSilentResult() resolves null after the timeout.
+     * @param {string} url - The authorization URL including prompt=none.
+     */
+    openSilentFrame(url) {
+        // Remove any stale frame from a previous attempt.
+        this._silentFrame?.remove();
+        this._silentFrame = null;
+
+        const iframe = document.createElement('iframe');
+        iframe.setAttribute('aria-hidden', 'true');
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        this._silentFrame = iframe;
+
+        this._silentSignInPromise = new Promise((resolve) => {
+            const channel = new BroadcastChannel('solid-oauth-callback');
+
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                channel.close();
+                this._silentFrame?.remove();
+                this._silentFrame = null;
+            };
+
+            // prompt=none should complete in seconds; 30 s is generous.
+            const timeoutId = setTimeout(() => {
+                cleanup();
+                resolve(null);
+            }, 30 * 1000);
+
+            channel.onmessage = (event) => {
+                cleanup();
+
+                if (event.data.error) {
+                    resolve(null);
+                    return;
+                }
+
+                resolve(JSON.stringify({
+                    code: event.data.code,
+                    state: event.data.state,
+                }));
+            };
+        });
+    },
+
+    /**
+     * Awaits the result of the previously opened silent sign-in iframe.
+     * @returns {Promise<string|null>} JSON string with { code, state }, or null on failure.
+     */
+    async awaitSilentResult() {
+        if (!this._silentSignInPromise) {
+            return null;
+        }
+
+        const result = await this._silentSignInPromise;
+        this._silentSignInPromise = null;
         return result;
     },
 };

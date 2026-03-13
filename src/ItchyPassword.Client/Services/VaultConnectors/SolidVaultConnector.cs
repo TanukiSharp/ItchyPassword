@@ -46,7 +46,6 @@ public class SolidVaultConnector(
     // localStorage keys (not exposed through Configuration — not UI-visible)
     // -------------------------------------------------------------------------
 
-    private const string AccessTokenStorageKey = "solid_access_token";
     private const string RefreshTokenStorageKey = "solid_refresh_token";
 
     private const string OAuthCallbackPath = "solid-oauth-callback";
@@ -171,7 +170,7 @@ public class SolidVaultConnector(
         byte[]? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.LoadEntriesAsync(Configuration, storage, masterKey, crypto, cancellationToken);
 
-        _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey, cancellationToken);
+        // Access tokens are not persisted — they are DPoP-bound to the current ephemeral key pair.
         _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey, cancellationToken);
 
         _configLoaded = true;
@@ -183,7 +182,7 @@ public class SolidVaultConnector(
         byte[]? masterKey = masterKeyProvider.HasMasterKey ? masterKeyProvider.MasterKey : null;
         await VaultConnectorHelper.SaveEntriesAsync(Configuration, storage, masterKey, crypto, cancellationToken);
 
-        await SaveEncryptedTokenAsync(AccessTokenStorageKey, _accessToken, cancellationToken);
+        // Access tokens are not persisted — they are DPoP-bound to the current ephemeral key pair.
         await SaveEncryptedTokenAsync(RefreshTokenStorageKey, _refreshToken, cancellationToken);
     }
 
@@ -198,10 +197,11 @@ public class SolidVaultConnector(
 
         await LoadConfigurationAsync(cancellationToken);
 
-        // Reload tokens in case another tab updated them.
+        // Reload the refresh token in case another tab updated it.
+        // Access tokens are not persisted — they are DPoP-bound to the current ephemeral key pair
+        // and cannot survive a page reload. The in-memory _accessToken is preserved.
         try
         {
-            _accessToken = await LoadEncryptedTokenAsync(AccessTokenStorageKey, cancellationToken);
             _refreshToken = await LoadEncryptedTokenAsync(RefreshTokenStorageKey, cancellationToken);
         }
         catch
@@ -217,7 +217,9 @@ public class SolidVaultConnector(
         }
 
         // 2. Try silently refreshing using the stored refresh token.
-        if (string.IsNullOrWhiteSpace(_refreshToken) == false)
+        bool hadStoredTokens = string.IsNullOrWhiteSpace(_refreshToken) == false;
+
+        if (hadStoredTokens)
         {
             try
             {
@@ -232,14 +234,24 @@ public class SolidVaultConnector(
             }
             catch
             {
-                // A failed refresh is non-fatal; fall through to interactive sign-in.
+                // A failed refresh is non-fatal; fall through to silent sign-in.
             }
 
             _accessToken = string.Empty;
             _refreshToken = string.Empty;
         }
 
-        // 3. Interactive sign-in via popup.
+        // 3. If the user has previously authenticated, attempt a silent OIDC re-authentication
+        //    using prompt=none in a tiny offscreen popup. The provider will redirect immediately
+        //    when a session cookie still exists — no user-visible UI or popup flash.
+        //    This avoids the visible flash that otherwise occurs when local tokens have expired
+        //    (e.g. after a DPoP key rotation on page reload) but the provider session is still active.
+        if (hadStoredTokens && await TrySilentSignInAsync(cancellationToken))
+        {
+            return true;
+        }
+
+        // 4. Interactive sign-in via popup.
         return await InteractiveSignInAsync(cancellationToken);
     }
 
@@ -467,6 +479,93 @@ public class SolidVaultConnector(
     }
 
     // -------------------------------------------------------------------------
+    // Silent OIDC re-authentication (prompt=none)
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Attempts silent OIDC re-authentication using <c>prompt=none</c> in a tiny offscreen popup.
+    /// When the provider still has an active session cookie the authorization code is returned
+    /// immediately without any user-visible interaction.
+    /// Returns <c>true</c> and stores the new tokens on success; returns <c>false</c> silently
+    /// when the provider requires user interaction (e.g. <c>login_required</c> error).
+    /// </summary>
+    private async Task<bool> TrySilentSignInAsync(CancellationToken cancellationToken)
+    {
+        OidcDiscovery discovery;
+
+        try
+        {
+            discovery = await EnsureDiscoveryAsync(cancellationToken);
+        }
+        catch
+        {
+            return false;
+        }
+
+        string redirectUri = ComputeRedirectUri();
+        string clientId;
+
+        try
+        {
+            clientId = await ResolveClientIdAsync(discovery, redirectUri, cancellationToken);
+        }
+        catch
+        {
+            return false;
+        }
+
+        string codeVerifier = GenerateCodeVerifier();
+        string codeChallenge = ComputeCodeChallenge(codeVerifier);
+        string state = GenerateState();
+        string dpopJkt = await js.InvokeAsync<string>("solidInterop.getDpopKeyThumbprint", cancellationToken);
+
+        string authUrl = BuildAuthorizationUrl(
+            discovery.AuthorizationEndpoint, clientId, redirectUri, codeChallenge, state, dpopJkt, prompt: "none"
+        );
+
+        // Create a hidden iframe — no user gesture required, works on all platforms including mobile.
+        await js.InvokeVoidAsync("solidInterop.openSilentFrame", cancellationToken, authUrl);
+
+        string? resultJson = await js.InvokeAsync<string?>("solidInterop.awaitSilentResult", cancellationToken);
+
+        if (string.IsNullOrWhiteSpace(resultJson))
+        {
+            return false;
+        }
+
+        AuthCallbackResult? callback = JsonSerializer.Deserialize<AuthCallbackResult>(resultJson);
+
+        if (callback is null || string.IsNullOrWhiteSpace(callback.Code) || callback.State != state)
+        {
+            return false;
+        }
+
+        TokenResponse? tokens;
+
+        try
+        {
+            tokens = await ExchangeCodeAsync(
+                discovery.TokenEndpoint, clientId, callback.Code, codeVerifier, redirectUri, cancellationToken
+            );
+        }
+        catch
+        {
+            return false;
+        }
+
+        if (tokens is null || string.IsNullOrWhiteSpace(tokens.AccessToken))
+        {
+            return false;
+        }
+
+        _accessToken = tokens.AccessToken;
+        _refreshToken = tokens.RefreshToken ?? string.Empty;
+
+        await SaveConfigurationAsync(cancellationToken);
+        return true;
+    }
+
+    // -------------------------------------------------------------------------
     // Token exchange and refresh
     // -------------------------------------------------------------------------
 
@@ -685,7 +784,8 @@ public class SolidVaultConnector(
         string redirectUri,
         string codeChallenge,
         string state,
-        string dpopJkt
+        string dpopJkt,
+        string? prompt = null
     )
     {
         var parameters = new Dictionary<string, string>
@@ -699,6 +799,11 @@ public class SolidVaultConnector(
             ["state"] = state,
             ["dpop_jkt"] = dpopJkt,
         };
+
+        if (string.IsNullOrEmpty(prompt) == false)
+        {
+            parameters["prompt"] = prompt;
+        }
 
         string queryString = string.Join("&", parameters
             .Select(p => $"{Uri.EscapeDataString(p.Key)}={Uri.EscapeDataString(p.Value)}")
