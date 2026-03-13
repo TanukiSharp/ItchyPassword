@@ -14,7 +14,6 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     private AppStatus _status = AppStatus.NotLoaded;
     private string _statusMessage = string.Empty;
     private string _searchQuery = string.Empty;
-    private Task? _currentLoadTask;
 
     public event Action? OnChange;
 
@@ -101,10 +100,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
 
         try
         {
-            // We capture the task to ensure we can await it if needed,
-            // but primarily to ensure the fire-and-forget nature doesn't swallow exceptions
-            // before we handle them.
-            _currentLoadTask = _session.LoadAsync(
+            await _session.LoadAsync(
                 msg =>
                 {
                     StatusMessage = msg;
@@ -118,8 +114,6 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                 },
                 cancellationToken
             );
-
-            await _currentLoadTask;
 
             Status = AppStatus.Loaded;
             StatusMessage = string.Empty;
@@ -144,10 +138,6 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                  StatusMessage = "Failed to load vault. Master Key is likely incorrect.";
             }
             // Stay on current page (likely /vault) to show error.
-        }
-        finally
-        {
-            _currentLoadTask = null;
         }
     }
 
