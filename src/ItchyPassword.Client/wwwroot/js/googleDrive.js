@@ -12,7 +12,10 @@
 // relay the code/state via BroadcastChannel and close the popup
 // BEFORE Blazor or any other heavy script loads.
 (function () {
-    if (window.location.pathname !== '/google-oauth-callback') {
+    // Use endsWith so the check works both at the root (/google-oauth-callback)
+    // and under a subpath (e.g. /itchypassword/google-oauth-callback on GitHub Pages).
+    var path = window.location.pathname.replace(/\/$/, '');
+    if (!path.endsWith('/google-oauth-callback')) {
         return;
     }
 

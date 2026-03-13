@@ -29,6 +29,12 @@
                     </NavLink>
                 </li>
                 <li><NavLink href="static-key" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">🔑 Static key</NavLink></li>
+                @if (AppState.Status == AppStatus.Loaded)
+                {
+                    <li>
+                        <button class="sidebar-action-link" @onclick="UnloadVaultAsync" title="Clears the master key and unloads all vault data.">🔒 Unload vault</button>
+                    </li>
+                }
                 <li><NavLink href="settings" Match="NavLinkMatch.Prefix" @onclick="CloseSidebar">⚙️ Settings</NavLink></li>
             </ul>
             <details class="sidebar-debug-section">
@@ -97,5 +103,11 @@
     private void CloseSidebar()
     {
         sidebarOpen = false;
+    }
+
+    private async Task UnloadVaultAsync()
+    {
+        sidebarOpen = false;
+        await AppState.UnloadAsync();
     }
 }

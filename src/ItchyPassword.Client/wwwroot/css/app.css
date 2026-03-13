@@ -565,10 +565,8 @@ tr:hover td { background-color: var(--hover-overlay); }
 .vault-filter-select {
     display: inline-block;
     width: auto;
-    min-width: 10rem;
     margin-bottom: 0;
     padding: 0.35rem 0.5rem;
-    font-size: 0.85rem;
 }
 
 .vault-item-count {
@@ -1033,6 +1031,19 @@ td.text-right,
     border-bottom: 1px solid var(--border-color);
 }
 
+/* Keep the name column flexible and the actions column pinned to its content width. */
+.vault-table td:first-child {
+    overflow-wrap: break-word;
+    word-break: break-word;
+    min-width: 0;
+}
+
+.vault-table th:last-child,
+.vault-table td:last-child {
+    width: 1%;
+    white-space: nowrap;
+}
+
 .vault-actions-group {
     display: inline-flex;
     gap: 0.35rem;
@@ -1374,7 +1385,7 @@ td.text-right,
     }
 
     .main-content {
-        padding-top: var(--spacing-md);
+        padding: 0;
         width: 100%;
         margin-top: 0;
         flex: 1;
@@ -1410,6 +1421,49 @@ td.text-right,
 
     .sidebar-overlay.active { /* Use .active if needed, but simple block does it */
         display: block;
+    }
+
+    .vault-header > .heading-flush {
+        display: none;
+    }
+
+    /* Scale the root font size — all rem-based sizes (nav, labels, badges, etc.) scale proportionally. */
+    :root {
+        font-size: 1.2rem;
+    }
+
+    input:not([type="checkbox"]):not([type="radio"]),
+    select,
+    textarea {
+        min-height: 2.75rem;
+        padding: 0.65rem var(--spacing-sm);
+    }
+
+    button, .button, select, input[type="submit"] {
+        min-height: 2.75rem;
+        padding: 0.65rem var(--spacing-md);
+    }
+
+    .icon-button,
+    .icon-btn,
+    .vault-item-action-btn {
+        width: 2.75rem;
+        height: 2.75rem;
+    }
+
+    .vault-table th,
+    .vault-table td {
+        padding: 1rem 0.5rem;
+    }
+
+    .vault-table thead th {
+        padding: 0.35rem 0.5rem;
+        font-size: 0.8rem;
+    }
+
+    .vault-filter-select {
+        min-height: 2.75rem;
+        padding: 0.65rem 0.5rem;
     }
 
     .grid-3col {
@@ -1619,6 +1673,24 @@ td.text-right,
 .sidebar-debug-toggle:hover {
     background-color: var(--bg-color);
     color: var(--text-color);
+}
+
+/* Sidebar action — behaves like a nav link but triggers an action instead of navigating. */
+.sidebar-action-link {
+    all: unset;
+    display: block;
+    padding: var(--spacing-sm);
+    color: var(--text-muted);
+    border-radius: var(--border-radius);
+    transition: background-color 0.2s;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.sidebar-action-link:hover {
+    background-color: var(--bg-color);
+    color: var(--primary-color);
 }
 
 /* ── Sidebar Badge ───────────────────────────────────────────────── */
