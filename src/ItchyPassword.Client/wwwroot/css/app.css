@@ -118,6 +118,8 @@ body {
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.5;
+    /* Prevents accidental pull-to-refresh gesture on mobile browsers. */
+    overscroll-behavior-y: none;
 }
 
 h1, h2, h3, h4, h5, h6 {
