@@ -1427,6 +1427,10 @@ td.text-right,
         display: none;
     }
 
+    .card-header.vault-header {
+        padding: var(--spacing-sm);
+    }
+
     /* Scale the root font size — all rem-based sizes (nav, labels, badges, etc.) scale proportionally. */
     :root {
         font-size: 1.2rem;
