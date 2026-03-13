@@ -95,7 +95,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         // Navigate immediately to vault view which will show spinner based on Loading status.
         if (_nav.Uri.Contains("/vault") == false)
         {
-            _nav.NavigateTo("/vault");
+            _nav.NavigateTo("vault");
         }
 
         try
@@ -127,7 +127,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         {
             Status = AppStatus.SetupRequired;
             StatusMessage = "Vault not configured.";
-            _nav.NavigateTo("/settings");
+            _nav.NavigateTo("settings");
         }
         catch (Exception ex)
         {
@@ -162,7 +162,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         Status = AppStatus.NotLoaded;
         StatusMessage = string.Empty;
         SearchQuery = string.Empty;
-        _nav.NavigateTo("/");
+        _nav.NavigateTo(_nav.BaseUri);
     }
 
     public async Task ReloadVaultAsync(CancellationToken cancellationToken)
@@ -176,7 +176,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     public void Configure()
     {
         // User wants to go to settings, maybe from error screen
-        _nav.NavigateTo("/settings");
+        _nav.NavigateTo("settings");
     }
 
     private void NotifyStateChanged() => OnChange?.Invoke();

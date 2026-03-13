@@ -35,18 +35,18 @@ else
     {
         if (AppState.Status != AppStatus.Loaded)
         {
-            Nav.NavigateTo("/");
+            Nav.NavigateTo(Nav.BaseUri);
         }
     }
 
     private void GoHome()
     {
-        Nav.NavigateTo("/");
+        Nav.NavigateTo(Nav.BaseUri);
     }
 
     private void GoBack()
     {
-        Nav.NavigateTo("/vault");
+        Nav.NavigateTo("vault");
     }
 
 }

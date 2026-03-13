@@ -78,7 +78,7 @@
     {
         if (Session.Vault is null || MasterKeyProvider.HasMasterKey == false)
         {
-            Nav.NavigateTo("/");
+            Nav.NavigateTo(Nav.BaseUri);
             return;
         }
 
@@ -205,7 +205,7 @@
                 return;
             }
 
-            Nav.NavigateTo("/vault");
+            Nav.NavigateTo("vault");
         }
         catch (Exception ex)
         {
@@ -221,6 +221,6 @@
 
     private void Cancel()
     {
-        Nav.NavigateTo("/vault");
+        Nav.NavigateTo("vault");
     }
 }

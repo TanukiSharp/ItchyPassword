@@ -26,11 +26,11 @@
     {
         if (AppState.Status == AppStatus.Loaded || AppState.Status == AppStatus.Loading || AppState.Status == AppStatus.Error)
         {
-            Nav.NavigateTo("/vault");
+            Nav.NavigateTo("vault");
         }
         else if (AppState.Status == AppStatus.SetupRequired)
         {
-            Nav.NavigateTo("/settings");
+            Nav.NavigateTo("settings");
         }
     }
 }

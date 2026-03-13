@@ -81,7 +81,7 @@ else
     {
         if (AppState.Status != AppStatus.Loaded)
         {
-            Nav.NavigateTo("/");
+            Nav.NavigateTo(Nav.BaseUri);
             return;
         }
 
@@ -144,7 +144,7 @@ else
                 return;
             }
 
-            Nav.NavigateTo("/vault");
+            Nav.NavigateTo("vault");
         }
         catch (Exception ex)
         {
@@ -194,7 +194,7 @@ else
                 return;
             }
 
-            Nav.NavigateTo("/vault");
+            Nav.NavigateTo("vault");
         }
         catch (Exception ex)
         {
@@ -214,6 +214,6 @@ else
 
     private void Cancel()
     {
-        Nav.NavigateTo("/vault");
+        Nav.NavigateTo("vault");
     }
 }
