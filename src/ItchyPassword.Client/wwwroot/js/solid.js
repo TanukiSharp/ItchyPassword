@@ -199,15 +199,28 @@ window.solidInterop = {
         this._signInPromise = new Promise((resolve) => {
             const channel = new BroadcastChannel('solid-oauth-callback');
 
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                clearInterval(closedPollId);
+                channel.close();
+            };
+
             // Resolve null if the user closes the popup without completing sign-in.
             const timeoutId = setTimeout(() => {
-                channel.close();
+                cleanup();
                 resolve(null);
             }, 5 * 60 * 1000);
 
+            // Poll for manual popup closure so we don't wait the full timeout.
+            const closedPollId = setInterval(() => {
+                if (this._popup?.closed) {
+                    cleanup();
+                    resolve(null);
+                }
+            }, 500);
+
             channel.onmessage = (event) => {
-                clearTimeout(timeoutId);
-                channel.close();
+                cleanup();
 
                 if (event.data.error) {
                     resolve(null);

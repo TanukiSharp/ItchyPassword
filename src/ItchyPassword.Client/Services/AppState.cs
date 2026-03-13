@@ -74,7 +74,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         }
 
         _keyProvider.MasterKey = key;
-        await StartLoadFlowAsync(cancellationToken);
+        await StartLoadFlowAsync("Loading vault...", cancellationToken);
     }
 
     public async Task RetryLoadAsync(CancellationToken cancellationToken)
@@ -85,13 +85,13 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             return;
         }
 
-        await StartLoadFlowAsync(cancellationToken);
+        await StartLoadFlowAsync("Retrying to load vault...", cancellationToken);
     }
 
-    private async Task StartLoadFlowAsync(CancellationToken cancellationToken)
+    private async Task StartLoadFlowAsync(string statusMessage, CancellationToken cancellationToken)
     {
         Status = AppStatus.Loading;
-        StatusMessage = "Accessing vault...";
+        StatusMessage = statusMessage;
 
         // Navigate immediately to vault view which will show spinner based on Loading status.
         if (_nav.Uri.Contains("/vault") == false)
@@ -179,7 +179,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     {
         if (Status == AppStatus.Loaded && _keyProvider.HasMasterKey)
         {
-            await StartLoadFlowAsync(cancellationToken);
+            await StartLoadFlowAsync("Reloading vault...", cancellationToken);
         }
     }
 
