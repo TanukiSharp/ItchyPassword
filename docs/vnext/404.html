@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <!--
+        base href is patched by UpdateBaseHref at publish time (same as index.html).
+        The script reads it at runtime to redirect back to the app root when GitHub Pages
+        (or any static host) returns a 404 for a direct Blazor sub-route navigation or
+        an accidental full-page reload on mobile.
+        The Master Key is never persisted, so starting from root after a reload is correct.
+    -->
+    <base href="/ItchyPassword/vnext/" />
+    <script>
+        window.location.replace(document.querySelector('base').getAttribute('href'));
+    </script>
+</head>
+<body></body>
+</html>
