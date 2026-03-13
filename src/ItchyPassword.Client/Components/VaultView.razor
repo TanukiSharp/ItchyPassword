@@ -16,8 +16,8 @@
             <span class="vault-item-count">@FilteredItems.Count items</span>
             <select class="input vault-filter-select" value="@_displayFilter" @onchange="OnFilterChanged">
                 <option value="all">Show all</option>
-                <option value="statickey">Static keys only</option>
-                <option value="secret">Secrets only</option>
+                <option value="statickey">Static keys</option>
+                <option value="secret">Secrets</option>
             </select>
             <button class="button icon-button secondary" @onclick="ReloadVaultAsync" title="Reload vault from storage." disabled="@_isReloading">
                 <img class="themed-icon" src="icons/reload-dark.svg" width="16" height="16" alt="Reload the vault." />
