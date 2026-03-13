@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <script>
+        /**
+         * GitHub Pages SPA fallback — redirects back to the correct app root.
+         *
+         * GitHub Pages serves this file whenever a URL does not map to a real file,
+         * which happens on every direct navigation or full-page reload to a Blazor
+         * sub-route (e.g. /ItchyPassword/vnext/vault).
+         *
+         * Strategy:
+         *   - If the path contains "vnext", redirect to /<repo>/vnext/.
+         *   - Otherwise redirect to /<repo>/ (the legacy app at the docs/ root).
+         *
+         * The Master Key is never persisted, so returning to the app root after
+         * a reload is both safe and correct.
+         */
+        (function () {
+            var segments = window.location.pathname.split('/').filter(Boolean);
+            var vnextIdx = segments.indexOf('vnext');
+            var redirectPath;
+            if (vnextIdx >= 0) {
+                // Keep everything up to and including "vnext".
+                redirectPath = '/' + segments.slice(0, vnextIdx + 1).join('/') + '/';
+            } else if (segments.length > 0) {
+                // GitHub Pages project pages: first segment is the repository name.
+                redirectPath = '/' + segments[0] + '/';
+            } else {
+                redirectPath = '/';
+            }
+            window.location.replace(redirectPath);
+        }());
+    </script>
+</head>
+<body></body>
+</html>

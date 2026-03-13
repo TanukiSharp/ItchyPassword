@@ -112,13 +112,21 @@
 /* Reset & Base */
 * { box-sizing: border-box; }
 
+/*
+ * Prevent pull-to-refresh on both Chrome (Android) and Safari (iOS).
+ * Must be on html *and* body — browsers differ on which element they consult
+ * for the viewport's overscroll behaviour.
+ */
+html {
+    overscroll-behavior-y: none;
+}
+
 body {
     margin: 0;
     font-family: system-ui, -apple-system, sans-serif;
     background-color: var(--bg-color);
     color: var(--text-color);
     line-height: 1.5;
-    /* Prevents accidental pull-to-refresh gesture on mobile browsers. */
     overscroll-behavior-y: none;
 }
 
@@ -164,6 +172,7 @@ a:hover { text-decoration: underline; }
     top: 0;
     height: 100vh;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     transition: transform 0.3s ease-in-out;
     display: flex;
     flex-direction: column;
@@ -544,6 +553,7 @@ tr:hover td { background-color: var(--hover-overlay); }
 .vault-scroll-area {
     flex: 1;
     overflow-y: auto;
+    overscroll-behavior-y: contain;
     min-height: 0;
 }
 
