@@ -1423,8 +1423,12 @@ td.text-right,
         display: block;
     }
 
-    /* Increase font size and touch targets — 1.2rem / 44px minimum for mobile. */
-    body {
+    .vault-header > .heading-flush {
+        display: none;
+    }
+
+    /* Scale the root font size — all rem-based sizes (nav, labels, badges, etc.) scale proportionally. */
+    :root {
         font-size: 1.2rem;
     }
 
@@ -1433,13 +1437,11 @@ td.text-right,
     textarea {
         min-height: 2.75rem;
         padding: 0.65rem var(--spacing-sm);
-        font-size: 1.2rem;
     }
 
     button, .button, select, input[type="submit"] {
         min-height: 2.75rem;
         padding: 0.65rem var(--spacing-md);
-        font-size: 1.2rem;
     }
 
     .icon-button,
