@@ -135,7 +135,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             StatusMessage = "Failed to load vault. " + ex.Message;
             if (ex is VaultDecryptionException)
             {
-                 StatusMessage = "Failed to load vault. Master Key is likely incorrect.";
+                 StatusMessage = "Failed to load vault. Master key is likely incorrect.";
             }
             // Stay on current page (likely /vault) to show error.
         }

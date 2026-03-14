@@ -32,7 +32,7 @@ public class VaultFormatException : Exception
 
 public class VaultDecryptionException : Exception
 {
-    public VaultDecryptionException() : base("Failed to decrypt the vault. The Master Key may be incorrect.")
+    public VaultDecryptionException() : base("Failed to decrypt the vault. The Master key may be incorrect.")
     {
     }
 

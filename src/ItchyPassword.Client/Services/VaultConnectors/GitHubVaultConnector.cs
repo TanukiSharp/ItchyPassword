@@ -52,7 +52,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         new ConfigurationEntry
         {
             Key = RepositoryOwnerConfigKey,
-            Label = "Repository Owner",
+            Label = "Repository owner",
             Description = "The GitHub username or organization that owns the repository.",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "my-github-username",
@@ -62,7 +62,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         new ConfigurationEntry
         {
             Key = RepositoryNameConfigKey,
-            Label = "Repository Name",
+            Label = "Repository name",
             Description = "The name of the GitHub repository that stores the vault file.",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "my-vault-repo",
@@ -72,7 +72,7 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
         new ConfigurationEntry
         {
             Key = FilePathConfigKey,
-            Label = "Vault File Path",
+            Label = "Vault file path",
             Description = "Path to the vault file inside the repository.",
             Kind = ConfigurationEntryKind.Text,
             DefaultValue = "vault.json",

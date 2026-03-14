@@ -17,7 +17,7 @@
 
         <EditForm Model="this" OnValidSubmit="Submit">
             <div class="form-group">
-                <label for="masterKey">Master Key</label>
+                <label for="masterKey">Master key</label>
                 <div class="master-key-input-row">
                     <div class="master-key-input-wrapper">
                         <input @ref="_masterKeyInput" class="input master-key-input" type="@(_showPassword ? "text" : "password")" id="masterKey" value="@_masterKey" @oninput="OnMasterKeyInput" placeholder="Enter your master key" required autofocus />
@@ -58,7 +58,7 @@
             }
 
             <button class="button primary master-key-submit" type="submit" disabled="@IsLoadDisabled" @onclick:stopPropagation>
-                <span>Load Vault</span>
+                <span>Load vault</span>
             </button>
         </EditForm>
     </div>

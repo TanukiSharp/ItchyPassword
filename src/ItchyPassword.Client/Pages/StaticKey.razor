@@ -3,9 +3,9 @@
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 
-<PageTitle>Static Key Generator</PageTitle>
+<PageTitle>Static key generator</PageTitle>
 
-<h1>Static Key</h1>
+<h1>Static key</h1>
 
 <div class="card page-container">
     <div class="card-header">
@@ -17,8 +17,8 @@
         @if (MasterKeyProvider.HasMasterKey == false)
         {
             <div class="alert warning">
-                You must enter your Master Key first.
-                <button class="button small secondary" @onclick="GoToLogin">Enter Master Key</button>
+                You must enter your master key first.
+                <button class="button small secondary" @onclick="GoToLogin">Enter master key</button>
             </div>
         }
         else

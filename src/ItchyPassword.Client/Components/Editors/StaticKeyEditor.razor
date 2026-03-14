@@ -8,7 +8,7 @@
 
 <div class="grid-2col static-key-top-grid">
     <div class="form-group">
-        <label>Public Part</label>
+        <label>Public part</label>
         <div class="input-with-action">
             <input class="input" value="@_publicPart" @oninput="OnPublicPartInput" minlength="@MinPublicPartLength" placeholder="@($"At least {MinPublicPartLength} characters")" />
         </div>
@@ -19,7 +19,7 @@
             <label>Result </label>
             <select class="input label-select" value="@_resultViewMode" @onchange="OnResultViewModeChanged">
                 <option value="plaintext">Plaintext</option>
-                <option value="qrcode">QR Code</option>
+                <option value="qrcode">QR code</option>
             </select>
         </div>
         @if (_resultViewMode == "plaintext")

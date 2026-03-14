@@ -100,7 +100,7 @@ public class SolidVaultConnector(
         new ConfigurationEntry
         {
             Key = VaultFileUrlKey,
-            Label = "Vault File URL",
+            Label = "Vault file URL",
             Description = "The full URL of the vault file in your pod (e.g. https://storage.inrupt.com/e283fa34-d03c-4fb6-9373-8535144e7ce2/ItchyPassword/vault.json).",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "https://storage.inrupt.com/e283fa34-d03c-4fb6-9373-8535144e7ce2/ItchyPassword/vault.json",
@@ -441,7 +441,7 @@ public class SolidVaultConnector(
 
         if (string.IsNullOrWhiteSpace(resultJson))
         {
-            AccessFailureMessage = "SOLID sign-in was cancelled or failed. Click Retry to try again.";
+            AccessFailureMessage = "SOLID sign-in was cancelled or failed.";
             return false;
         }
 
@@ -449,14 +449,14 @@ public class SolidVaultConnector(
 
         if (callback is null || string.IsNullOrWhiteSpace(callback.Code))
         {
-            AccessFailureMessage = "SOLID sign-in returned invalid data. Click Retry to try again.";
+            AccessFailureMessage = "SOLID sign-in returned invalid data.";
             return false;
         }
 
         // Validate state to prevent CSRF attacks.
         if (callback.State != state)
         {
-            AccessFailureMessage = "SOLID sign-in state mismatch (possible CSRF). Click Retry to try again.";
+            AccessFailureMessage = "SOLID sign-in state mismatch (possible CSRF).";
             return false;
         }
 
@@ -466,7 +466,7 @@ public class SolidVaultConnector(
 
         if (tokens is null || string.IsNullOrWhiteSpace(tokens.AccessToken))
         {
-            AccessFailureMessage = "Failed to obtain an access token from the SOLID provider. Click Retry to try again.";
+            AccessFailureMessage = "Failed to obtain an access token from the SOLID provider.";
             return false;
         }
 

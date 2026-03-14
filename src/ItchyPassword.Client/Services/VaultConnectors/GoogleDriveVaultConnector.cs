@@ -282,7 +282,7 @@ public class GoogleDriveVaultConnector(
 
         if (string.IsNullOrWhiteSpace(resultJson))
         {
-            AccessFailureMessage = "Google sign-in was cancelled or failed. Click Retry to try again.";
+            AccessFailureMessage = "Google sign-in was cancelled or failed.";
             return false;
         }
 
@@ -290,14 +290,14 @@ public class GoogleDriveVaultConnector(
 
         if (callbackResult is null || string.IsNullOrWhiteSpace(callbackResult.Code))
         {
-            AccessFailureMessage = "Google sign-in returned invalid data. Click Retry to try again.";
+            AccessFailureMessage = "Google sign-in returned invalid data.";
             return false;
         }
 
         // Validate state to prevent CSRF attacks.
         if (callbackResult.State != state)
         {
-            AccessFailureMessage = "Google sign-in state mismatch (possible CSRF). Click Retry to try again.";
+            AccessFailureMessage = "Google sign-in state mismatch (possible CSRF).";
             return false;
         }
 
@@ -306,7 +306,7 @@ public class GoogleDriveVaultConnector(
 
         if (tokenResponse is null || string.IsNullOrWhiteSpace(tokenResponse.AccessToken))
         {
-            AccessFailureMessage = "Failed to exchange authorization code for access token. Click Retry to try again.";
+            AccessFailureMessage = "Failed to exchange authorization code for access token.";
             return false;
         }
 
