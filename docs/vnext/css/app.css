@@ -344,6 +344,11 @@ input::-ms-clear {
     background: none;
 }
 
+.master-key-toggle:active {
+    /* Prevent the global button:active translateY from displacing the absolutely-positioned toggle. */
+    transform: translateY(-50%);
+}
+
 label {
     display: block;
     margin-bottom: var(--spacing-xs);
@@ -505,7 +510,6 @@ tr:hover td { background-color: var(--hover-overlay); }
     bottom: 0;
     background-color: rgba(0,0,0,0.5);
     z-index: 900;
-    display: none;
 }
 
 .connector-card {
@@ -747,7 +751,7 @@ td.text-right,
 /* ── Details / Summary ───────────────────────────────────────────── */
 
 .static-key-advanced {
-    margin-top: 0.3rem;
+    margin-top: 0.6rem;
 }
 
 .details-summary {
@@ -1142,6 +1146,10 @@ td.text-right,
     min-height: 2.5rem;
 }
 
+.static-key-top-grid {
+    grid-template-columns: 1fr;
+}
+
 /* ── SecretEditor ────────────────────────────────────────────────── */
 
 .editor-column {
@@ -1367,6 +1375,18 @@ td.text-right,
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+    .options-panel {
+        padding: 0.5rem;
+    }
+
+    .grid-2col {
+        gap: 0.75rem;
+    }
+
+    .grid-3col {
+        gap: 0.5rem;
+    }
+
     .app-layout {
         flex-direction: column;
     }
@@ -1431,15 +1451,17 @@ td.text-right,
         display: block;
     }
 
-    .sidebar-overlay.active { /* Use .active if needed, but simple block does it */
-        display: block;
-    }
+    /* Sidebar overlay is conditionally rendered via @if (sidebarOpen), so no display toggle needed. */
 
     .vault-header > .heading-flush {
         display: none;
     }
 
     .card-header.vault-header {
+        padding: var(--spacing-sm);
+    }
+
+    .card-header {
         padding: var(--spacing-sm);
     }
 
@@ -1458,6 +1480,11 @@ td.text-right,
     button, .button, select, input[type="submit"] {
         min-height: 2.75rem;
         padding: 0.65rem var(--spacing-md);
+    }
+
+    .symbol-reset-btn {
+        min-height: unset;
+        padding: 0.45rem;
     }
 
     .icon-button,
