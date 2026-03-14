@@ -344,6 +344,11 @@ input::-ms-clear {
     background: none;
 }
 
+.master-key-toggle:active {
+    /* Prevent the global button:active translateY from displacing the absolutely-positioned toggle. */
+    transform: translateY(-50%);
+}
+
 label {
     display: block;
     margin-bottom: var(--spacing-xs);
@@ -505,7 +510,6 @@ tr:hover td { background-color: var(--hover-overlay); }
     bottom: 0;
     background-color: rgba(0,0,0,0.5);
     z-index: 900;
-    display: none;
 }
 
 .connector-card {
@@ -1447,9 +1451,7 @@ td.text-right,
         display: block;
     }
 
-    .sidebar-overlay.active { /* Use .active if needed, but simple block does it */
-        display: block;
-    }
+    /* Sidebar overlay is conditionally rendered via @if (sidebarOpen), so no display toggle needed. */
 
     .vault-header > .heading-flush {
         display: none;
