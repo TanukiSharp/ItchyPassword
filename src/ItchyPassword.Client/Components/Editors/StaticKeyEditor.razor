@@ -6,7 +6,7 @@
 @inject IVaultCryptoService VaultCrypto
 @inject IMasterKeyProvider MasterKeyProvider
 
-<div class="grid-2col">
+<div class="grid-2col static-key-top-grid">
     <div class="form-group">
         <label>Public Part</label>
         <div class="input-with-action">
@@ -15,11 +15,24 @@
     </div>
 
     <div class="form-group">
-        <label>Result</label>
-        <div class="input-with-action">
-            <input class="input" type="text" readonly value="@_result" />
-            <CopyButton Text="@_result" />
+        <div class="secret-label-row">
+            <label>Result </label>
+            <select class="input label-select" value="@_resultViewMode" @onchange="OnResultViewModeChanged">
+                <option value="plaintext">Plaintext</option>
+                <option value="qrcode">QR Code</option>
+            </select>
         </div>
+        @if (_resultViewMode == "plaintext")
+        {
+            <div class="input-with-action">
+                <input class="input" type="text" readonly value="@_result" />
+                <CopyButton Text="@_result" />
+            </div>
+        }
+        else
+        {
+            <QrCodeDisplay Text="@_result" />
+        }
     </div>
 </div>
 
@@ -86,6 +99,7 @@
 
     private readonly Debouncer _debouncer = new();
     private string _result = string.Empty;
+    private string _resultViewMode = "plaintext";
     private string _error = string.Empty;
 
     private bool _hasDuplicateChars = false;
@@ -259,6 +273,11 @@
             _length = val;
             await TryAutoGenerateAsync();
         }
+    }
+
+    private void OnResultViewModeChanged(ChangeEventArgs e)
+    {
+        _resultViewMode = e.Value?.ToString() ?? "plaintext";
     }
 
     /// <summary>

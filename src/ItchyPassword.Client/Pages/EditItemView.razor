@@ -48,7 +48,7 @@ else
 
                 <div class="form-actions">
                     <button class="button primary" type="submit" disabled="@_isSaving">
-                        @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
+                        @if (_isSaving) { <span>Saving...</span> } else { <span>Save</span> }
                     </button>
                     <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
                     <button class="button danger ml-auto" type="button" @onclick="DeleteAsync" disabled="@_isSaving">Delete</button>

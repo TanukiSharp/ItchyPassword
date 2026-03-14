@@ -747,7 +747,7 @@ td.text-right,
 /* ── Details / Summary ───────────────────────────────────────────── */
 
 .static-key-advanced {
-    margin-top: 0.3rem;
+    margin-top: 0.6rem;
 }
 
 .details-summary {
@@ -1142,6 +1142,10 @@ td.text-right,
     min-height: 2.5rem;
 }
 
+.static-key-top-grid {
+    grid-template-columns: 1fr;
+}
+
 /* ── SecretEditor ────────────────────────────────────────────────── */
 
 .editor-column {
@@ -1367,6 +1371,18 @@ td.text-right,
 
 /* Mobile Responsiveness */
 @media (max-width: 768px) {
+    .options-panel {
+        padding: 0.5rem;
+    }
+
+    .grid-2col {
+        gap: 0.75rem;
+    }
+
+    .grid-3col {
+        gap: 0.5rem;
+    }
+
     .app-layout {
         flex-direction: column;
     }
@@ -1443,6 +1459,10 @@ td.text-right,
         padding: var(--spacing-sm);
     }
 
+    .card-header {
+        padding: var(--spacing-sm);
+    }
+
     /* Scale the root font size — all rem-based sizes (nav, labels, badges, etc.) scale proportionally. */
     :root {
         font-size: 1.2rem;
@@ -1458,6 +1478,11 @@ td.text-right,
     button, .button, select, input[type="submit"] {
         min-height: 2.75rem;
         padding: 0.65rem var(--spacing-md);
+    }
+
+    .symbol-reset-btn {
+        min-height: unset;
+        padding: 0.45rem;
     }
 
     .icon-button,

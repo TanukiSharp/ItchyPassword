@@ -43,7 +43,7 @@
 
             <div class="form-actions">
                 <button class="button primary" type="submit" disabled="@(_isSaving || string.IsNullOrWhiteSpace(_name))">
-                    @if (_isSaving) { <span>Saving...</span> } else { <span>Save to vault</span> }
+                    @if (_isSaving) { <span>Saving...</span> } else { <span>Save</span> }
                 </button>
                 <button class="button secondary" type="button" @onclick="Cancel">Cancel</button>
             </div>
