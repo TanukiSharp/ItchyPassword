@@ -126,9 +126,10 @@ public class GoogleDriveVaultConnector(
         {
             Key = FolderIdConfigKey,
             Label = "Folder",
-            Description = "Enter a folder name (e.g. \"ItchyPassword\") or a path (e.g. \"MyData/Vaults\"). Created automatically if it does not exist.",
+            Description = "Enter a folder name (e.g. \"ItchyPassword\") or a path (e.g. \"ItchyPassword/Vaults\"). Created automatically if it does not exist.",
             Kind = ConfigurationEntryKind.Text,
             Placeholder = "ItchyPassword",
+            DefaultValue = "ItchyPassword",
             StorageKey = "gdrive_folder_id",
             IsRequired = true,
             VisibleWhenKey = StorageModeConfigKey,
