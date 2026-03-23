@@ -86,10 +86,22 @@ public interface IVaultConnector
     IReadOnlyList<ConfigurationEntry> Configuration { get; }
 
     /// <summary>
-    /// Clears any connector-specific in-memory secrets (e.g. OAuth tokens stored in private fields).
-    /// Called when the vault is unloaded so that sensitive material does not linger in memory.
-    /// Encrypted configuration entries are cleared separately by the caller;
-    /// this method only needs to handle secrets not stored in <see cref="Configuration"/>.
+    /// Clears in-memory secrets: OAuth tokens and any other connector-specific sensitive fields.
+    /// Does <b>not</b> touch localStorage or non-sensitive derived state (file IDs, SHA, etc.).
+    /// Called by the vault-lock flow so the user's session is preserved for next unlock.
     /// </summary>
     Task ClearSecretsAsync();
+
+    /// <summary>
+    /// Clears connector state according to <paramref name="clearType"/>.
+    /// <list type="bullet">
+    ///   <item><see cref="VaultConnectorClearType.Cache"/>: discards non-sensitive derived state
+    ///   (resolved file IDs, folder IDs, SHA/ETag, OIDC discovery documents, DPoP nonces).
+    ///   In-memory secrets and localStorage are untouched.</item>
+    ///   <item><see cref="VaultConnectorClearType.All"/>: everything in <c>Cache</c>, plus wipes
+    ///   in-memory secrets and removes all persisted tokens and configuration entries from
+    ///   localStorage. The connector returns to a fully unconfigured state.</item>
+    /// </list>
+    /// </summary>
+    Task ClearAsync(VaultConnectorClearType clearType);
 }

@@ -31,7 +31,7 @@
     /// The Base32-encoded TOTP secret.
     /// </summary>
     [Parameter]
-    public required string Secret { get; set; }
+    public required string Secret { get; init; }
 
     private string _currentCode = string.Empty;
     private int _remainingSeconds = 30;

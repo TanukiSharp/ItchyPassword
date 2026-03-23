@@ -19,7 +19,7 @@
                 {
                     @foreach (ModalAction action in Actions)
                     {
-                        <button class="@action.CssClass modal-action-btn" disabled="@IsWorking" @onclick="() => HandleClick(action)">
+                        <button type="button" class="@action.CssClass modal-action-btn" disabled="@IsWorking" @onclick="() => HandleClick(action)">
                             <div class="modal-action-content">
                                 <span class="modal-action-label">@action.Label</span>
                                 @if (action.Description is not null)

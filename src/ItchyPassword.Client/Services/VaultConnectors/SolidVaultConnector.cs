@@ -60,6 +60,11 @@ public class SolidVaultConnector(
     // Most recently received DPoP-Nonce header value (from AS or RS).
     private string? _dpopNonce;
 
+    // Auto-registered client ID for the current session (in-memory only).
+    // Dynamic registrations may be ephemeral on the provider side, so caching
+    // them in localStorage across sessions leads to stale client_id errors.
+    private string? _autoRegisteredClientId;
+
     // In-memory access and refresh tokens.
     private string _accessToken = string.Empty;
     private string _refreshToken = string.Empty;
@@ -148,11 +153,33 @@ public class SolidVaultConnector(
     /// <summary>
     /// Clears in-memory OAuth tokens.
     /// </summary>
+    /// <inheritdoc />
     public Task ClearSecretsAsync()
     {
         _accessToken = string.Empty;
         _refreshToken = string.Empty;
+
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task ClearAsync(VaultConnectorClearType clearType)
+    {
+        // Cache: reset non-sensitive derived state (OIDC discovery, DPoP nonce).
+        _discovery = null;
+        _dpopNonce = null;
+        _autoRegisteredClientId = null;
+
+        if (clearType == VaultConnectorClearType.All)
+        {
+            // All: wipe in-memory secrets and remove everything from localStorage.
+            _accessToken = string.Empty;
+            _refreshToken = string.Empty;
+            await storage.RemoveItemAsync(RefreshTokenStorageKey, CancellationToken.None);
+            await VaultConnectorHelper.ClearEntriesAsync(Configuration, storage, CancellationToken.None);
+
+            _configLoaded = false;
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -338,14 +365,10 @@ public class SolidVaultConnector(
             return configured;
         }
 
-        // 2. An auto-registered client ID was stored in a previous session.
-        string issuer = VaultConnectorHelper.GetValue(Configuration, IssuerUrlKey).TrimEnd('/');
-        string cacheKey = $"solid_auto_client_{ComputeShortHash(issuer)}";
-        string? cached = await storage.GetItemAsync(cacheKey, cancellationToken);
-
-        if (string.IsNullOrWhiteSpace(cached) == false)
+        // 2. Reuse the in-memory client ID from a previous registration in this session.
+        if (string.IsNullOrWhiteSpace(_autoRegisteredClientId) == false)
         {
-            return cached;
+            return _autoRegisteredClientId;
         }
 
         // 3. Attempt dynamic client registration (RFC 7591).
@@ -383,8 +406,9 @@ public class SolidVaultConnector(
         string clientId = reg?.ClientId
             ?? throw new InvalidOperationException("Dynamic registration succeeded but the provider returned no client_id.");
 
-        // Persist so we reuse it across sessions (not sensitive — client IDs are public).
-        await storage.SetItemAsync(cacheKey, clientId, cancellationToken);
+        // Cache in memory only — dynamic registrations may be ephemeral on the
+        // provider side and must not be persisted across browser sessions.
+        _autoRegisteredClientId = clientId;
 
         return clientId;
     }
@@ -861,16 +885,6 @@ public class SolidVaultConnector(
         };
 
         return cutAt >= 0 ? url[..cutAt] : url;
-    }
-
-    /// <summary>
-    /// Returns a short hex string derived from the SHA-256 of <paramref name="input"/>.
-    /// Used to build issuer-scoped localStorage keys without embedding raw URLs as keys.
-    /// </summary>
-    private static string ComputeShortHash(string input)
-    {
-        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(input));
-        return Convert.ToHexStringLower(hash)[..8];
     }
 
     /// <summary>

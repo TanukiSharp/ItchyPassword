@@ -162,15 +162,39 @@ public class GoogleDriveVaultConnector(
     /// <inheritdoc />
     public string? AccessFailureMessage { get; private set; }
 
-    /// <summary>
-    /// Clears in-memory OAuth tokens and secret configuration entries.
-    /// </summary>
+    /// <inheritdoc />
     public Task ClearSecretsAsync()
     {
         _accessToken = string.Empty;
         _refreshToken = string.Empty;
 
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task ClearAsync(VaultConnectorClearType clearType)
+    {
+        // Cache: reset non-sensitive derived state (file IDs, folder ID).
+        _vaultFile.Reset();
+        _historyFile.Reset();
+        _resolvedFolderId = null;
+
+        // The access token is also cached state: it is short-lived (~1 h) and can always be
+        // re-obtained silently from the refresh token. Remove it from localStorage so a stale
+        // or expired token is never loaded on the next page start. The in-memory copy is left
+        // intact so the current session continues without interruption.
+        await _storage.RemoveItemAsync(AccessTokenStorageKey, CancellationToken.None);
+
+        if (clearType == VaultConnectorClearType.All)
+        {
+            // All: wipe in-memory secrets and remove everything from localStorage.
+            _accessToken = string.Empty;
+            _refreshToken = string.Empty;
+            await _storage.RemoveItemAsync(RefreshTokenStorageKey, CancellationToken.None);
+            await VaultConnectorHelper.ClearEntriesAsync(Configuration, _storage, CancellationToken.None);
+
+            _configLoaded = false;
+        }
     }
 
     /// <inheritdoc />
@@ -880,13 +904,21 @@ public class GoogleDriveVaultConnector(
         public string? FileId { get; private set; }
 
         /// <summary>
+        /// Clears the cached file ID so the next operation re-resolves it from the Drive API.
+        /// </summary>
+        public void Reset() => FileId = null;
+
+        /// <summary>
         /// Searches for the file by name in the configured Drive location and caches its ID.
         /// </summary>
         public async Task FindAsync(HttpClient http, string accessToken, DriveStorageMode storageMode, string? folderId, CancellationToken cancellationToken)
         {
+            // Exclude Google Workspace native types (Docs, Sheets, Slides, etc.) — they are never
+            // downloadable via alt=media and could share a name with the vault file if the user
+            // accidentally opened it with a Google editor.
             string query = storageMode == DriveStorageMode.AppData
-                ? $"name = '{fileName}' and 'appDataFolder' in parents and trashed = false"
-                : $"name = '{fileName}' and '{folderId}' in parents and trashed = false";
+                ? $"name = '{fileName}' and not mimeType contains 'vnd.google-apps' and 'appDataFolder' in parents and trashed = false"
+                : $"name = '{fileName}' and not mimeType contains 'vnd.google-apps' and '{folderId}' in parents and trashed = false";
 
             string spaces = storageMode == DriveStorageMode.AppData ? "appDataFolder" : "drive";
             string encodedQuery = Uri.EscapeDataString(query);
@@ -959,7 +991,9 @@ public class GoogleDriveVaultConnector(
                 ? ["appDataFolder"]
                 : [folderId!];
 
-            var metadata = new { name = fileName, parents };
+            // Explicitly set mimeType in the metadata to guarantee Drive stores the file as a
+            // binary file and never auto-converts it to a Google Workspace type.
+            var metadata = new { name = fileName, mimeType = contentType, parents };
             string metadataJson = JsonSerializer.Serialize(metadata);
 
             using var multipart = new MultipartContent("related");

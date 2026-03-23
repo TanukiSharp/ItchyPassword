@@ -104,7 +104,22 @@ public class GitHubVaultConnector(HttpClient http, ILocalStorageService storage,
 
     public Task ClearSecretsAsync()
     {
+        // GitHub uses a PAT from Configuration (handled by the AppState encrypted-entry loop).
+        // No additional in-memory secrets to clear here.
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async Task ClearAsync(VaultConnectorClearType clearType)
+    {
+        // Cache: reset the cached ETag/SHA so the next operation re-fetches it.
+        _currentSha = string.Empty;
+
+        if (clearType == VaultConnectorClearType.All)
+        {
+            // All: wipe all configuration entries (PAT, repo owner, repo name, file path).
+            await VaultConnectorHelper.ClearEntriesAsync(Configuration, storage, CancellationToken.None);
+        }
     }
 
     /// <inheritdoc />

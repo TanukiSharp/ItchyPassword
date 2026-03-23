@@ -1,12 +1,12 @@
 // DOM interop helpers — sets element styles via CSSOM (CSP-compliant, unlike inline style attributes).
 window.domInterop = {
     setStyle: (el, prop, value) => {
-        if (el) {
+        if (el && el.style) {
             el.style.setProperty(prop, value);
         }
     },
     setWidthAnimated: (el, widthPercent, skipTransition) => {
-        if (!el) {
+        if (!el || !el.style) {
             return;
         }
         if (skipTransition) {

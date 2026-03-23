@@ -45,7 +45,27 @@ internal static class VaultConnectorHelper
         string encoded = stored[EncryptedPrefix.Length..];
         byte[] encrypted = Base58.Decode(encoded);
         byte[] decrypted = await crypto.DecryptV3Async(encrypted, masterKey, cancellationToken);
+
         return Encoding.UTF8.GetString(decrypted);
+    }
+
+    /// <summary>
+    /// Removes all persistable configuration entries from localStorage and clears their in-memory values.
+    /// </summary>
+    public static async Task ClearEntriesAsync(
+        IReadOnlyList<ConfigurationEntry> entries,
+        ILocalStorageService storage,
+        CancellationToken cancellationToken
+    )
+    {
+        foreach (ConfigurationEntry entry in entries)
+        {
+            if (entry.StorageKey is not null)
+            {
+                entry.Value = string.Empty;
+                await storage.RemoveItemAsync(entry.StorageKey, cancellationToken);
+            }
+        }
     }
 
     /// <summary>
@@ -61,7 +81,8 @@ internal static class VaultConnectorHelper
         ILocalStorageService storage,
         byte[]? masterKey,
         ICryptoService crypto,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         foreach (ConfigurationEntry entry in entries)
         {
@@ -103,7 +124,8 @@ internal static class VaultConnectorHelper
         ILocalStorageService storage,
         byte[]? masterKey,
         ICryptoService crypto,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken
+    )
     {
         foreach (ConfigurationEntry entry in entries)
         {

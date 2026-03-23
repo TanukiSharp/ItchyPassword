@@ -148,6 +148,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
 
         foreach (IVaultConnector connector in _session.Connectors)
         {
+            // Clear in-memory values of encrypted config entries (e.g. GitHub PAT).
             foreach (ConfigurationEntry entry in connector.Configuration)
             {
                 if (entry.IsEncrypted)
@@ -156,6 +157,8 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                 }
             }
 
+            // Clear in-memory OAuth tokens without touching localStorage.
+            // The user remains authenticated; tokens are re-decrypted on next unlock.
             await connector.ClearSecretsAsync();
         }
 
