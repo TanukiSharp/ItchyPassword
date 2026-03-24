@@ -39,7 +39,10 @@
                     <div class="form-group">
                         <div class="master-key-input-row">
                             <div class="master-key-input-wrapper">
-                                <input @ref="_confirmKeyInput" class="input master-key-input @ConfirmationCssClass" type="@(_showPassword ? "text" : "password")" id="masterKeyConfirm" value="@_confirmKey" @oninput="OnConfirmKeyInput" placeholder="Re-enter your master key" />
+                                <input @ref="_confirmKeyInput" class="input master-key-input @ConfirmationCssClass" type="@(_showConfirmPassword ? "text" : "password")" id="masterKeyConfirm" value="@_confirmKey" @oninput="OnConfirmKeyInput" placeholder="Re-enter your master key" />
+                                <button type="button" class="master-key-toggle" @onclick="ToggleConfirmPasswordVisibility" @onclick:stopPropagation title="@(_showConfirmPassword ? "Hide master key" : "Show master key")">
+                                    <img class="themed-icon" src="icons/@(_showConfirmPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showConfirmPassword ? "Hide" : "Show")" />
+                                </button>
                             </div>
                             <span title="Character count" class="char-count">@_confirmKey.Length</span>
                         </div>
@@ -73,6 +76,7 @@
     private string _masterKey = string.Empty;
     private string _confirmKey = string.Empty;
     private bool _showPassword = false;
+    private bool _showConfirmPassword = false;
     private bool _wasAutoProtected = false;
     private bool _confirmExpanded = true;
     private bool _focusConfirmAfterRender = false;
@@ -145,6 +149,14 @@
     private void TogglePasswordVisibility()
     {
         _showPassword = !_showPassword;
+        _focusMasterAfterRender = true;
+        ResetAutoProtectTimer();
+    }
+
+    private void ToggleConfirmPasswordVisibility()
+    {
+        _showConfirmPassword = !_showConfirmPassword;
+        _focusConfirmAfterRender = true;
         ResetAutoProtectTimer();
     }
 
