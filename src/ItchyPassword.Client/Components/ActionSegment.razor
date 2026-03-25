@@ -1,0 +1,131 @@
+@inject ClipboardService Clipboard
+@inject ErrorLogService ErrorLog
+
+@if (_isUrl)
+{
+    <a class="action-segment" href="@_normalizedUrl" target="_blank" rel="noopener noreferrer">
+        @ChildContent
+        <img class="themed-icon action-segment-icon" src="icons/link-dark.svg" width="12" height="12" alt="Open link" />
+    </a>
+}
+else
+{
+    <span class="action-segment @_flashClass" @onclick="CopyAsync" role="button">
+        @ChildContent
+        <img class="themed-icon action-segment-icon" src="icons/copy-light.svg" width="12" height="12" alt="Copy" />
+    </span>
+}
+
+@code {
+    /// <summary>
+    /// The raw segment text, used for clipboard copy or URL navigation.
+    /// </summary>
+    [Parameter]
+    public required string Text { get; set; }
+
+    /// <summary>
+    /// The rendered content (typically highlighted text from VaultView).
+    /// </summary>
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    private bool _isUrl;
+    private string _normalizedUrl = string.Empty;
+    private string _flashClass = string.Empty;
+
+    protected override void OnParametersSet()
+    {
+        _isUrl = TryParseUrl(Text.AsSpan(), out _normalizedUrl);
+    }
+
+    /// <summary>
+    /// Determines whether the given text segment looks like a URL.
+    /// When it is, <paramref name="normalizedUrl"/> receives the full URL with scheme
+    /// so it can be used directly as an href without recomputing.
+    /// Uses span-based checks to avoid allocations where possible.
+    /// </summary>
+    private static bool TryParseUrl(ReadOnlySpan<char> segment, out string normalizedUrl)
+    {
+        normalizedUrl = string.Empty;
+        ReadOnlySpan<char> trimmed = segment.Trim();
+
+        if (trimmed.IsEmpty)
+        {
+            return false;
+        }
+
+        // Scheme-based URLs: already have a scheme, use as-is.
+        if (trimmed.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ||
+            trimmed.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedUrl = trimmed.ToString();
+            return true;
+        }
+
+        // www. prefix: prepend https scheme.
+        if (trimmed.StartsWith("www.", StringComparison.OrdinalIgnoreCase))
+        {
+            normalizedUrl = $"https://{trimmed}";
+            return true;
+        }
+
+        // Emails are not URLs.
+        if (trimmed.Contains('@'))
+        {
+            return false;
+        }
+
+        // Bare domain heuristic: must contain a dot to be a candidate.
+        if (trimmed.Contains('.') == false)
+        {
+            return false;
+        }
+
+        // Reuse the candidate string built for Uri.TryCreate as the normalized URL.
+        string candidate = $"https://{trimmed}";
+
+        if (Uri.TryCreate(candidate, UriKind.Absolute, out Uri? uri) &&
+            uri.Host.Contains('.'))
+        {
+            normalizedUrl = candidate;
+            return true;
+        }
+
+        return false;
+    }
+
+    private bool _isCopying = false;
+
+    private async Task CopyAsync()
+    {
+        if (_isCopying)
+        {
+            return; // Prevent multiple rapid clicks.
+        }
+
+        _isCopying = true;
+
+        try
+        {
+            try
+            {
+                await Clipboard.CopyTextAsync(Text.Trim(), CancellationToken.None);
+                _flashClass = "action-segment-flash-success";
+            }
+            catch (Exception ex)
+            {
+                _flashClass = "action-segment-flash-error";
+                ErrorLog.Log($"Failed to copy \"{Text.Trim()}\" to clipboard.", source: "ActionSegment", exception: ex);
+            }
+
+            StateHasChanged();
+            await Task.Delay(1500);
+            _flashClass = string.Empty;
+            StateHasChanged();
+        }
+        finally
+        {
+            _isCopying = false;
+        }
+    }
+}

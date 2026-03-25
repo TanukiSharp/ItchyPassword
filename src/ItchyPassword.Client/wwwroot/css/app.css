@@ -570,6 +570,7 @@ tr:hover td { background-color: var(--hover-overlay); }
 .vault-item-name {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.4rem;
 }
 
@@ -1076,6 +1077,55 @@ td.text-right,
     padding: 2rem;
     text-align: center;
     color: var(--text-muted);
+}
+
+/* ── Action Segments (clickable name parts: links & copy) ────────── */
+
+.action-segment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0.05rem 0.15rem;
+    color: inherit;
+    text-decoration: none;
+    font: inherit;
+    border: none;
+    background: none;
+}
+
+.action-segment:hover {
+    background-color: rgba(128, 128, 128, 0.12);
+}
+
+.action-segment-icon {
+    flex-shrink: 0;
+    opacity: 0.4;
+}
+
+.action-segment:hover .action-segment-icon {
+    opacity: 0.8;
+}
+
+.action-segment-flash-success {
+    background-color: transparent;
+    animation: action-flash-success 100ms linear infinite alternate;
+}
+
+.action-segment-flash-error {
+    background-color: transparent;
+    animation: action-flash-error 100ms linear infinite alternate;
+}
+
+@keyframes action-flash-success {
+    from { background-color: transparent; }
+    to { background-color: rgba(34, 197, 94, 0.35); }
+}
+
+@keyframes action-flash-error {
+    from { background-color: transparent; }
+    to { background-color: rgba(239, 68, 68, 0.35); }
 }
 
 /* ── Settings Page ───────────────────────────────────────────────── */
