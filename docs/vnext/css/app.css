@@ -485,7 +485,7 @@ tr:hover td { background-color: var(--hover-overlay); }
 .mobile-toggle-bar {
     display: none;
     align-items: center;
-    padding: 1rem;
+    padding: 0.3rem 1rem;
     background-color: var(--secondary-bg);
     border-bottom: 1px solid var(--border-color);
 }
@@ -570,6 +570,7 @@ tr:hover td { background-color: var(--hover-overlay); }
 .vault-item-name {
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 0.4rem;
 }
 
@@ -977,7 +978,7 @@ td.text-right,
 }
 
 .vault-search {
-    margin-bottom: 1rem;
+    margin: 0.25rem;
     flex-shrink: 0;
 }
 
@@ -1033,10 +1034,7 @@ td.text-right,
 }
 
 .vault-table thead {
-    position: sticky;
-    top: 0;
-    z-index: 1;
-    background-color: var(--card-bg);
+    display: none;
 }
 
 .vault-table th,
@@ -1076,6 +1074,55 @@ td.text-right,
     padding: 2rem;
     text-align: center;
     color: var(--text-muted);
+}
+
+/* ── Action Segments (clickable name parts: links & copy) ────────── */
+
+.action-segment {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    cursor: pointer;
+    border-radius: 3px;
+    padding: 0.05rem 0.15rem;
+    color: inherit;
+    text-decoration: none;
+    font: inherit;
+    border: none;
+    background: none;
+}
+
+.action-segment:hover {
+    background-color: rgba(128, 128, 128, 0.12);
+}
+
+.action-segment-icon {
+    flex-shrink: 0;
+    opacity: 0.4;
+}
+
+.action-segment:hover .action-segment-icon {
+    opacity: 0.8;
+}
+
+.action-segment-flash-success {
+    background-color: transparent;
+    animation: action-flash-success 100ms linear infinite alternate;
+}
+
+.action-segment-flash-error {
+    background-color: transparent;
+    animation: action-flash-error 100ms linear infinite alternate;
+}
+
+@keyframes action-flash-success {
+    from { background-color: transparent; }
+    to { background-color: rgba(34, 197, 94, 0.35); }
+}
+
+@keyframes action-flash-error {
+    from { background-color: transparent; }
+    to { background-color: rgba(239, 68, 68, 0.35); }
 }
 
 /* ── Settings Page ───────────────────────────────────────────────── */
@@ -1484,12 +1531,13 @@ td.text-right,
 
     /* Sidebar overlay is conditionally rendered via @if (sidebarOpen), so no display toggle needed. */
 
-    .vault-header > .heading-flush {
-        display: none;
+    .card-header.vault-header {
+        padding: 0.25rem var(--spacing-sm);
     }
 
-    .card-header.vault-header {
-        padding: var(--spacing-sm);
+    .vault-header-actions {
+        gap: 0.3rem;
+        margin-left: 0.5rem;
     }
 
     .card-header {
@@ -1524,15 +1572,69 @@ td.text-right,
     }
 
     .icon-button,
-    .icon-btn,
-    .vault-item-action-btn {
+    .icon-btn {
         width: 2.75rem;
         height: 2.75rem;
     }
 
+    .vault-header-actions button,
+    .vault-header-actions .button,
+    .vault-header-actions select,
+    .vault-header-actions .icon-button {
+        min-height: 2.25rem;
+        padding: 0.35rem 0.45rem;
+    }
+
+    .vault-header-actions .icon-button,
+    .vault-header-actions .icon-btn {
+        width: 2.25rem;
+        height: 2.25rem;
+    }
+
+    .vault-header-actions .vault-item-count {
+        font-size: 0.9rem;
+    }
+
+    .vault-search {
+        margin-bottom: 0.5rem;
+    }
+
+    .vault-search-row {
+        gap: 0.35rem;
+    }
+
+    .vault-search-row input:not([type="checkbox"]):not([type="radio"]),
+    .vault-search-row select {
+        min-height: 2.25rem;
+        padding: 0.35rem 0.45rem;
+    }
+
+    .vault-item-action-btn {
+        width: 2.25rem;
+        height: 2.25rem;
+        min-height: auto;
+        padding: 0;
+    }
+
+    .vault-actions-group {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
     .vault-table th,
     .vault-table td {
-        padding: 1rem 0.5rem;
+        padding: 0.5rem 0.5rem;
+    }
+
+    .vault-table th:last-child,
+    .vault-table td:last-child {
+        white-space: normal;
+        padding-left: 0.15rem;
+        padding-right: 0.15rem;
+    }
+
+    .vault-table thead th:last-child {
+        font-size: 0;
     }
 
     .vault-table thead th {
@@ -1589,6 +1691,22 @@ td.text-right,
 
     .form-actions {
         margin-top: 0.5rem;
+    }
+
+    .master-key-overlay {
+        margin: 0 0.5rem;
+    }
+
+    .master-key-panel {
+        font-size: 1.2em;
+    }
+
+    .master-key-panel h2 {
+        font-size: 1.5rem;
+    }
+
+    .master-key-version {
+        font-size: 1rem;
     }
 }
 
