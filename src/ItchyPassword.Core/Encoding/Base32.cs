@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 
 namespace ItchyPassword.Core.Encoding;
 
@@ -12,6 +11,8 @@ public static class Base32
     /// <summary>
     /// Decodes a Base32-encoded string into its original byte representation.
     /// Whitespace and padding ('=') characters are stripped before decoding.
+    /// Uses a bit accumulator to convert 5-bit values directly into bytes
+    /// without intermediate arrays.
     /// </summary>
     public static byte[] Decode(string base32)
     {
@@ -20,45 +21,45 @@ public static class Base32
             return [];
         }
 
-        // Strip whitespace and padding, then decode each character to its 5-bit value.
-        byte[] fiveBitValues = base32
-            .Where(c => char.IsWhiteSpace(c) == false && c != '=')
-            .Select(DecodeChar)
-            .ToArray();
+        // Count valid characters to size the output buffer.
+        int validCount = 0;
 
-        // Expand 5-bit values into a bit array.
-        bool[] bits = new bool[fiveBitValues.Length * 5];
-        int bitIndex = 0;
-
-        foreach (byte value in fiveBitValues)
+        foreach (char c in base32)
         {
-            for (int i = 4; i >= 0; i--)
+            if (char.IsWhiteSpace(c) == false && c != '=')
             {
-                bits[bitIndex++] = (value & (1 << i)) != 0;
+                validCount++;
             }
         }
 
-        // Pack bits back into bytes (8 bits each).
-        int byteCount = bits.Length / 8;
-        byte[] result = new byte[byteCount];
-        int resultIndex = 0;
-        byte currentByte = 0;
-        int k = 0;
-
-        for (int i = 0; i < byteCount * 8; i++)
+        if (validCount == 0)
         {
-            if (bits[i])
+            return [];
+        }
+
+        // Each valid character contributes 5 bits; output is groups of 8 bits.
+        int byteCount = validCount * 5 / 8;
+        byte[] result = new byte[byteCount];
+
+        int buffer = 0;
+        int bitsInBuffer = 0;
+        int resultIndex = 0;
+
+        foreach (char c in base32)
+        {
+            if (char.IsWhiteSpace(c) || c == '=')
             {
-                currentByte |= (byte)(1 << (7 - k));
+                continue;
             }
 
-            k++;
+            buffer = (buffer << 5) | DecodeChar(c);
+            bitsInBuffer += 5;
 
-            if (k >= 8)
+            if (bitsInBuffer >= 8)
             {
-                result[resultIndex++] = currentByte;
-                currentByte = 0;
-                k = 0;
+                bitsInBuffer -= 8;
+                result[resultIndex++] = (byte)(buffer >> bitsInBuffer);
+                buffer &= (1 << bitsInBuffer) - 1;
             }
         }
 

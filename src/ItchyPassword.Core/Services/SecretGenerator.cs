@@ -147,29 +147,12 @@ public static class SecretGenerator
     /// </summary>
     private static string BuildCombinedAlphabet(SecretGenerationRules rules)
     {
-        string combined = string.Empty;
-
-        if (rules.MinLowercase > 0)
-        {
-            combined += LowercaseChars;
-        }
-
-        if (rules.MinUppercase > 0)
-        {
-            combined += UppercaseChars;
-        }
-
-        if (rules.MinDigits > 0)
-        {
-            combined += DigitChars;
-        }
-
-        if (rules.MinSymbols > 0 && string.IsNullOrEmpty(rules.SymbolAlphabet) == false)
-        {
-            combined += rules.SymbolAlphabet;
-        }
-
-        return combined;
+        return string.Concat(
+            rules.MinLowercase > 0 ? LowercaseChars : string.Empty,
+            rules.MinUppercase > 0 ? UppercaseChars : string.Empty,
+            rules.MinDigits > 0 ? DigitChars : string.Empty,
+            rules.MinSymbols > 0 && string.IsNullOrEmpty(rules.SymbolAlphabet) == false ? rules.SymbolAlphabet : string.Empty
+        );
     }
 
     /// <summary>

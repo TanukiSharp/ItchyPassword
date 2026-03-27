@@ -1,3 +1,4 @@
+@using ItchyPassword.Core.Encoding
 @using ItchyPassword.Core.Services
 @inject IJSRuntime JS
 @implements IDisposable
@@ -41,8 +42,22 @@
     private ElementReference _fillRef;
     private Timer? _timer;
 
+    /// <summary>
+    /// Pre-decoded secret bytes, cached to avoid Base32 decoding every second.
+    /// </summary>
+    private byte[]? _secretBytes;
+
     protected override void OnInitialized()
     {
+        try
+        {
+            _secretBytes = Base32.Decode(Secret);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Invalid TOTP secret: {ex.Message}";
+        }
+
         Refresh();
         _timer = new Timer(OnTick, null, TimeSpan.Zero, TimeSpan.FromSeconds(1));
     }
@@ -73,9 +88,14 @@
 
     private void Refresh()
     {
+        if (_secretBytes is null)
+        {
+            return;
+        }
+
         try
         {
-            _currentCode = TotpGenerator.GenerateCode(Secret);
+            _currentCode = TotpGenerator.GenerateCode(_secretBytes, DateTime.UtcNow);
             int remaining = TotpGenerator.GetRemainingSeconds();
             _isResetting = remaining > _remainingSeconds;
             _remainingSeconds = remaining;

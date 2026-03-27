@@ -179,6 +179,13 @@ public static class BaseN
 
         bytes.Reverse();
 
-        return bytes.Select(b => (byte)b).ToArray();
+        var result = new byte[bytes.Count];
+
+        for (int i = 0; i < bytes.Count; i++)
+        {
+            result[i] = (byte)bytes[i];
+        }
+
+        return result;
     }
 }

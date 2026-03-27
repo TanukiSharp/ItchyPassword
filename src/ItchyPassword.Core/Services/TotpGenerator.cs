@@ -1,6 +1,5 @@
-using System;
+using System.Buffers.Binary;
 using System.Security.Cryptography;
-using ItchyPassword.Core.Encoding;
 
 namespace ItchyPassword.Core.Services;
 
@@ -14,28 +13,18 @@ public static class TotpGenerator
     private static readonly DateTime UnixEpoch = new(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
     /// <summary>
-    /// Computes a TOTP code for the current UTC time.
+    /// Computes a TOTP code for a specific point in time using pre-decoded secret bytes.
+    /// Use this overload when calling repeatedly with the same secret to avoid redundant Base32 decoding.
     /// </summary>
-    /// <param name="base32Secret">The shared secret encoded as a Base32 string.</param>
-    /// <param name="digitCount">Number of digits in the output code (1–8, default 6).</param>
-    /// <returns>The TOTP code, zero-padded to <paramref name="digitCount"/> digits.</returns>
-    public static string GenerateCode(string base32Secret, int digitCount = DefaultDigitCount)
-    {
-        return GenerateCode(base32Secret, DateTime.UtcNow, digitCount);
-    }
-
-    /// <summary>
-    /// Computes a TOTP code for a specific point in time.
-    /// </summary>
-    /// <param name="base32Secret">The shared secret encoded as a Base32 string.</param>
+    /// <param name="secretBytes">The raw secret bytes (already decoded from Base32).</param>
     /// <param name="timestamp">The UTC timestamp to compute the code for.</param>
     /// <param name="digitCount">Number of digits in the output code (1–8, default 6).</param>
     /// <returns>The TOTP code, zero-padded to <paramref name="digitCount"/> digits.</returns>
-    public static string GenerateCode(string base32Secret, DateTime timestamp, int digitCount = DefaultDigitCount)
+    public static string GenerateCode(byte[] secretBytes, DateTime timestamp, int digitCount = DefaultDigitCount)
     {
-        if (string.IsNullOrWhiteSpace(base32Secret))
+        if (secretBytes is null || secretBytes.Length == 0)
         {
-            throw new ArgumentException("Secret cannot be empty.", nameof(base32Secret));
+            throw new ArgumentException("Secret bytes cannot be empty.", nameof(secretBytes));
         }
 
         if (digitCount < 1 || digitCount > 8)
@@ -43,7 +32,6 @@ public static class TotpGenerator
             throw new ArgumentOutOfRangeException(nameof(digitCount), "Digit count must be between 1 and 8.");
         }
 
-        byte[] secretBytes = Base32.Decode(base32Secret);
         ulong timeStep = GetTimeStep(timestamp);
         byte[] timeBytes = GetBigEndianBytes(timeStep);
 
@@ -83,13 +71,8 @@ public static class TotpGenerator
     /// </summary>
     private static byte[] GetBigEndianBytes(ulong value)
     {
-        byte[] bytes = BitConverter.GetBytes(value);
-
-        if (BitConverter.IsLittleEndian)
-        {
-            Array.Reverse(bytes);
-        }
-
+        var bytes = new byte[8];
+        BinaryPrimitives.WriteUInt64BigEndian(bytes, value);
         return bytes;
     }
 

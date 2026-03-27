@@ -5,3 +5,4 @@
 obj/
 *.csproj.user
 node_modules/
+/BenchmarkDotNet.Artifacts/

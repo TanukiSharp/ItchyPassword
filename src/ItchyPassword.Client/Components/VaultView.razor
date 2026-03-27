@@ -11,7 +11,7 @@
 <div class="card vault-card">
     <div class="card-header vault-header">
         <div class="vault-header-actions">
-            <span class="vault-item-count">@FilteredItems.Count items</span>
+            <span class="vault-item-count">@_filteredItems.Count items</span>
             <select class="input vault-filter-select" value="@_displayFilter" @onchange="OnFilterChanged">
                 <option value="all">Show all</option>
                 <option value="statickey">Static keys</option>
@@ -28,7 +28,7 @@
 
     <div class="vault-search">
         <div class="vault-search-row">
-            <input class="input vault-search-input" type="text" placeholder="Search items..." @bind="AppState.SearchQuery" @bind:event="oninput" />
+            <input class="input vault-search-input" type="text" placeholder="Search items..." value="@AppState.SearchQuery" @oninput="OnSearchQueryChanged" />
             <select class="input vault-search-mode" value="@_searchMode" @onchange="OnSearchModeChanged" title="Search mode">
                 <option value="@SearchMode.Contains">Contains</option>
                 <option value="@SearchMode.Fuzzy">Fuzzy</option>
@@ -46,7 +46,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach (VaultItemMatch match in FilteredItems)
+                @foreach (VaultItemMatch match in _filteredItems)
                 {
                     <tr>
                         <td>
@@ -88,7 +88,7 @@
                         </td>
                     </tr>
                 }
-                @if (FilteredItems.Count == 0)
+                @if (_filteredItems.Count == 0)
                 {
                     <tr>
                         <td colspan="2" class="vault-empty-row">
@@ -107,6 +107,7 @@
 
     private string _displayFilter = "all";
     private SearchMode _searchMode = SearchMode.Contains;
+    private List<VaultItemMatch> _filteredItems = [];
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,9 +126,21 @@
         }
     }
 
+    protected override void OnParametersSet()
+    {
+        _filteredItems = BuildFilteredItems();
+    }
+
+    private void OnSearchQueryChanged(ChangeEventArgs e)
+    {
+        AppState.SearchQuery = e.Value?.ToString() ?? string.Empty;
+        _filteredItems = BuildFilteredItems();
+    }
+
     private async Task OnFilterChanged(ChangeEventArgs e)
     {
         _displayFilter = e.Value?.ToString() ?? "all";
+        _filteredItems = BuildFilteredItems();
         await Storage.SetItemAsync(DisplayFilterStorageKey, _displayFilter, CancellationToken.None);
     }
 
@@ -138,6 +151,7 @@
             _searchMode = mode;
         }
 
+        _filteredItems = BuildFilteredItems();
         await Storage.SetItemAsync(SearchModeStorageKey, _searchMode.ToString(), CancellationToken.None);
     }
 
@@ -155,6 +169,7 @@
         try
         {
             await AppState.ReloadVaultAsync(CancellationToken.None);
+            _filteredItems = BuildFilteredItems();
         }
         finally
         {
@@ -299,10 +314,12 @@
         };
     }
 
-    private List<VaultItemMatch> FilteredItems
+    /// <summary>
+    /// Computes the filtered and search-matched vault items.
+    /// Called once per state change; result is cached in <see cref="_filteredItems"/>.
+    /// </summary>
+    private List<VaultItemMatch> BuildFilteredItems()
     {
-        get
-        {
             if (Session.Vault is null)
             {
                 return [];
@@ -355,7 +372,6 @@
             }
 
             return results;
-        }
     }
 
     private void EditItem(VaultItemV2 item)

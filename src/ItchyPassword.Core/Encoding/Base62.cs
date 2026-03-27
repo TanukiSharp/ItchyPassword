@@ -90,6 +90,6 @@ public static class Base62
         }
 
         // Return payload past the 2-byte header.
-        return bytes.Skip(2).Take(totalLength).ToArray();
+        return bytes.GetRange(2, totalLength).ToArray();
     }
 }
