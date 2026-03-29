@@ -37,7 +37,6 @@ window.ItchyPassword.Crypto = {
             const exportedKey = await window.crypto.subtle.exportKey('raw', derivedKey);
             return new Uint8Array(exportedKey);
         } catch (e) {
-            console.error('Crypto Error:', e);
             throw e;
         }
     },
@@ -71,7 +70,6 @@ window.ItchyPassword.Crypto = {
         try {
             return await this._generatePassword(privatePart, publicPart, 'Password', 100000);
         } catch (e) {
-            console.error('Password V1 generation error:', e);
             throw e;
         }
     },
@@ -80,7 +78,6 @@ window.ItchyPassword.Crypto = {
         try {
             return await this._generatePassword(privatePart, publicPart, hkdfPurpose || 'Password', 400000);
         } catch (e) {
-            console.error('Password V2 generation error:', e);
             throw e;
         }
     },
@@ -132,7 +129,6 @@ window.ItchyPassword.Crypto = {
             return output;
 
         } catch (e) {
-            console.error('Encrypt V3 Error:', e);
             throw e;
         }
     },
@@ -184,7 +180,6 @@ window.ItchyPassword.Crypto = {
         try {
             return await this._decrypt(ciphertext, password, 100000);
         } catch (e) {
-            console.error('Decrypt V2 Error:', e);
             throw e;
         }
     },
@@ -193,7 +188,6 @@ window.ItchyPassword.Crypto = {
         try {
             return await this._decrypt(ciphertext, password, 400000);
         } catch (e) {
-            console.error('Decrypt V3 Error:', e);
             throw e;
         }
     },

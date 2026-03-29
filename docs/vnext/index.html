@@ -4,6 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- SECURITY: frame-ancestors cannot be enforced via <meta> CSP (per CSP Level 2 spec).
+         To prevent clickjacking, the hosting server MUST send an HTTP response header:
+           Content-Security-Policy: frame-ancestors 'none'
+         or at minimum:
+           X-Frame-Options: DENY
+         GitHub Pages does not support custom headers; consider Cloudflare Pages or a CDN
+         with header injection if clickjacking protection is required. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'none';
                    script-src 'self' 'wasm-unsafe-eval';
@@ -18,20 +25,20 @@
     <title>ItchyPassword</title>
     <base href="/ItchyPassword/vnext/" />
 
-    <link rel="stylesheet" href="css/app.css" />
+    <link rel="stylesheet" href="css/app.css?v=be217c5365b225884a5f876771a265749c37c2f0" />
     <link rel="icon" type="image/png" href="favicon.png" />
 
     <!-- Theme switcher (must run before CSS to prevent flash of wrong theme) -->
-    <script src="js/theme.js"></script>
+    <script src="js/theme.js?v=be217c5365b225884a5f876771a265749c37c2f0"></script>
 
     <!-- Crypto Service -->
-    <script src="js/crypto.js"></script>
+    <script src="js/crypto.js?v=be217c5365b225884a5f876771a265749c37c2f0"></script>
     <!-- Google Drive Vault Connector (OAuth popup interop) -->
-    <script src="js/googleDrive.js"></script>
+    <script src="js/googleDrive.js?v=be217c5365b225884a5f876771a265749c37c2f0"></script>
     <!-- SOLID Pod Vault Connector (OAuth popup interop + DPoP) -->
-    <script src="js/solid.js"></script>
+    <script src="js/solid.js?v=be217c5365b225884a5f876771a265749c37c2f0"></script>
     <!-- DOM interop (CSP-compliant style manipulation) -->
-    <script src="js/dom.js"></script>
+    <script src="js/dom.js?v=be217c5365b225884a5f876771a265749c37c2f0"></script>
 </head>
 
 <body>
