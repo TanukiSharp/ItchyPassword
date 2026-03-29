@@ -70,7 +70,14 @@
                     <VaultConnectorSettings Connector="connector" />
 
                     <div class="connector-test">
-                        <button type="button" class="button primary small" disabled="@(_busyConnector is not null)" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
+                        @if (_busyConnector == captured)
+                        {
+                            <button type="button" class="button danger small" @onclick="CancelTestAccess">Cancel</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="button primary small" disabled="@(_busyConnector is not null)" @onclick="@(() => TestAccessAsync(connector))">Test access</button>
+                        }
                         <button type="button" class="button secondary small" disabled="@(_busyConnector is not null)" @onclick="@(() => ClearConnectorAsync(captured, VaultConnectorClearType.Cache))">Clear cache</button>
                         <button type="button" class="button danger small" disabled="@(_busyConnector is not null)" @onclick="@(() => ClearConnectorAsync(captured, VaultConnectorClearType.All))">Clear all</button>
                         @if (testResults.TryGetValue(connector.Id, out (bool? Success, string Message) result))
@@ -117,6 +124,7 @@
     private Dictionary<Guid, (bool? Success, string Message)> testResults = new();
     private string redirectMessage = string.Empty;
     private IVaultConnector? _busyConnector;
+    private CancellationTokenSource? _accessCts;
 
     // Modal state.
     private bool modalVisible;
@@ -141,6 +149,8 @@
     public void Dispose()
     {
         AppState.OnChange -= StateHasChanged;
+        _accessCts?.Cancel();
+        _accessCts?.Dispose();
     }
 
     protected override async Task OnInitializedAsync()
@@ -252,22 +262,39 @@
 
     private async Task TestAccessAsync(IVaultConnector connector)
     {
+        _accessCts?.Cancel();
+        _accessCts?.Dispose();
+        _accessCts = new CancellationTokenSource();
+        CancellationToken token = _accessCts.Token;
+
         // Call AccessAsync before any await to let the connector's synchronous
         // preamble run on the click call-stack (preserving the browser gesture).
-        Task<bool> accessTask = connector.AccessAsync(CancellationToken.None);
+        Task<bool> accessTask = connector.AccessAsync(token);
 
         _busyConnector = connector;
         testResults[connector.Id] = (null, "Testing...");
         StateHasChanged();
 
-        bool hasAccess = await accessTask;
+        try
+        {
+            bool hasAccess = await accessTask;
 
-        testResults[connector.Id] = hasAccess
-            ? (true, "Access granted.")
-            : (false, "Access denied. " + connector.AccessFailureMessage);
+            testResults[connector.Id] = hasAccess
+                ? (true, "Access granted.")
+                : (false, "Access denied. " + connector.AccessFailureMessage);
+        }
+        catch (OperationCanceledException)
+        {
+            testResults[connector.Id] = (null, "Cancelled.");
+        }
 
         _busyConnector = null;
         StateHasChanged();
+    }
+
+    private void CancelTestAccess()
+    {
+        _accessCts?.Cancel();
     }
 
     private async Task LoadAndGo()

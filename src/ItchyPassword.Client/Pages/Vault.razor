@@ -11,6 +11,7 @@
     <div class="page-centered">
         <div class="loading-spinner"></div>
         <p class="loading-message">@AppState.StatusMessage</p>
+        <button class="button-link loading-cancel" @onclick="CancelLoad">Cancel</button>
     </div>
 }
 else if (AppState.Status == AppStatus.Error)
@@ -54,6 +55,11 @@ else if (AppState.Status == AppStatus.Loaded)
     private async Task RetryAccess()
     {
         await AppState.RetryLoadAsync(CancellationToken.None);
+    }
+
+    private void CancelLoad()
+    {
+        AppState.CancelLoad();
     }
 
     private async Task GoHomeAsync()

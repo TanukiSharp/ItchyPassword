@@ -318,7 +318,22 @@ public class GoogleDriveVaultConnector(
             jsInProcess.InvokeVoid("googleDriveInterop.openPopup", authUrl);
         }
 
-        string? resultJson = await _js.InvokeAsync<string?>("googleDriveInterop.awaitResult", cancellationToken);
+        string? resultJson;
+
+        try
+        {
+            resultJson = await _js.InvokeAsync<string?>("googleDriveInterop.awaitResult", cancellationToken);
+        }
+        catch (OperationCanceledException)
+        {
+            // Clean up the pending JS promise and close the popup when the user cancels.
+            if (_js is IJSInProcessRuntime jsSync)
+            {
+                jsSync.InvokeVoid("googleDriveInterop.cancelSignIn");
+            }
+
+            throw;
+        }
 
         if (string.IsNullOrWhiteSpace(resultJson))
         {

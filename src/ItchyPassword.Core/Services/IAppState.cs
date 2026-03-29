@@ -47,6 +47,11 @@ public interface IAppState
     Task ReloadVaultAsync(CancellationToken cancellationToken);
 
     /// <summary>
+    /// Cancels the current load operation if one is in progress.
+    /// </summary>
+    void CancelLoad();
+
+    /// <summary>
     /// Navigates to the configuration page if possible.
     /// </summary>
     void Configure();

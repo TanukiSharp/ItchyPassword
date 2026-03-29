@@ -11,6 +11,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
     private readonly VaultSession _session = session;
     private readonly IMasterKeyProvider _keyProvider = keyProvider;
     private readonly ToastService _toast = toast;
+    private CancellationTokenSource? _loadCts;
     private AppStatus _status = AppStatus.NotLoaded;
     private string _statusMessage = string.Empty;
     private string _searchQuery = string.Empty;
@@ -87,8 +88,18 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
         await StartLoadFlowAsync("Retrying to load vault...", cancellationToken);
     }
 
+    public void CancelLoad()
+    {
+        _loadCts?.Cancel();
+    }
+
     private async Task StartLoadFlowAsync(string statusMessage, CancellationToken cancellationToken)
     {
+        _loadCts?.Cancel();
+        _loadCts?.Dispose();
+        _loadCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        CancellationToken linkedToken = _loadCts.Token;
+
         Status = AppStatus.Loading;
         StatusMessage = statusMessage;
 
@@ -112,7 +123,7 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
                     // Message will be updated by LoadAsync's status callback immediately after this.
                     NotifyStateChanged();
                 },
-                cancellationToken
+                linkedToken
             );
 
             Status = AppStatus.Loaded;
@@ -122,6 +133,11 @@ public class AppState(NavigationManager nav, VaultSession session, IMasterKeyPro
             {
                 _toast.Show("⚠️ Vault integrity check failed. ⚠️\nThe vault may have been modified outside the app.", TimeSpan.MaxValue);
             }
+        }
+        catch (OperationCanceledException)
+        {
+            Status = AppStatus.Error;
+            StatusMessage = "Loading cancelled.";
         }
         catch (VaultConnectorNotConfiguredException)
         {

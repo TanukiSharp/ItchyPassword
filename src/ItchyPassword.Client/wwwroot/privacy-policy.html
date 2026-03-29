@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy - ItchyPassword</title>
+    <base href="/" />
+    <link rel="stylesheet" href="css/app.css" />
+    <link rel="icon" type="image/png" href="favicon.png" />
+</head>
+
+<body>
+    <div class="legal-page">
+        <div class="legal-container">
+            <h1>Privacy Policy</h1>
+            <p class="legal-effective-date">Effective date: March 29, 2026</p>
+
+            <section>
+                <h2>Introduction</h2>
+                <p>
+                    ItchyPassword is a privacy-first, offline-capable password manager that runs entirely in your browser.
+                    This Privacy Policy explains what data ItchyPassword collects (essentially none), how it operates, and how third-party integrations work.
+                </p>
+            </section>
+
+            <section>
+                <h2>Data we collect</h2>
+                <p><strong>We do not collect any personal data.</strong></p>
+                <p>
+                    ItchyPassword is a client-side Blazor WebAssembly application. All cryptographic operations happen locally in your browser.
+                    There is no server-side component, no analytics, no tracking, and no telemetry.
+                </p>
+                <ul>
+                    <li>Your master key is <strong>never</strong> stored anywhere &mdash; not even encrypted. It exists only in browser memory while the tab is open.</li>
+                    <li>Your vault data is encrypted and decrypted entirely in your browser using the Web Crypto API (SubtleCrypto).</li>
+                    <li>No data is sent to any server operated by ItchyPassword.</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>Local storage</h2>
+                <p>
+                    ItchyPassword uses your browser's <code>localStorage</code> to persist non-secret configuration data, such as:
+                </p>
+                <ul>
+                    <li>Vault connector settings (e.g., which storage backends are configured).</li>
+                    <li>UI preferences (e.g., selected theme).</li>
+                </ul>
+                <p>
+                    Any secret stored in <code>localStorage</code> (such as OAuth tokens) is encrypted with your master key before being saved.
+                    You can clear this data at any time through your browser settings.
+                </p>
+            </section>
+
+            <section>
+                <h2>Third-party services</h2>
+                <p>
+                    ItchyPassword supports optional vault connectors that interact with third-party services to store and retrieve your <strong>encrypted</strong> vault data.
+                    When you enable a connector, ItchyPassword communicates directly with that service from your browser:
+                </p>
+                <ul>
+                    <li>
+                        <strong>Google Drive</strong> &mdash; If you choose to use Google Drive as a vault storage backend, ItchyPassword uses the Google Drive API
+                        to read and write a single encrypted vault file in your Google Drive. The OAuth flow happens via a browser popup.
+                        Only the encrypted vault blob is stored; Google never receives your master key or decrypted data.
+                        Google's privacy policy applies to data stored in your Google Drive account.
+                    </li>
+                    <li>
+                        <strong>GitHub</strong> &mdash; If you choose to use GitHub as a vault storage backend, ItchyPassword uses the GitHub API
+                        to read and write an encrypted vault file as commits in a repository. Only the encrypted vault blob is stored.
+                    </li>
+                    <li>
+                        <strong>Solid Pod</strong> &mdash; If you choose to use a Solid Pod as a vault storage backend, ItchyPassword uses the Solid protocol
+                        to read and write an encrypted vault file on your Pod. The OAuth flow uses DPoP-bound tokens via a browser popup.
+                        Only the encrypted vault blob is stored on your Pod; the Solid provider never receives your master key or decrypted data.
+                    </li>
+                </ul>
+                <p>
+                    These services are entirely optional. ItchyPassword can operate fully offline without any third-party service.
+                </p>
+            </section>
+
+            <section>
+                <h2>Cookies</h2>
+                <p>ItchyPassword does not use cookies.</p>
+            </section>
+
+            <section>
+                <h2>Children's privacy</h2>
+                <p>ItchyPassword does not knowingly collect any information from anyone, including children under 13 years of age.</p>
+            </section>
+
+            <section>
+                <h2>Changes to this policy</h2>
+                <p>
+                    We may update this Privacy Policy from time to time. Changes will be reflected on this page with an updated effective date.
+                </p>
+            </section>
+
+            <section>
+                <h2>Contact</h2>
+                <p>
+                    If you have questions about this Privacy Policy, you can open an issue on the
+                    <a href="https://github.com/TanukiSharp/ItchyPassword" target="_blank" rel="noopener noreferrer">GitHub repository</a>.
+                </p>
+            </section>
+        </div>
+    </div>
+</body>
+
+</html>
