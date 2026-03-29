@@ -136,6 +136,7 @@ public class GoogleDriveVaultConnector(
             IsRequired = true,
             VisibleWhenKey = StorageModeConfigKey,
             VisibleWhenValue = "folder",
+            Validate = ValidateFolderPath,
         },
     ];
 
@@ -656,6 +657,32 @@ public class GoogleDriveVaultConnector(
     {
         string value = VaultConnectorHelper.GetValue(Configuration, StorageModeConfigKey);
         return value == "folder" ? DriveStorageMode.UserFolder : DriveStorageMode.AppData;
+    }
+
+    /// <summary>
+    /// Validates the folder path entered by the user.
+    /// Warns if the last segment looks like a filename (contains a dot followed by an extension),
+    /// because each segment becomes a folder — not a file.
+    /// </summary>
+    private static string? ValidateFolderPath(string value)
+    {
+        string[] segments = value.Split('/', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (segments.Length == 0)
+        {
+            return null;
+        }
+
+        string last = segments[^1];
+        int dotIndex = last.LastIndexOf('.');
+
+        // A dot at position 0 (hidden folder like ".config") or no dot at all is fine.
+        if (dotIndex > 0 && dotIndex < last.Length - 1)
+        {
+            return $"'{last}' looks like a filename. This will create a folder, not a file.";
+        }
+
+        return null;
     }
 
     /// <summary>
