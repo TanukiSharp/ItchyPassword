@@ -24,6 +24,31 @@
         </Task>
     </UsingTask>
 
+    <!-- Appends ?v={CacheBuster} to local CSS/JS references in an HTML file. -->
+    <UsingTask TaskName="AppendCacheBuster"
+               TaskFactory="RoslynCodeTaskFactory"
+               AssemblyFile="$(MSBuildBinPath)\Microsoft.Build.Tasks.Core.dll">
+        <ParameterGroup>
+            <FilePath ParameterType="System.String" Required="true" />
+            <CacheBuster ParameterType="System.String" Required="true" />
+        </ParameterGroup>
+        <Task>
+            <Using Namespace="System.IO" />
+            <Using Namespace="System.Text.RegularExpressions" />
+            <Code Type="Fragment" Language="cs">
+                <![CDATA[
+          var content = File.ReadAllText(FilePath);
+          // Match href="..." or src="..." for local assets (skip URLs, _framework, and data: URIs).
+          var updated = Regex.Replace(
+              content,
+              @"((?:href|src)="")((?!https?://|_framework|data:)[^""]+\.(?:css|js))("")",
+              $"$1$2?v={CacheBuster}$3");
+          File.WriteAllText(FilePath, updated);
+        ]]>
+            </Code>
+        </Task>
+    </UsingTask>
+
     <!-- Inject git commit hash at build time -->
     <Target Name="GenerateGitCommitHash" BeforeTargets="CoreCompile">
         <Exec Command="git rev-parse HEAD" ConsoleToMSBuild="true" StandardOutputImportance="low" IgnoreExitCode="true">
@@ -65,6 +90,8 @@
 
         <UpdateBaseHref Condition="'@(PublishFiles)' != ''" FilePath="$(DocsVNextDir)index.html" BasePath="/ItchyPassword/vnext/" />
         <UpdateBaseHref Condition="'@(PublishFiles)' != ''" FilePath="$(DocsVNextDir)404.html"   BasePath="/ItchyPassword/vnext/" />
+
+        <AppendCacheBuster Condition="'@(PublishFiles)' != ''" FilePath="$(DocsVNextDir)index.html" CacheBuster="$(GitCommitHash)" />
 
         <Message Importance="high" Text="Published assets copied to docs/vnext." />
     </Target>

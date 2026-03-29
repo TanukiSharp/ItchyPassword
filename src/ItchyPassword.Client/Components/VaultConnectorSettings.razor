@@ -35,14 +35,19 @@
                 }
                 else
                 {
-                    <input class="input"
+                    <input class="input @(GetValidationError(entry, currentValue) is not null ? "input-error" : "")"
                            type="@(entry.Kind == ConfigurationEntryKind.Secret ? "password" : "text")"
                            value="@currentValue"
                            placeholder="@entry.Placeholder"
                            @onchange="@(e => UpdateValue(entry.Key, e.Value?.ToString()))" />
                 }
 
-                @if (string.IsNullOrWhiteSpace(entry.Description) == false)
+                @{ string? validationError = GetValidationError(entry, currentValue); }
+                @if (validationError is not null)
+                {
+                    <span class="form-error">@validationError</span>
+                }
+                else if (string.IsNullOrWhiteSpace(entry.Description) == false)
                 {
                     <span class="form-description">@entry.Description</span>
                 }
@@ -71,5 +76,18 @@
 
         VaultConnectorHelper.SetValue(Connector.Configuration, key, val ?? string.Empty);
         await Connector.SaveConfigurationAsync(CancellationToken.None);
+    }
+
+    /// <summary>
+    /// Returns a validation error message for the entry, or null when valid.
+    /// </summary>
+    private static string? GetValidationError(ConfigurationEntry entry, string value)
+    {
+        if (entry.Validate is null || string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return entry.Validate(value);
     }
 }

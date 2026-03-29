@@ -54,6 +54,7 @@ public class GoogleDriveVaultConnector(
     private const string VaultFileName = "vault.json";
     private const string HistoryFileName = "history.txt";
     private const int MaxHistoryEntries = 500;
+    private const int TokenExpiryMarginSeconds = 300;
     private const string DriveApiBase = "https://www.googleapis.com/drive/v3";
     private const string DriveUploadBase = "https://www.googleapis.com/upload/drive/v3";
     private const string GoogleTokenEndpoint = "https://oauth2.googleapis.com/token";
@@ -79,6 +80,7 @@ public class GoogleDriveVaultConnector(
     private string? _resolvedFolderId;
     private string _accessToken = string.Empty;
     private string _refreshToken = string.Empty;
+    private DateTimeOffset _tokenExpiresAt;
 
     /// <inheritdoc />
     public Guid Id { get; } = Guid.Parse("b7d4c22a-0498-4c12-a1f4-5f80e9a5c8e2");
@@ -167,6 +169,7 @@ public class GoogleDriveVaultConnector(
     {
         _accessToken = string.Empty;
         _refreshToken = string.Empty;
+        _tokenExpiresAt = default;
 
         return Task.CompletedTask;
     }
@@ -190,6 +193,7 @@ public class GoogleDriveVaultConnector(
             // All: wipe in-memory secrets and remove everything from localStorage.
             _accessToken = string.Empty;
             _refreshToken = string.Empty;
+            _tokenExpiresAt = default;
             await _storage.RemoveItemAsync(RefreshTokenStorageKey, CancellationToken.None);
             await VaultConnectorHelper.ClearEntriesAsync(Configuration, _storage, CancellationToken.None);
 
@@ -252,8 +256,11 @@ public class GoogleDriveVaultConnector(
         // 1. If we have an access token, validate it (checks expiry + scopes).
         if (string.IsNullOrWhiteSpace(_accessToken) == false)
         {
-            if (await ValidateTokenAsync(_accessToken, cancellationToken))
+            (bool isValid, int expiresIn) = await ValidateTokenAsync(_accessToken, cancellationToken);
+
+            if (isValid)
             {
+                _tokenExpiresAt = DateTimeOffset.UtcNow.AddSeconds(expiresIn - TokenExpiryMarginSeconds);
                 return true;
             }
         }
@@ -261,18 +268,25 @@ public class GoogleDriveVaultConnector(
         // 2. Access token missing or invalid — try refreshing.
         if (string.IsNullOrWhiteSpace(_refreshToken) == false)
         {
-            string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken, cancellationToken);
+            GoogleTokenResponse? refreshResponse = await TryRefreshAccessTokenAsync(_refreshToken, cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(refreshed) == false && await ValidateTokenAsync(refreshed, cancellationToken))
+            if (refreshResponse is not null && string.IsNullOrWhiteSpace(refreshResponse.AccessToken) == false)
             {
-                _accessToken = refreshed;
-                await SaveConfigurationAsync(cancellationToken);
-                return true;
+                (bool isValid, int expiresIn) = await ValidateTokenAsync(refreshResponse.AccessToken, cancellationToken);
+
+                if (isValid)
+                {
+                    _accessToken = refreshResponse.AccessToken;
+                    _tokenExpiresAt = DateTimeOffset.UtcNow.AddSeconds(expiresIn - TokenExpiryMarginSeconds);
+                    await SaveConfigurationAsync(cancellationToken);
+                    return true;
+                }
             }
 
             // Refresh token produced a token without required scopes — discard it.
             _accessToken = string.Empty;
             _refreshToken = string.Empty;
+            _tokenExpiresAt = default;
             AccessFailureMessage = """
                 Google did not grant the required permissions.
                 Please revoke ItchyPassword at https://myaccount.google.com/permissions and try again.
@@ -338,7 +352,9 @@ public class GoogleDriveVaultConnector(
         _accessToken = tokenResponse.AccessToken;
 
         // Validate the freshly obtained token has the required scopes.
-        if (await ValidateTokenAsync(_accessToken, cancellationToken) == false)
+        (bool isValid, int _) = await ValidateTokenAsync(_accessToken, cancellationToken);
+
+        if (isValid == false)
         {
             AccessFailureMessage = """
                 Google did not grant the required permissions.
@@ -347,6 +363,8 @@ public class GoogleDriveVaultConnector(
             _accessToken = string.Empty;
             return false;
         }
+
+        _tokenExpiresAt = DateTimeOffset.UtcNow.AddSeconds(tokenResponse.ExpiresIn - TokenExpiryMarginSeconds);
 
         if (string.IsNullOrWhiteSpace(tokenResponse.RefreshToken) == false)
         {
@@ -462,9 +480,9 @@ public class GoogleDriveVaultConnector(
 
     /// <summary>
     /// Attempts to obtain a new access token using a stored refresh token.
-    /// Returns the new access token, or <see langword="null"/> if the refresh failed.
+    /// Returns the full token response, or <see langword="null"/> if the refresh failed.
     /// </summary>
-    private async Task<string?> TryRefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
+    private async Task<GoogleTokenResponse?> TryRefreshAccessTokenAsync(string refreshToken, CancellationToken cancellationToken)
     {
         try
         {
@@ -483,8 +501,7 @@ public class GoogleDriveVaultConnector(
                 return null;
             }
 
-            GoogleTokenResponse? tokenResponse = await response.Content.ReadFromJsonAsync<GoogleTokenResponse>(cancellationToken);
-            return tokenResponse?.AccessToken;
+            return await response.Content.ReadFromJsonAsync<GoogleTokenResponse>(cancellationToken);
         }
         catch
         {
@@ -494,19 +511,24 @@ public class GoogleDriveVaultConnector(
 
     /// <summary>
     /// Validates an access token by calling the Google tokeninfo endpoint.
-    /// Returns <see langword="true"/> if the token is still valid and has the scope
-    /// required by the current storage mode.
+    /// Uses POST to avoid leaking the token in URL query parameters.
+    /// Returns whether the token is valid and the remaining lifetime in seconds.
     /// </summary>
-    private async Task<bool> ValidateTokenAsync(string accessToken, CancellationToken cancellationToken)
+    private async Task<(bool IsValid, int ExpiresInSeconds)> ValidateTokenAsync(string accessToken, CancellationToken cancellationToken)
     {
         try
         {
-            string url = $"https://www.googleapis.com/oauth2/v1/tokeninfo?access_token={Uri.EscapeDataString(accessToken)}";
-            using HttpResponseMessage response = await _http.GetAsync(url, cancellationToken);
+            using var content = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                ["access_token"] = accessToken,
+            });
+
+            using HttpResponseMessage response = await _http.PostAsync(
+                "https://www.googleapis.com/oauth2/v3/tokeninfo", content, cancellationToken);
 
             if (response.IsSuccessStatusCode == false)
             {
-                return false;
+                return (false, 0);
             }
 
             // Verify the token has the scope required for the current storage mode.
@@ -520,20 +542,36 @@ public class GoogleDriveVaultConnector(
 
                 if (grantedScopes.Contains(requiredFragment, StringComparison.OrdinalIgnoreCase) == false)
                 {
-                    return false;
+                    return (false, 0);
                 }
             }
             else
             {
                 // No scope info in response — treat as invalid to be safe.
-                return false;
+                return (false, 0);
             }
 
-            return true;
+            int expiresIn = 0;
+
+            if (doc.RootElement.TryGetProperty("expires_in", out JsonElement expiresElement))
+            {
+                // The tokeninfo endpoint may return expires_in as a number or a string.
+                if (expiresElement.ValueKind == JsonValueKind.Number)
+                {
+                    expiresIn = expiresElement.GetInt32();
+                }
+                else if (expiresElement.ValueKind == JsonValueKind.String
+                    && int.TryParse(expiresElement.GetString(), out int parsed))
+                {
+                    expiresIn = parsed;
+                }
+            }
+
+            return (true, expiresIn);
         }
         catch
         {
-            return false;
+            return (false, 0);
         }
     }
 
@@ -590,8 +628,8 @@ public class GoogleDriveVaultConnector(
     /// </summary>
     private async Task<string> GetOrRefreshAccessTokenAsync(CancellationToken cancellationToken)
     {
-        // Fast path: return existing token if available.
-        if (string.IsNullOrWhiteSpace(_accessToken) == false)
+        // Fast path: return existing token if still valid.
+        if (string.IsNullOrWhiteSpace(_accessToken) == false && _tokenExpiresAt > DateTimeOffset.UtcNow)
         {
             return _accessToken;
         }
@@ -599,11 +637,12 @@ public class GoogleDriveVaultConnector(
         // Attempt to refresh using the stored refresh token.
         if (string.IsNullOrWhiteSpace(_refreshToken) == false)
         {
-            string? refreshed = await TryRefreshAccessTokenAsync(_refreshToken, cancellationToken);
+            GoogleTokenResponse? refreshResponse = await TryRefreshAccessTokenAsync(_refreshToken, cancellationToken);
 
-            if (string.IsNullOrWhiteSpace(refreshed) == false)
+            if (refreshResponse is not null && string.IsNullOrWhiteSpace(refreshResponse.AccessToken) == false)
             {
-                _accessToken = refreshed;
+                _accessToken = refreshResponse.AccessToken;
+                _tokenExpiresAt = DateTimeOffset.UtcNow.AddSeconds(refreshResponse.ExpiresIn - TokenExpiryMarginSeconds);
                 await SaveConfigurationAsync(cancellationToken);
                 return _accessToken;
             }
@@ -691,7 +730,9 @@ public class GoogleDriveVaultConnector(
     /// </summary>
     private async Task<string> FindOrCreateFolderAsync(string accessToken, string folderName, string parentId, CancellationToken cancellationToken)
     {
-        string escapedName = folderName.Replace("'", "\\'", StringComparison.Ordinal);
+        string escapedName = folderName
+            .Replace("\\", "\\\\", StringComparison.Ordinal)
+            .Replace("'", "\\'", StringComparison.Ordinal);
         string query = $"name = '{escapedName}' and mimeType = 'application/vnd.google-apps.folder' and '{parentId}' in parents and trashed = false";
         string encodedQuery = Uri.EscapeDataString(query);
         string url = $"{DriveApiBase}/files?q={encodedQuery}&spaces=drive&fields=files(id,name)&pageSize=1";

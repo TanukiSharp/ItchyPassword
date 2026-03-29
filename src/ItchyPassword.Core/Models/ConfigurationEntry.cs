@@ -108,4 +108,11 @@ public class ConfigurationEntry
     /// Only meaningful when <see cref="StorageKey"/> is not <c>null</c>.
     /// </summary>
     public bool IsEncrypted { get; init; }
+
+    /// <summary>
+    /// Gets an optional validation function for this entry's value.
+    /// Returns an error message when the value is invalid, or <c>null</c> when valid.
+    /// Empty or whitespace values are not validated (use <see cref="IsRequired"/> for that).
+    /// </summary>
+    public Func<string, string?>? Validate { get; init; }
 }

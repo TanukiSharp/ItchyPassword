@@ -4,6 +4,13 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- SECURITY: frame-ancestors cannot be enforced via <meta> CSP (per CSP Level 2 spec).
+         To prevent clickjacking, the hosting server MUST send an HTTP response header:
+           Content-Security-Policy: frame-ancestors 'none'
+         or at minimum:
+           X-Frame-Options: DENY
+         GitHub Pages does not support custom headers; consider Cloudflare Pages or a CDN
+         with header injection if clickjacking protection is required. -->
     <meta http-equiv="Content-Security-Policy"
           content="default-src 'none';
                    script-src 'self' 'wasm-unsafe-eval';

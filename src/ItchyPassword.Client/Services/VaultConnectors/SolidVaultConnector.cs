@@ -101,6 +101,7 @@ public class SolidVaultConnector(
             Placeholder = "https://login.inrupt.com",
             StorageKey = "solid_issuer_url",
             IsRequired = true,
+            Validate = ValidateHttpsUrl,
         },
         new ConfigurationEntry
         {
@@ -111,6 +112,7 @@ public class SolidVaultConnector(
             Placeholder = "https://storage.inrupt.com/e283fa34-d03c-4fb6-9373-8535144e7ce2/ItchyPassword/vault.json",
             StorageKey = "solid_vault_file_url",
             IsRequired = true,
+            Validate = ValidateHttpsUrl,
         },
         new ConfigurationEntry
         {
@@ -292,6 +294,7 @@ public class SolidVaultConnector(
         await LoadConfigurationAsync(cancellationToken);
 
         string vaultUrl = VaultConnectorHelper.GetValue(Configuration, VaultFileUrlKey);
+        RequireHttpsUrl(vaultUrl, "Vault file URL");
         string accessToken = await GetOrRefreshTokenAsync(cancellationToken);
 
         using HttpResponseMessage response = await SendDpopAsync(
@@ -315,6 +318,7 @@ public class SolidVaultConnector(
         await LoadConfigurationAsync(cancellationToken);
 
         string vaultUrl = VaultConnectorHelper.GetValue(Configuration, VaultFileUrlKey);
+        RequireHttpsUrl(vaultUrl, "Vault file URL");
         string accessToken = await GetOrRefreshTokenAsync(cancellationToken);
 
         using HttpResponseMessage response = await SendDpopAsync(
@@ -329,6 +333,32 @@ public class SolidVaultConnector(
     }
 
     // -------------------------------------------------------------------------
+    // URL validation
+    // -------------------------------------------------------------------------
+
+    /// <summary>
+    /// Validates that a URL uses the HTTPS scheme. Returns an error message if invalid, or <c>null</c> if valid.
+    /// Used both as a <see cref="ConfigurationEntry.Validate"/> callback and by the runtime guards.
+    /// </summary>
+    private static string? ValidateHttpsUrl(string url)
+    {
+        if (Uri.TryCreate(url, UriKind.Absolute, out Uri? uri) == false || uri.Scheme != Uri.UriSchemeHttps)
+        {
+            return "Must be an HTTPS URL.";
+        }
+
+        return null;
+    }
+
+    private static void RequireHttpsUrl(string url, string fieldName)
+    {
+        if (ValidateHttpsUrl(url) is not null)
+        {
+            throw new InvalidOperationException($"{fieldName} must be an HTTPS URL.");
+        }
+    }
+
+    // -------------------------------------------------------------------------
     // OIDC discovery
     // -------------------------------------------------------------------------
 
@@ -340,6 +370,7 @@ public class SolidVaultConnector(
         }
 
         string issuer = VaultConnectorHelper.GetValue(Configuration, IssuerUrlKey).TrimEnd('/');
+        RequireHttpsUrl(issuer, "Provider URL");
         string discoveryUrl = $"{issuer}/.well-known/openid-configuration";
 
         using HttpResponseMessage response = await http.GetAsync(discoveryUrl, cancellationToken);
@@ -348,7 +379,46 @@ public class SolidVaultConnector(
         _discovery = await response.Content.ReadFromJsonAsync<OidcDiscovery>(cancellationToken)
             ?? throw new InvalidOperationException("SOLID provider returned an empty discovery document.");
 
+        // OIDC Discovery §4.3: the issuer in the document must match the URL it was fetched from.
+        string? documentIssuer = _discovery.Issuer?.TrimEnd('/');
+        if (string.Equals(documentIssuer, issuer, StringComparison.Ordinal) == false)
+        {
+            _discovery = null;
+            throw new InvalidOperationException(
+                $"OIDC issuer mismatch: expected '{issuer}', got '{documentIssuer}'.");
+        }
+
+        // Verify that authorization and token endpoints share the issuer's origin.
+        // This prevents a discovery document from redirecting auth flows to a different domain.
+        ValidateEndpointOrigin(_discovery.AuthorizationEndpoint, issuer, "authorization_endpoint");
+        ValidateEndpointOrigin(_discovery.TokenEndpoint, issuer, "token_endpoint");
+
         return _discovery;
+    }
+
+    /// <summary>
+    /// Validates that an OIDC endpoint URL shares the same origin (scheme + host + port) as the issuer.
+    /// </summary>
+    private static void ValidateEndpointOrigin(string endpointUrl, string issuer, string endpointName)
+    {
+        if (Uri.TryCreate(endpointUrl, UriKind.Absolute, out Uri? endpointUri) == false
+            || Uri.TryCreate(issuer, UriKind.Absolute, out Uri? issuerUri) == false)
+        {
+            throw new InvalidOperationException($"OIDC {endpointName} is not a valid URL.");
+        }
+
+        if (endpointUri.Scheme != Uri.UriSchemeHttps)
+        {
+            throw new InvalidOperationException($"OIDC {endpointName} must be HTTPS.");
+        }
+
+        if (string.Equals(endpointUri.Host, issuerUri.Host, StringComparison.OrdinalIgnoreCase) == false
+            || endpointUri.Port != issuerUri.Port)
+        {
+            throw new InvalidOperationException(
+                $"OIDC {endpointName} origin ({endpointUri.Host}:{endpointUri.Port}) "
+                + $"does not match issuer origin ({issuerUri.Host}:{issuerUri.Port}).");
+        }
     }
 
     // -------------------------------------------------------------------------
@@ -707,11 +777,13 @@ public class SolidVaultConnector(
     /// </summary>
     private async Task<string> GetOrRefreshTokenAsync(CancellationToken cancellationToken)
     {
-        if (string.IsNullOrWhiteSpace(_accessToken) == false)
+        // Fast path: return existing token if still valid (client-side exp check).
+        if (string.IsNullOrWhiteSpace(_accessToken) == false && IsTokenValid(_accessToken))
         {
             return _accessToken;
         }
 
+        // Token missing or expired — attempt to refresh.
         if (string.IsNullOrWhiteSpace(_refreshToken) == false)
         {
             string? refreshed = await TryRefreshTokenAsync(_refreshToken, cancellationToken);
@@ -974,6 +1046,7 @@ public class SolidVaultConnector(
 #pragma warning disable IDE1006 // Naming Styles
 
     private sealed record OidcDiscovery(
+        [property: JsonPropertyName("issuer")] string? Issuer,
         [property: JsonPropertyName("authorization_endpoint")] string AuthorizationEndpoint,
         [property: JsonPropertyName("token_endpoint")] string TokenEndpoint,
         [property: JsonPropertyName("registration_endpoint")] string? RegistrationEndpoint);

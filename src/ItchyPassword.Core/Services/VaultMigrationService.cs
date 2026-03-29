@@ -6,7 +6,7 @@ using System.Text.Json.Nodes;
 
 namespace ItchyPassword.Core.Services;
 
-public class VaultMigrationService(IVaultCryptoService vaultCrypto)
+public class VaultMigrationService(IVaultCryptoService vaultCrypto, ErrorLogService errorLog)
 {
     /// <summary>
     /// Checks if the provided JSON content looks like a Legacy V1 vault.
@@ -259,8 +259,13 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
                 item.Type = VaultItemTypeV2.Secret;
                 item.SetData(secret);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                errorLog.Log(
+                    $"Failed to migrate password entry '{item.Name}' to cipher.",
+                    nameof(VaultMigrationService),
+                    ex
+                );
             }
             finally
             {
@@ -297,8 +302,13 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto)
 
                 item.SetData(secretData);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                errorLog.Log(
+                    $"Failed to re-encrypt cipher '{item.Name}'.",
+                    nameof(VaultMigrationService),
+                    ex
+                );
             }
             finally
             {

@@ -1,19 +1,35 @@
 using ItchyPassword.Core.Models;
 using ItchyPassword.Core.Services;
 using ItchyPassword.Core.Tests.Crypto;
+using Microsoft.Playwright;
 using System.Text.Json;
 
 namespace ItchyPassword.Core.Tests.Services;
 
-public class VaultDataServiceTests
+public class VaultDataServiceTests : IClassFixture<PlaywrightFixture>, IAsyncLifetime
 {
-    private readonly DotNetCryptoService _crypto;
-    private readonly byte[] _masterKey;
+    private readonly PlaywrightFixture _fixture;
+    private IPage _page = null!;
+    private PlaywrightCryptoService _crypto = null!;
+    private readonly byte[] _masterKey = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
 
-    public VaultDataServiceTests()
+    public VaultDataServiceTests(PlaywrightFixture fixture)
     {
-        _crypto = new DotNetCryptoService();
-        _masterKey = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16];
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync()
+    {
+        _page = await _fixture.CreatePageWithCryptoAsync();
+        _crypto = new PlaywrightCryptoService(_page);
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (_page is not null)
+        {
+            await _page.CloseAsync();
+        }
     }
 
     private static VaultV2 CreateVault(params string[] itemNames)

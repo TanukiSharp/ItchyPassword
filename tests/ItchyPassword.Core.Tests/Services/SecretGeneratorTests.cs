@@ -1,15 +1,38 @@
 using ItchyPassword.Core.Services;
 using ItchyPassword.Core.Tests.Crypto;
+using Microsoft.Playwright;
 
 namespace ItchyPassword.Core.Tests.Services;
 
-public class SecretGeneratorTests
+public class SecretGeneratorTests : IClassFixture<PlaywrightFixture>, IAsyncLifetime
 {
+    private readonly PlaywrightFixture _fixture;
+    private IPage _page = null!;
+    private PlaywrightCryptoService _crypto = null!;
+
+    public SecretGeneratorTests(PlaywrightFixture fixture)
+    {
+        _fixture = fixture;
+    }
+
+    public async Task InitializeAsync()
+    {
+        _page = await _fixture.CreatePageWithCryptoAsync();
+        _crypto = new PlaywrightCryptoService(_page);
+    }
+
+    public async Task DisposeAsync()
+    {
+        if (_page is not null)
+        {
+            await _page.CloseAsync();
+        }
+    }
+
     [Fact]
     public async Task GenerateAsync_DefaultRules_ReturnsNonEmptyString()
     {
-        var crypto = new DotNetCryptoService();
-        var pool = new RandomBytePool(crypto);
+        var pool = new RandomBytePool(_crypto);
         var rules = new SecretGenerationRules();
 
         string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
@@ -21,8 +44,7 @@ public class SecretGeneratorTests
     [Fact]
     public async Task GenerateAsync_DefaultRules_ContainsAllCharClasses()
     {
-        var crypto = new DotNetCryptoService();
-        var pool = new RandomBytePool(crypto);
+        var pool = new RandomBytePool(_crypto);
         var rules = new SecretGenerationRules();
 
         string result = await SecretGenerator.GenerateAsync(rules, pool, CancellationToken.None);
@@ -36,8 +58,7 @@ public class SecretGeneratorTests
     [Fact]
     public async Task GenerateAsync_SmallLength_Works()
     {
-        var crypto = new DotNetCryptoService();
-        var pool = new RandomBytePool(crypto);
+        var pool = new RandomBytePool(_crypto);
         var rules = new SecretGenerationRules
         {
             TotalLength = 12,
@@ -51,7 +72,7 @@ public class SecretGeneratorTests
 
         Assert.Equal(12, result.Length);
 
-        // Check each character individually for null
+        // Check each character individually for null.
         for (int i = 0; i < result.Length; i++)
         {
             Assert.True(result[i] != '\0', $"Char at index {i} is null (0x0000). Full ints: [{string.Join(",", result.Select(c => (int)c))}]");
@@ -61,9 +82,8 @@ public class SecretGeneratorTests
     [Fact]
     public async Task GenerateAsync_DefaultLength_NoNullChars()
     {
-        var crypto = new DotNetCryptoService();
-        var pool = new RandomBytePool(crypto);
-        var rules = new SecretGenerationRules(); // DefaultLength = 64
+        var pool = new RandomBytePool(_crypto);
+        var rules = new SecretGenerationRules();
 
         for (int run = 0; run < 50; run++)
         {
@@ -80,8 +100,7 @@ public class SecretGeneratorTests
     [Fact]
     public async Task GenerateAsync_RepeatedCalls_AlwaysReturnNonEmpty()
     {
-        var crypto = new DotNetCryptoService();
-        var pool = new RandomBytePool(crypto);
+        var pool = new RandomBytePool(_crypto);
         var rules = new SecretGenerationRules();
 
         for (int i = 0; i < 20; i++)

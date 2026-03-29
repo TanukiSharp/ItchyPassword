@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace ItchyPassword.Core.Formatting;
 
 public static class ByteSizeFormat
@@ -8,15 +10,21 @@ public static class ByteSizeFormat
 
     /// <summary>
     /// Formats a byte count as a human-readable size string (bytes, KB, MB, GB).
+    /// Always uses '.' as the decimal separator regardless of locale.
     /// </summary>
     public static string ToHumanReadable(int count)
     {
         return count switch
         {
-            >= GB => $"{count / (double)GB:F2} GB",
-            >= MB => $"{count / (double)MB:F2} MB",
-            >= KB => $"{count / (double)KB:F1} KB",
+            >= GB => Format(count, GB, "GB"),
+            >= MB => Format(count, MB, "MB"),
+            >= KB => Format(count, KB, "KB"),
             _ => $"{count} bytes",
         };
+    }
+
+    private static string Format(int value, int unitValue, string unitText)
+    {
+        return string.Format(CultureInfo.InvariantCulture, $"{{0:F2}} {unitText}", value / (double)unitValue);
     }
 }

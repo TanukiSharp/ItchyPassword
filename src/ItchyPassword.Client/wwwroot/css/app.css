@@ -551,6 +551,17 @@ tr:hover td { background-color: var(--hover-overlay); }
     white-space: pre-line;
 }
 
+.form-error {
+    display: block;
+    font-size: 0.8em;
+    color: var(--error, #e74c3c);
+    margin-top: 0.25rem;
+}
+
+.input-error {
+    border-color: var(--error, #e74c3c);
+}
+
 /* Vault item name with inline icon */
 .vault-card {
     display: flex;

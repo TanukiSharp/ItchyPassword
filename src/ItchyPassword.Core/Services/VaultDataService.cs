@@ -1,5 +1,6 @@
 using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace ItchyPassword.Core.Services;
@@ -30,6 +31,8 @@ public enum VaultSignatureStatus
 
 public static class VaultDataService
 {
+    private const int MaxSupportedVersion = 2;
+
     private static readonly JsonSerializerOptions _loadOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -56,7 +59,7 @@ public static class VaultDataService
             VaultV2? vault = JsonSerializer.Deserialize<VaultV2>(jsonContent, _loadOptions);
 
             // V2 or newer detected
-            if (vault is not null && vault.Value.Version >= 2)
+            if (vault is not null && vault.Value.Version >= 2 && vault.Value.Version <= MaxSupportedVersion)
             {
                 return vault;
             }
@@ -128,13 +131,24 @@ public static class VaultDataService
             return VaultSignatureStatus.Missing;
         }
 
+        byte[] storedBytes;
+        try
+        {
+            storedBytes = Base58.Decode(vault.Signature);
+        }
+        catch
+        {
+            return VaultSignatureStatus.Invalid;
+        }
+
         // Re-serialize without signature to get the canonical form.
         VaultV2 unsigned = new() { Version = vault.Version, Items = vault.Items, Signature = null };
         string canonical = JsonSerializer.Serialize(unsigned, _canonicalOptions);
 
-        string expected = await ComputeSignatureAsync(canonical, masterKey, crypto, cancellationToken);
+        byte[] data = System.Text.Encoding.UTF8.GetBytes(canonical);
+        byte[] expectedBytes = await crypto.ComputeHmacSha512Async(data, masterKey, cancellationToken);
 
-        return string.Equals(vault.Signature, expected, StringComparison.Ordinal)
+        return CryptographicOperations.FixedTimeEquals(storedBytes, expectedBytes)
             ? VaultSignatureStatus.Valid
             : VaultSignatureStatus.Invalid;
     }

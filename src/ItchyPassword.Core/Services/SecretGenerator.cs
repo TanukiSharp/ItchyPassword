@@ -171,6 +171,12 @@ public static class SecretGenerator
     /// </summary>
     private static async Task<int> GetBoundedRandomIndexAsync(int maxExclusive, RandomBytePool pool, CancellationToken cancellationToken)
     {
+        if (maxExclusive < 1 || maxExclusive > 65536)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxExclusive), maxExclusive,
+                "Must be between 1 and 65536 (16-bit value space).");
+        }
+
         // The largest multiple of maxExclusive that fits in a 16-bit value.
         // Values >= this threshold are rejected to eliminate modulo bias.
         int threshold = (65536 / maxExclusive) * maxExclusive;
