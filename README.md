@@ -1,349 +1,272 @@
-# Overview
+# ItchyPassword
 
 This project is still under development, getting stable but will probably keep changing during the course of its evolution.
 
 ![](nothing-to-see-here.gif)
 
-[ItchyPassword] is a web-based password manager, that should be usable for anyone.<br/>
-It works fully offline with all the cryptography happening in the browser. It requires a browser with SubtleCrypto API available.
+[ItchyPassword] is a privacy-first, offline-capable password manager built with **Blazor WebAssembly**. All cryptography happens in the browser via the [SubtleCrypto] API. No server, no backend, no telemetry.
 
-Works fine with Chromium-based browsers (Edge, Chrome) and Firefox on desktop (Windows 10 and 11) and mobile (Chrome and Edge on Android).
+Works on Chromium-based browsers (Edge, Chrome) and Firefox, on both desktop (Windows, Linux, macOS) and mobile (Android).
 
-There is the possibility to plug vault storages to automatically fetch and store data from/to external services, so this will require an internet access, but it is optional and those actions (fetch/store) can be performed manually instead.
+Vault storage connectors can optionally sync your encrypted data to external services (GitHub, Google Drive, SOLID Pod), but the app is fully functional offline. Those connectors only ever see encrypted blobs.
 
-In any case, your master key never leaves the machine and is never stored anywhere, neither in clear nor even encrypted. Never. Meaning you have to enter it each time you start the application or refresh the page. This is by design.
+**Your master key never leaves the machine and is never stored anywhere** — not even encrypted. It lives in memory only while the tab is open and must be re-entered each time you start the app or refresh the page. This is by design.
 
-## Web app
-
-You can find a usable version of the application [here](https://tanukisharp.github.io/ItchyPassword).
+> **Note**
+> The Blazor rewrite (v2) is still in beta-testing and available at:
+> https://tanukisharp.github.io/ItchyPassword/vnext
+>
+> The original TypeScript version remains at:
+> https://tanukisharp.github.io/ItchyPassword
 
 ## Build
 
-You need to have NPM installed to fetch packages, and optionally NVM to help you select the right version of NPM if you have many installed.
-
-This project doesn't use NodeJS at all.
-
-Tested with NPM versions:
-- 6.0.0
-- 6.13.0
-- 7.24.0
-- 8.19.2
+You need the [.NET 10 SDK](https://dotnet.microsoft.com/download/dotnet/10.0) (or later) installed.
 
 ```sh
-cd web
-nvm use
-npm install
-npm run build # or npm run watch, or npm run build-dev
+dotnet publish -c Release -p:RunAOTCompilation=true
 ```
 
-The `npm run` commands:
-- `watch` will compile the TypeScript code and watch it, rebuilding incrementally when it changes.
-- `build` will build the code in production mode.
-- `build-dev` will build the code in development mode.
+The published output will be in `docs/vnext`.
 
-## Run and use
+### AOT compilation
 
-Open `docs/index.html` in your browser.
+The `-p:RunAOTCompilation=true` argument is **optional**. Here are the trade-offs:
 
-You do not need to make the files served by a web server, just open the file with your preferred browser and it will work.
+| | With AOT (`true`) | Without AOT (default) |
+|---|---|---|
+| **Runtime performance** | Near-native speed for C# logic (UI, JSON parsing, search, encoding) | Interpreted, noticeably slower general app responsiveness |
+| **App download size** | Larger (several MB more) | Smaller initial download |
+| **Build time** | Much slower (minutes) | Fast (seconds) |
+| **Best for** | Production / daily use | Quick development iterations |
 
-## How it looks like
+> **Note**
+> The heavy cryptographic operations (PBKDF2 key derivation, AES-GCM encryption, HMAC-SHA-512) all run in the browser's native SubtleCrypto API via JavaScript interop, so they are **not** affected by AOT. AOT improves everything else: UI rendering, vault deserialization, search, encoding, and general app responsiveness.
 
-First, let me give you an overview of [ItchyPassword].
+For development, you can skip AOT:
 
-When you run it, it should look like this:
+```sh
+dotnet watch run --project src/ItchyPassword.Client/ItchyPassword.Client.csproj
+```
 
-![](./Documentation/01.png)
+> **Tip**
+> If the build fails with file lock errors, run `dotnet clean` first or kill lingering `dotnet` processes.
+
+## Features overview
 
 ### Master key
 
-The `Master key` field is where you enter your master key, which is the only "password" you should ever have to remember.
+The master key is the only thing you need to remember. It is entered at launch and held in memory for the duration of your session.
 
-The green field below is just a convenience field for you to retype your master key, if it turns green, it means both fields match, if it turns red, they don't, as simple as that.
+A confirmation field lets you double-check your input: it turns green when both fields match, red when they don't. This is important when you create your very first items offline — you want to make sure you didn't mistype.
 
-This is useful when you work fully offline and when you create your very first passwords or ciphers, you need to make extra sure they are not generated with the wrong master key.
+If you don't submit your master key within ~30 seconds of inactivity (no typing), it is automatically cleared from the input field for security reasons. Once submitted, the key remains in memory until the page is closed, reloaded, or discarded by the browser (which can happen on mobile).
 
-The button `Protect and lock` removes your master key from the UI text element and stores it in memory. This is to avoid a person with physical access to your machine to be able to copy and paste it somewhere readable.
+![](./Documentation/screenshots/01_master_key.png)
 
 > **Note**
-> The master key should be quite long and unpredictable.
-> For this purpose, I recommend to use Diceware™
+> Your master key should be long and unpredictable.
+> It is recommended to use Diceware™ to generate it.
 >
 > You can find a web-based implementation at https://tanukisharp.github.io/Diceware/ ([details](https://github.com/TanukiSharp/Diceware))
 
-### Nothing tab
+### Vault
 
-This tab is just here if you want to hide content, if you have visitors or what.
+The vault is a simple JSON file that stores all your items (static keys, secrets). It can be easily archived, copied, or backed up like any other file. Once your master key is entered and a connector is configured, the vault is fetched and loaded — but **items are not all decrypted at once**. Each item is decrypted on-demand as you navigate to it, keeping exposure to a minimum.
 
-### Password tab
+![](./Documentation/screenshots/02_vault.png)
 
-This is where you can generate passwords.
+From the vault view, you can:
+- **Search** items by name or metadata, with three search modes: Contains, Fuzzy, and Exact, with match highlighting.
+- **Filter** items by type (all, static keys only, secrets only).
+- **Copy** a static key or decrypted secret to the clipboard with a single click.
+- **Edit** any item by clicking on it. You can delete item from the edit view.
+- **Create** new items via the `+` button.
+- **Reload** the vault from the configured connector.
 
-![](./Documentation/02_password.png)
+Item names are split into actionable segments: parts that look like URLs become clickable links, and other parts can be copied individually with a click.
 
-### Ciphers tab
+### Static key (formerly "Password")
 
-This is where you can encrypt and decrypt any text content. (it should be named `Cipher` actually)
+A static key is a **deterministic** value derived from your master key and a public part. Given the same inputs, the same output is always generated. This means nothing needs to be stored to regenerate it — you only need to remember your master key and the public part. This is particularly useful for services where the vault itself is stored (e.g., GitHub, Google), since you can regenerate the password without having access to the vault, avoiding a lock-out situation.
 
-![](./Documentation/03_cipher.png)
+Only the public part, alphabet, length, and version are stored in the vault — all unencrypted, and none of it is sensitive. The generated key itself is never stored anywhere.
 
-### Re-encrypt tab
+![](./Documentation/screenshots/03_static_key.png)
 
-This tab is named `...` to keep it short and avoid taking too much space in the UI, because it is almost never used, is experimental, and probably buggy. Let's skip it for now.
+Options include:
+- **Public part**: a memorable string that, combined with your master key, produces the key. For example, `github.com/myemail@example.com`.
+- **Alphabet**: the set of characters allowed in the generated output.
+- **Length**: how many characters the output should be.
+- **Version**: the derivation version (v1 = 100,000 PBKDF2 iterations, v2 = 400,000).
 
-### Logs tab
+The output supports two display modes:
+- **Plaintext**: view and copy the generated key.
+- **QR code**: renders the generated key as a QR code.
 
-This tab is supposed to show errors when they occur, in order to debug issues when a developer console is not accessible (thank you mobile browsers), but so far it's not working great. 🫤 Let's skip it too.
+> **Warning**
+> For services you need to access to bootstrap your vault (e.g., GitHub), the public part should be something you know and remember by heart.
+> If you generate a random public part and store it only in your vault, you could lock yourself out.
+>
+> Also, if you customized the alphabet, length, or version, you will need to remember those parameters to regenerate the exact same key without the vault handy. For simplicity, it is recommended to keep the default values so you only need to remember the public part.
 
-### Vault tab
+### Secret (formerly "Cipher")
 
-This is where you will be able to load and save information about your passwords and ciphers. This tab will require an internet access, but all sensitive data is encrypted with your master key.
+A secret is a **free-form text**, stored encrypted with your master key. Unlike static keys, secrets are not deterministic value once encrypted — they are actual ciphertext in the vault.
 
-![](./Documentation/04_vault.png)
+![](./Documentation/screenshots/04_secret.png)
 
-For now, only GitHub storage is supported, but the application is designed to be extended with other types of vault. To access GitHub, you will need a personal access token. Your GitHub personal access token is stored in the browser's local storage, encrypted with your master key.
+Secrets support three display modes:
+- **Plaintext**: view and edit the decrypted content.
+- **TOTP**: if the secret contains a TOTP seed (base32-encoded), it displays a live 6-digit code with a 30-second countdown timer, with copy support.
+- **QR code**: renders the decrypted content as a QR code.
 
-More details on the personal access token later.
+A built-in **secret generator** can produce random secrets with configurable rules:
+- Total length
+- Minimum count of lowercase, uppercase, digits, and symbols
+- Custom symbol alphabet
 
-When the vault is fetched successfully, that means GitHub access was granted, which means your personal access token was successfully decrypted, which means your master key is correct, and so the `Master key` field is automatically "protected and locked", just as if you had clicked on the `Protect and lock` button.
+### Metadata
+
+Every vault item (static key or secret) can have **key-value metadata** attached to it. Each metadata entry can optionally be **encrypted** independently — useful for storing sensitive notes like usernames, recovery codes, or account IDs alongside an item without them being visible in the vault file.
+
+> **Note**
+> When encrypting metadata, only the value is encrypted, not the key. This lets you search for items by metadata key even when the values are protected.
+
+![](./Documentation/screenshots/05_metadata.png)
+
+### Empty page
+
+A blank page accessible from the navigation sidebar. Its only purpose is to quickly hide the screen content if you have people around.
+
+### Error log
+
+A debug page that collects runtime errors in memory. Useful for diagnosing issues on mobile browsers where the developer console is not easily accessible.
+
+### Raw vault
+
+Another debug page that displays the encrypted vault content as-is (the raw JSON blob), useful for diagnostics.
+
+### Theme support
+
+The app supports **System**, **Light**, and **Dark** themes. The preference is persisted in local storage.
+
+## Vault connectors
+
+Vault connectors are storage backends that handle fetching and saving the encrypted vault blob. You can configure them in the **Settings** page. The app supports multiple connectors, and you choose which one to use for reading and writing.
+
+### GitHub
+
+Stores your vault as a JSON file in a GitHub repository. Changes are committed, so your data is versioned and can be reverted.
+
+You need:
+- A GitHub account
+- A repository (e.g., `ItchyPasswordVault`)
+- A personal access token (PAT) with `Contents: Read and write` permission on that repository
+
+The PAT is encrypted with your master key before being stored in local storage.
+
+> **Note**
+> Fine-grained tokens scoped to a single repository are recommended over classic tokens.
+
+### Google Drive
+
+Stores your vault as a file in Google Drive. Two modes are available:
+- **App data folder** (hidden): the file lives in a special folder only accessible by the app.
+- **User folder**: the file is stored in a regular, user-visible folder.
+
+Authentication uses OAuth 2.0 with PKCE (no client secret stored in the app).
+
+### SOLID Pod
+
+Stores your vault in a [SOLID](https://solidproject.org/) pod. Authentication uses SOLID's OpenID Connect flow with DPoP token binding.
 
 ## How it works
 
-### Generate a password
+### Static key generation
 
-1. Input your master key in the `Master key` field.
-2. Go to the `Password` tab.
-3. Type something in the `Public part`. You can also click the `Generate` button to get a unique public part, if you don't care about remembering it.<br/>
-Note that as you type, once the public part is long enough, a password is generated in the `Password` field and it is also copied to the clipboard for you to paste it somewhere later on, if the `Copy` button flashed green. If it flashed red, that means something failed.
-    - You can set some options if you need to, by clicking the `...` button:
-    ![](./Documentation/05_password_options.png)
-    Here the fields `Alphabet` and `Length` appear, the former let you choose the available characters that can end up in the generated password, the latter let you choose the generated password length.
-4. Copy (if not already done) the password generated in the `Password` field and use it anywhere needed.
+Input elements:
+1. Your master key (string → UTF-8 bytes)
+2. A public part (string → UTF-8 bytes)
+3. A purpose value (string → UTF-8 bytes)
 
-For a given master key and a given public part, the same password is generated, so if the public part changes, you get a different password, and that's all the point.
+A derived key is computed using [PBKDF2] from `1`, with `2` as salt, using [SHA-512] as the hash algorithm.
+Then `3` is hashed using [HMAC]-[SHA-512] with 256 bits from the derived key as the secret.
+The output is encoded using a configurable alphabet.
 
-Of course if you type a given public part correctly but make a mistake in your master key, you get the wrong password, so watch out.
+| Version | PBKDF2 iterations |
+|---|---|
+| v1 | 100,000 |
+| v2 | 400,000 |
 
-The public part is something you have to remember if you do not use the vault feature. To be honest, remembering the public part for all the services you use can be quite challenging, so the vault is getting handy, and in this case, because you do not have to remember the public part, you can just generate it with the `Generate` button.
+### Secret encryption
 
-> **Warning**
-> At least for GitHub, the public part should be something you know and remember.<br/>
-> If you generate a random string, and you push it to your vault, then when you need to setup a new device, you will need your password to access GitHub, and the public part to generate your GitHub password will be in your vault, in GitHub, and you will have locked yourself out.
+Secrets are encrypted using AES-GCM via the browser's SubtleCrypto API, with a key derived from your master key. The encrypted blob is stored in the vault alongside a version tag for future-proof decryption.
 
-### Encrypt / decrypt
+### Vault integrity
 
-1. Input your master key in the `Master key` field.
-2. Go to the `Ciphers` tab.
-3. Type a cipher name in the `Cypher name` field. This is just for you to understand what cipher it is, and is only relevant when you store your cipher in the vault.
-4. Type what you want to encrypt or decrypt in the box below on the left, and click either the `Encrypt` or `Decrypt` button for your clear text to be encrypted in the box on the right, or your encrypted text to be decrypted and appear in the box on the right.
-    ![](./Documentation/06_cipher.png)
+The vault file includes an HMAC signature computed over the canonical JSON content. On load, the signature is verified to detect tampering or corruption.
 
-## How to use the vault
-
-### Create a vault
-
-For the moment, [ItchyPassword] has only one vault storage implementation, and it is based on GitHub repository, meaning that your data is stored in a JSON file in a GitHub repository, and pushing changes is actually making commits to the repository, so your data is also versioned and can be reverted in case of problem.
-
-So first, you will need a GitHub account.
-
-You can create an account very quickly and for free if you don't already have one. Just go to https://github.com and sign up.
-
-By the way, if you are just about to sign up, I recommend you to already use [ItchyPassword] to create your GitHub password.
-
-Quick summary if you didn't read the sections above:
-
-1. Open https://tanukisharp.github.io/ItchyPassword/ in a web browser.
-2. In the `Master key` field, type your master key.
-3. In the `Password` tab, type a public part. I recommend `github.com/<your-email-address>`, but anything long enough and that you will always remember for sure will do.
-4. Copy the resulting password in the `Password` field in order to use it. ([ItchyPassword] does it for you though)
-
-Here I assume you know how to use GitHub, teaching you that is beyond the scope of this document.
-
-Once you have a GitHub account and you are logged in, create a repository that will be used to store your data. By convention, name it `ItchyPasswordVault`, but you are really free to name it as you please.
-
-### Setup your vault
-
-1. Open https://tanukisharp.github.io/ItchyPassword/ in a web browser.
-2. Enter your master key in the `Master key` field.
-3. Go to the `Vault` tab
-4. Click the `Refresh` button. This will trigger the setup procedure since it is not setup yet.
-5. A dialog should open asking you for a username:
-    ![](./Documentation/07_setup_vault_step_01.png)
-    Enter the username you used to create your GitHub account. Note that this is not your email address.
-6. In the next dialog, you are asked to enter a GitHub repository name:
-    ![](./Documentation/07_setup_vault_step_02.png)
-    Enter the name of the repository you created to store your vault data. The field is pre-filled with the value `ItchyPasswordVault`, but you have to enter the name of the repository you created.
-7. In the next dialog, you are asked to type the name of your vault file:
-    ![](./Documentation/07_setup_vault_step_03.png)
-    You can name the file that will store your data the way you want. By default the value `vault.json` is pre-filled, but again, this is a free field.
-8. In the next (and last) dialog, you are asked to enter a `Personal access token`:
-    ![](./Documentation/07_setup_vault_step_04.png)
-    **Note:** I detail the procedure to generate a personal access token in the section `Generate a personal access token (on GitHub)` below.<br/>
-    This token is for GitHub to grant you access to the `ItchyPasswordVault` repository. This is required to fetch the data file from GitHub, and also to push changes to the data file back to GitHub.
-9. Once you have a personal access token, it is encrypted with your master key and stored in the browser's local storage. That's why you needed to enter your master key first, at step 2.<br/>
-Anyway, if you click the `Refresh` button of the `Vault` tab without having a master key entered first, [ItchyPassword] tells you that you must enter a master key first, to make sure you can't accidentally paste a personal access token that would not be persisted, or even worst, persisted in clear. 😱
-
-Once the procedure is done, the `Refresh` button should flash green to indicate that everything went according to plan. Otherwise, the button will flash red to indicate that an error occurred.
-
-In case of failure, you are mostly clueless, unfortunately. The `Logs` tab is supposed to help, but most of the time, it doesn't, sorry about that. 🫤
-
-In case of success, your browser has an encrypted personal access token in its local storage, meaning that:
-- on another browser or in another session of the same browser, you won't have this token
-- only your master key can make this token usable (decrypt).
-- from now on, you will only need to type your master key and click the `Refresh` button in order to get your vault loaded
-
-### Push to vault
-
-The `Password` and `Ciphers` tabs have a `Push to vault` button. Roughly, when clicking this button that is just below the `Storage data` text field, everything that is in this field (the `Storage data`) will be pushed to your vault on GitHub.
-
-Here is an image of the empty `Password` tab:
-![](./Documentation/09_vault_05.png)
-
-#### Password case
-
-Hereafter is an image of a real world password generation:
-
-![](./Documentation/09_vault_06.png)
-
-The `Public part` is filled with long enough text (must be at least 8 characters). You can see that the `Password` field has also been filled up by [ItchyPassword].
-
-The `Storage path` describes "where" you want to store the details used to (re-)generate the password. By "where", I mean in which object node, you can see this as directories and sub-directories. You can add (virtually) as many as want.
-
-The `alphabet`, `lenght` and `public` properties are the key ingredients to generate the password, and are what will be needed to re-generate it when ou will need it.
-
-The `customKeys` property is defined by the `Custom keys` text field at the bottom of the image. This can be empty, but if not, it must be a valid JSON object text representation. Custom keys is free data for you to remember, they are not encrypted and have no impact in password generation.
-
-A good use case is when a service assigns you a huge ID that you will never remember but need to sign-in, you may want to put it here.
-
-When clicking the `Push to vault` button, the exact content of the `Storage data` field will be pushed to GitHub in the form of a commit, and will appear as a "diff" in the vault data file.
-
-#### Cipher case
-
-The `Ciphers` feature work mostly the same way as the `Password` feature.
-
-Hereafter is a real world cipher:
-
-![](./Documentation/09_vault_07.png)
-
-Unlike a password, you may have multiple ciphers in a single node, and therefore you have to give it a name, via the `Cipher name` field.
-
-Below, the left text field is writable and is where the content you want to encrypt (or decrypt) goes. Then click the `Encrypt` or `Decrypt` button, and the result goes into the text field on the right, which is read-only, to make sure you cannot edit it by mistake before pushing to your vault.
-
-The `Storage path` and `Custom keys` fields work the same as in the `Password` feature.
-
-#### Update case
-
-For both `Password` and `Ciphers` feature, you may have notice a `Matching path` gray label just below the `Storage path` field.
-
-This is for, in case you need to update an existing node, you can confirm you didn't mistake. Also, when you create a new password or cipher, it can be useful to check if you didn't already input an existing path by mistake.
-
-![](./Documentation/09_vault_08.png)
-
-### Use the vault
-
-Once your vault is correctly setup and functional, clicking the `Refresh` button should fetch the vault data file and display it, as follow:
-
-![](./Documentation/09_vault_01.png)
-
-The `Clear settings` button will erase the local storage, the four values you were asked via dialog boxes when you have setup your vault.<br/>
-Before clearing the settings, it will ask you for confirmation, so if you click the button by mistake, no worries.
-
-The `View settings` will just display what's in the local storage, except the personal access token, as follow:
-
-![](./Documentation/09_vault_02.png)
-
-This can be useful to confirm what you entered if something goes wrong.
-
-The `Search` box allows you to filter elements with a specific text. The fuzzy search mode will find more matches then the exact mode, as follow.
-
-Fuzzy:
-![](./Documentation/09_vault_03.png)
-
-Exact:
-![](./Documentation/09_vault_04.png)
-
-Finally, in the `Tree view`, you should see buttons appear. A button is created for each password and cipher, alongside an edit cipher button.
-
-Clicking on a password or cipher button will automatically re-generate the password or cipher and copy it to the clipboard, for your convenience.
-
-Clicking on the edit cipher button will open the `Ciphers` tab and copy the encrypted and decrypted content in the UI.
+A migration service handles upgrading vaults from older formats.
 
 ### Generate a personal access token (on GitHub)
 
-The procedure described below is correct as of April 2023.<br/>
-Note that by the time you read it, it may have changed on GitHub side and not updated here.
+This section only applies if you use the **GitHub** vault connector.
+
+> The procedure below is accurate as of 2026, but may change on GitHub's side.
 
 1. Open https://github.com and log in.<br/>
     If you are setting up things on a new device:
 
     a. Open [ItchyPassword].
 
-    b. Enter your master key in `Master key` field.
+    b. Enter your master key.
 
-    c. Enter your predictable public part for GitHub, such as `github.com/<your-email-address>`.
+    c. Enter your predictable public part for GitHub (e.g., `github.com/<your-email-address>`) in the Static key section.
 
-    d. Login to GitHub with the generated password in the `Password` field.
+    d. Log in to GitHub with the generated static key.
 
-2. Once logged-in to GitHub, find the `Settings`, then `Developer settings`, then `Personal access tokens`.
-3. Here you can choose `Tokens (classic)` or `Fine-grained tokens`.<br/>
-    I recommend `Fine-grained tokens`, but the classic will do too.
-4. Click on the `Generate new token` button.
-5. On the token creation page, for the field `Token name` (or `Note` if you chose `Tokens (classic)`), I recommend to name the token `ItchyPassword (<user> / <device-type> / <browser-name>)`, but again, this field is completely up to you.
-    > **Warning**
-    > As of now, the fine-grained token name is limited to 40 characters, which clearly sucks in my opinion. I opened an issue to ask, but nobody gives a damn.
-    > https://github.com/orgs/community/discussions/41568
+2. Go to `Settings` → `Developer settings` → `Personal access tokens`.
+3. Choose `Fine-grained tokens` (recommended) or `Tokens (classic)`.
+4. Click `Generate new token`.
+5. Name the token. Recommended naming is: `ItchyPassword (<user> / <device> / <browser>)`.
 
-    The reason for specifying all this (user, device type and browser), is because:
-    - `user`: you may at some point need to generate a token for another person, like your child
-    - `device`: you may want to know on which device this token is stored, in case you loose it (the device), you know which token to invalidate
-    - `browser`: you may use several browsers on the same device, and each will need its own token
-
-    Here are some examples with my naming convention:
-    - `ItchyPassword (Alice / Living room TV desktop / Edge)`
+    Examples:
+    - `ItchyPassword (Alice / Desktop / Edge)`
     - `ItchyPassword (Bob / Pixel 6a / Chrome)`
-    - `ItchyPassword (Bob / Pixel 6a / Firefox)`
 
-6. For the `Expiration` field, you can safely set 90 days, but avoid setting a longer duration.<br/> This means you will have to re-generate a new token every 90 days (3 months), but re-generating is much simpler.<br/>
-    > **Note**
-    > If you need to generate a token for testing something or because you need to access one of your information only once from another device, I recommend in this case to generate a token with the shortest lifetime possible.
-7. For the last setting:
+    This helps identify which token to revoke if a device is lost.
 
-    a. If you chose `Tokens (classic)`, then for the field `Select scope`, check the `repo` box, and your screen should look like this:
-    ![](./Documentation/08_generate_token_01.png)
+6. Set `Expiration` to 90 days or less.
+7. Configure permissions:
 
-    b. If you chose `Fine-grained tokens`, then:
-    - Set a `Description` if you want. Can be useful if the `Token name` field is too limiting.
-    - Make sure the `Resource owner` is set to you (or the right owner)
-    - In the `Repository access` section, you must select `Only select repositories`, and select only your "ItchyPasswordVault" repository. This is all the point of fine-grained tokens, they can be limited to a given set of repositories.
-    - In the `Permissions` section, unfold the `Repository permissions` section, find the `Contents` sub-section and set the `Access` dropdown to `Read and write`.
+    **Fine-grained tokens**:
+    - `Repository access` → `Only select repositories` → select your vault repository.
+    - `Permissions` → `Repository permissions` → `Contents` → `Read and write`.
 
-    Your screen should look like this:
-    ![](./Documentation/08_generate_token_02.png)
-    **Note** that `Metadata` permission is mandatory and will automatically be set to `Read-only`.
-8. Finally, click the `Generate token` button.<br/>
-    You should end up on a page with a token that you can copy to the clipboard. This is the personal access token you have to provide to [ItchyPassword] in the `Vault` tab.
+    **Classic tokens**:
+    - Check the `repo` scope.
 
-## Details
+8. Click `Generate token` and copy the result into the GitHub connector settings in [ItchyPassword].
 
-### Passwords generation
+### Set up a SOLID pod
 
-#### Version 1
+This section only applies if you use the **SOLID Pod** vault connector.
 
-Input elements are:
+You need a SOLID pod from any Solid-OIDC compatible provider (e.g., [Inrupt](https://inrupt.com/)). The connector requires two URLs that are typically on **different subdomains**, which can be confusing at first:
 
-1. The user's master key (string converted to UTF-8 bytes)
-2. A public key (string converted to UTF-8 bytes)
-3. A purpose value (string converted to UTF-8 bytes)
+- **Provider URL** (Issuer): the OIDC identity provider, used for authentication. For example, `https://login.inrupt.com`.
+- **Vault file URL**: the full URL of the vault file in your pod storage. For example, `https://storage.inrupt.com/<your-pod-id>/ItchyPassword/vault.json`.
 
-A derived key is computed using [PBKDF2] from `1`, using `2` as salt, [SHA-512] as hash algorithm with 100'000 iterations.
-Then, `3` is hashed using [HMAC] [SHA-512] algorithm with 256 bits from the derived key as the secret.
-The output of the hash is the final password to be used, which is then encoded using a custom alphabet.
+These are different servers — one handles identity, the other handles data storage. You can usually find your storage URL by logging into your pod provider's dashboard and looking at your pod's root URL, then appending a path of your choice (e.g., `ItchyPassword/vault.json`).
 
-#### Version 2
+An optional **Client ID** field is available. Most providers support dynamic client registration, so you can leave it empty and let ItchyPassword register automatically. Fill it in only if your provider requires a pre-registered client.
 
-This is the same as version 1 but with 400'000 iterations.
+> **Note**
+> The DPoP key pair used for token binding is ephemeral — generated fresh in the browser each session and never stored anywhere.
 
 [HMAC]: https://en.wikipedia.org/wiki/HMAC
 [SHA-512]: https://en.wikipedia.org/wiki/SHA-2
 [PBKDF2]: https://en.wikipedia.org/wiki/PBKDF2
-[ItchyPassword]: https://tanukisharp.github.io/ItchyPassword/
+[SubtleCrypto]: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto
+[ItchyPassword]: https://tanukisharp.github.io/ItchyPassword/vnext
