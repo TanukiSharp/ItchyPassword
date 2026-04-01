@@ -265,6 +265,13 @@ An optional **Client ID** field is available. Most providers support dynamic cli
 > **Note**
 > The DPoP key pair used for token binding is ephemeral — generated fresh in the browser each session and never stored anywhere.
 
+## Legal
+
+- [Privacy Policy](https://tanukisharp.github.io/ItchyPassword/vnext/privacy-policy.html)
+- [Terms of Service](https://tanukisharp.github.io/ItchyPassword/vnext/terms-of-service.html)
+
+
+
 [HMAC]: https://en.wikipedia.org/wiki/HMAC
 [SHA-512]: https://en.wikipedia.org/wiki/SHA-2
 [PBKDF2]: https://en.wikipedia.org/wiki/PBKDF2
