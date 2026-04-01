@@ -151,6 +151,53 @@ Another debug page that displays the encrypted vault content as-is (the raw JSON
 
 The app supports **System**, **Light**, and **Dark** themes. The preference is persisted in local storage.
 
+## Getting started
+
+If you're new to ItchyPassword and not a power user, the easiest way to get going is with the **Google Drive** connector. It requires no developer setup — just a Google account. The GitHub connector requires creating a repository and a personal access token, and SOLID pods are still niche. For most people, Google Drive is the simplest choice.
+
+Because your vault is stored on Google Drive, you need to be able to log in to Google **without** having access to the vault. It is strongly recommended to change your Google password to a **Static key** — a deterministic value you can always regenerate from your master key and a public part — especially if your current password is not strong enough. This way, you avoid a lock-out situation where you can't access the vault because you can't log in to Google.
+
+### New users
+
+1. Open [ItchyPassword] and enter your master key.
+2. You'll be redirected to the **Settings** page to configure a connector. Skip this for now.
+3. Navigate to the **Vault** page and click the `+` button to create a new item.
+4. Choose **Static key** as the type.
+5. Set the **public part** to something memorable, for example `google.com/myemail@gmail.com`.
+6. Leave alphabet, length, and version at their defaults so you can regenerate this key from memory alone.
+7. Copy the generated static key and go to your Google account settings to change your password to it.
+8. Go back to **Settings** and configure the **Google Drive** connector. Authenticate with your (new) Google password.
+9. Save your vault. You're all set.
+
+> **Warning**
+> Make sure you remember the public part you chose for Google. If you forget it, you won't be able to regenerate the static key, and you'll be locked out of both Google and your vault.
+
+### Existing users migrating to Google Drive
+
+If you already use ItchyPassword with another connector (e.g., GitHub) and want to switch to Google Drive:
+
+#### 1. Load your existing vault
+
+The previous version of ItchyPassword only supported the GitHub connector, so your vault is likely stored there.
+
+1. Open [ItchyPassword] and enter your master key.
+2. Go to **Settings** and configure the **GitHub** connector with your repository details and personal access token (PAT).
+3. Load your vault from GitHub to make sure all your items are available.
+
+#### 2. Ensure your Google password is a Static key
+
+4. Check how your Google password is currently stored in the vault. If it's already a **Static key**, skip to step 8.
+5. If your Google password is stored as a **Secret**, you need to replace it. The type of a vault item cannot be changed, so you'll need to delete the existing Secret and create a new Static key in its place.
+6. Create a new **Static key** item with a memorable public part (e.g., `google.com/myemail@gmail.com`). Keep the default alphabet, length, and version.
+7. Copy the generated static key and change your Google account password to it. Then delete the old Secret item. Save your vault to GitHub so the changes are persisted.
+
+#### 3. Transfer your vault to Google Drive
+
+8. Go to **Settings** and activate the **Google Drive** connector. A Google authentication popup will open — log in with your Google password.
+9. Click **Export** to Google Drive to transfer all your existing vault content.
+
+You can keep the GitHub connector configured alongside Google Drive, or clear the configuration once you've confirmed everything works.
+
 ## Vault connectors
 
 Vault connectors are storage backends that handle fetching and saving the encrypted vault blob. You can configure them in the **Settings** page. The app supports multiple connectors, and you choose which one to use for reading and writing.
