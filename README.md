@@ -267,8 +267,8 @@ An optional **Client ID** field is available. Most providers support dynamic cli
 
 ## Legal
 
-- [Privacy Policy](https://tanukisharp.github.io/ItchyPassword/vnext/privacy-policy.html)
-- [Terms of Service](https://tanukisharp.github.io/ItchyPassword/vnext/terms-of-service.html)
+- [Privacy Policy](https://tanukisharp.github.io/ItchyPassword/privacy-policy.html)
+- [Terms of Service](https://tanukisharp.github.io/ItchyPassword/terms-of-service.html)
 
 
 
