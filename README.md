@@ -343,6 +343,13 @@ The output of the hash is the final password to be used, which is then encoded u
 
 This is the same as version 1 but with 400'000 iterations.
 
+## Legal
+
+- [Privacy Policy](https://tanukisharp.github.io/ItchyPassword/privacy-policy.html)
+- [Terms of Service](https://tanukisharp.github.io/ItchyPassword/terms-of-service.html)
+
+
+
 [HMAC]: https://en.wikipedia.org/wiki/HMAC
 [SHA-512]: https://en.wikipedia.org/wiki/SHA-2
 [PBKDF2]: https://en.wikipedia.org/wiki/PBKDF2
