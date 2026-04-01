@@ -1,27 +1,111 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>ItchyPassword</title>
-    <base href="/ItchyPassword/" />
-    <link rel="stylesheet" href="css/app.css" />
-    <link rel="icon" type="image/png" href="favicon.png" />
+    <meta name="description" content="ItchyPassword - A privacy-first, offline-capable password manager using Google Drive for secure sync.">
+
+    <meta property="og:title" content="ItchyPassword" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://tanukisharp.github.io/ItchyPassword/" />
+    <meta property="og:description" content="Secure password manager built with Blazor WebAssembly. No backend, no telemetry, your data stays yours." />
+
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif; line-height: 1.6; color: #24292e; max-width: 900px; margin: 0 auto; padding: 2rem; }
+        h1, h2, h3 { border-bottom: 1px solid #eaecef; padding-bottom: .3em; }
+        code { background-color: rgba(27,31,35,.05); border-radius: 3px; padding: .2em .4em; font-family: monospace; }
+        pre { background-color: #f6f8fa; padding: 16px; border-radius: 6px; overflow: auto; }
+        table { border-collapse: collapse; width: 100%; margin: 1rem 0; }
+        table, th, td { border: 1px solid #dfe2e5; padding: 6px 13px; }
+        blockquote { border-left: .25em solid #dfe2e5; color: #6a737d; padding: 0 1em; margin: 1rem 0; }
+        img { max-width: 100%; height: auto; border-radius: 6px; }
+        .footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #eaecef; font-size: 0.9em; }
+        .alert { background: #fff5b1; padding: 10px; border-radius: 5px; border: 1px solid #eddb29; }
+    </style>
 </head>
-
 <body>
-    <h1>ItchyPassword</h1>
 
-    ItchyPassword is a web-based password manager, that should be usable for anyone.<br/>
-    It works fully offline with all the cryptography happening in the browser. It requires a browser with SubtleCrypto API available.<br/>
+    <header>
+        <h1>ItchyPassword</h1>
+        <p><strong>Privacy-first, offline-capable password manager.</strong></p>
+    </header>
 
-    Works fine with Chromium-based browsers (Edge, Chrome) and Firefox on desktop (Windows 10 and 11) and mobile (Chrome and Edge on Android).<br/>
+    <section>
+        <p>This project is built with <strong>Blazor WebAssembly</strong>. All cryptography happens locally in your browser via the SubtleCrypto API. There is no server, no backend, and no telemetry.</p>
 
-    There is the possibility to plug vault storages to automatically fetch and store data from/to external services, so this will require an internet access, but it is optional and those actions (fetch/store) can be performed manually instead.<br/>
+        <div class="alert">
+            <strong>Note:</strong> The Blazor version (v2) is available at:
+            <a href="https://tanukisharp.github.io/ItchyPassword/vnext">tanukisharp.github.io/ItchyPassword/vnext</a>
+        </div>
+    </section>
 
-    In any case, your master key never leaves the machine and is never stored anywhere, neither in clear nor even encrypted. Never. Meaning you have to enter it each time you start the application or refresh the page. This is by design.<br/>
+    <hr>
 
-    <a href="privacy-policy.html">Privacy Policy</a><br/>
-    <a href="terms-of-service.html">Terms of Service</a>
+    <h2>How it works with Google Drive</h2>
+    <p>
+        ItchyPassword can optionally use <strong>Google Drive</strong> as a storage connector to sync your encrypted vault across devices.
+        When you grant access, the application uses the <code>drive.file</code> scope, meaning:
+    </p>
+    <ul>
+        <li>It can <strong>only</strong> access files that it has created itself.</li>
+        <li>It <strong>cannot</strong> see, read, or delete any other files in your Google Drive.</li>
+        <li>Your data is encrypted with your Master Key <em>before</em> being uploaded. Even Google cannot read your passwords.</li>
+    </ul>
+
+    <h2>Features overview</h2>
+
+    <h3>Master key security</h3>
+    <p>Your master key never leaves your machine and is never stored anywhere — not even encrypted. It lives in memory only while the tab is open.</p>
+
+    <h3>Vault Management</h3>
+    <ul>
+        <li><strong>Static keys:</strong> Deterministic passwords derived from your master key (no storage needed).</li>
+        <li><strong>Secrets:</strong> Encrypted free-form text (notes, existing passwords).</li>
+        <li><strong>TOTP support:</strong> Live 6-digit codes for 2FA.</li>
+        <li><strong>Metadata:</strong> Attach encrypted or plain notes to any item.</li>
+    </ul>
+
+    <h2>Build & Development</h2>
+    <p>Requires .NET 10 SDK or later.</p>
+    <pre><code>dotnet publish -c Release -p:RunAOTCompilation=true</code></pre>
+
+    <h2>Technical Details</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Feature</th>
+                <th>Implementation</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Cryptography</td>
+                <td>SubtleCrypto API (AES-GCM, PBKDF2, HMAC-SHA-512)</td>
+            </tr>
+            <tr>
+                <td>Storage</td>
+                <td>GitHub, Google Drive, SOLID Pod, or Local only</td>
+            </tr>
+            <tr>
+                <td>Framework</td>
+                <td>Blazor WebAssembly (.NET 10)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <footer class="footer">
+        <h3>Legal Information</h3>
+        <p>
+            To comply with Google's verification requirements, please find our legal documents below:
+        </p>
+        <ul>
+            <li><a href="./privacy-policy.html">Privacy Policy</a></li>
+            <li><a href="./terms-of-service.html">Terms of Service</a></li>
+        </ul>
+        <p>&copy; 2026 TanukiSharp - Hosted on GitHub Pages</p>
+    </footer>
+
 </body>
+</html>
