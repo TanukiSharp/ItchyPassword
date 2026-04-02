@@ -28,7 +28,7 @@
 
     <div class="vault-search">
         <div class="vault-search-row">
-            <input class="input vault-search-input" type="text" placeholder="Search items..." value="@AppState.SearchQuery" @oninput="OnSearchQueryChanged" />
+            <input @ref="_searchInput" class="input vault-search-input" type="text" placeholder="Search items..." value="@AppState.SearchQuery" @oninput="OnSearchQueryChanged" />
             <select class="input vault-search-mode" value="@_searchMode" @onchange="OnSearchModeChanged" title="Search mode">
                 <option value="@SearchMode.Contains">Contains</option>
                 <option value="@SearchMode.Fuzzy">Fuzzy</option>
@@ -105,6 +105,7 @@
     private const string DisplayFilterStorageKey = "vault_display_filter";
     private const string SearchModeStorageKey = "vault_search_mode";
 
+    private ElementReference _searchInput;
     private string _displayFilter = "all";
     private SearchMode _searchMode = SearchMode.Contains;
     private List<VaultItemMatch> _filteredItems = [];
@@ -153,6 +154,7 @@
 
         _filteredItems = BuildFilteredItems();
         await Storage.SetItemAsync(SearchModeStorageKey, _searchMode.ToString(), CancellationToken.None);
+        await _searchInput.FocusAsync();
     }
 
     private void CreateNew()
