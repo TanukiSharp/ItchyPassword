@@ -62,7 +62,7 @@ A confirmation field lets you double-check your input: it turns green when both 
 
 If you don't submit your master key within ~30 seconds of inactivity (no typing), it is automatically cleared from the input field for security reasons. Once submitted, the key remains in memory until the page is closed, reloaded, or discarded by the browser (which can happen on mobile).
 
-![](./Documentation/screenshots/01_master_key.png)
+![](./Documentation/screenshots/01-master-key.png)
 
 > **Note**
 > Your master key should be long and unpredictable.
@@ -74,7 +74,7 @@ If you don't submit your master key within ~30 seconds of inactivity (no typing)
 
 The vault is a simple JSON file that stores all your items (static keys, secrets). It can be easily archived, copied, or backed up like any other file. Once your master key is entered and a connector is configured, the vault is fetched and loaded — but **items are not all decrypted at once**. Each item is decrypted on-demand as you navigate to it, keeping exposure to a minimum.
 
-![](./Documentation/screenshots/02_vault.png)
+![](./Documentation/screenshots/02-vault.png)
 
 From the vault view, you can:
 - **Search** items by name or metadata, with three search modes: Contains, Fuzzy, and Exact, with match highlighting.
@@ -92,7 +92,7 @@ A static key is a **deterministic** value derived from your master key and a pub
 
 Only the public part, alphabet, length, and version are stored in the vault — all unencrypted, and none of it is sensitive. The generated key itself is never stored anywhere.
 
-![](./Documentation/screenshots/03_static_key.png)
+![](./Documentation/screenshots/03-static-key.png)
 
 Options include:
 - **Public part**: a memorable string that, combined with your master key, produces the key. For example, `github.com/myemail@example.com`.
@@ -114,7 +114,7 @@ The output supports two display modes:
 
 A secret is a **free-form text**, stored encrypted with your master key. Unlike static keys, secrets are not deterministic value once encrypted — they are actual ciphertext in the vault.
 
-![](./Documentation/screenshots/04_secret.png)
+![](./Documentation/screenshots/04-secret.png)
 
 Secrets support three display modes:
 - **Plaintext**: view and edit the decrypted content.
@@ -133,7 +133,7 @@ Every vault item (static key or secret) can have **key-value metadata** attached
 > **Note**
 > When encrypting metadata, only the value is encrypted, not the key. This lets you search for items by metadata key even when the values are protected.
 
-![](./Documentation/screenshots/05_metadata.png)
+![](./Documentation/screenshots/05-metadata.png)
 
 ### Empty page
 
