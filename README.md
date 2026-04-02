@@ -161,13 +161,15 @@ Because your vault is stored on Google Drive, you need to be able to log in to G
 
 1. Open [ItchyPassword] and enter your master key.
 2. You'll be redirected to the **Settings** page to configure a connector. Skip this for now.
-3. Navigate to the **Vault** page and click the `+` button to create a new item.
-4. Choose **Static key** as the type.
-5. Set the **public part** to something memorable, for example `google.com/myemail@gmail.com`.
-6. Leave alphabet, length, and version at their defaults so you can regenerate this key from memory alone.
-7. Copy the generated static key and go to your Google account settings to change your password to it.
-8. Go back to **Settings** and configure the **Google Drive** connector. Authenticate with your (new) Google password.
-9. Save your vault. You're all set.
+3. Navigate to the **Static key** page from the sidebar. This page lets you generate a static key without creating a vault item yet.
+4. Set the **public part** to something memorable, for example `google.com/myemail@gmail.com`.
+5. Leave alphabet, length, and version at their defaults so you can regenerate this key from memory alone.
+6. Copy the generated static key and go to your Google account settings to change your password to it.
+7. Go back to [ItchyPassword], navigate to **Settings**, and configure the **Google Drive** connector. For more information about setting up the **Google Drive** connector, refer to the **Google Drive** section below. Once done, click the **Activate** button.
+8. A Google authentication popup will open — log in with your (new) Google password.
+9. Navigate to the **Vault** page and click the `+` button to create a new item.
+10. Choose **Static key** as the type and set the same public part you used in step 4 (e.g., `google.com/myemail@gmail.com`). Keep the default alphabet, length, and version.
+11. Save the item. You're all set.
 
 > **Warning**
 > Make sure you remember the public part you chose for Google. If you forget it, you won't be able to regenerate the static key, and you'll be locked out of both Google and your vault.
@@ -218,11 +220,51 @@ The PAT is encrypted with your master key before being stored in local storage.
 
 ### Google Drive
 
-Stores your vault as a file in Google Drive. Two modes are available:
-- **App data folder** (hidden): the file lives in a special folder only accessible by the app.
-- **User folder**: the file is stored in a regular, user-visible folder.
+Stores your vault as a file in Google Drive. Authentication uses OAuth 2.0 with PKCE (no client secret stored in the app).
 
-Authentication uses OAuth 2.0 with PKCE (no client secret stored in the app).
+Two storage modes are available:
+
+> **Warning**
+> Please read the pros and cons of each mode carefully before choosing. The implications — especially around data retention when revoking access and manual backup capabilities — are significant and changing later is possible but not user friendly.
+
+#### App data folder (default)
+
+The vault file is stored in a hidden, app-specific area of your Google Drive (`appDataFolder`). This space is managed entirely by ItchyPassword and is **not visible** in the Google Drive UI — you won't see it when browsing your files.
+
+**Pros:**
+- Keeps your Google Drive clean — no extra folders or files cluttering your drive.
+- The vault cannot be accidentally renamed, moved, or deleted by the user.
+- Uses the most restrictive OAuth scope (`drive.appdata`), which only grants access to the app's own hidden folder — ItchyPassword cannot see or touch any of your other Drive files.
+- No other application can access the vault file — the app data folder is isolated per application.
+
+**Cons:**
+- You cannot manually browse, download, or back up the vault file from Google Drive.
+- If you uninstall or revoke ItchyPassword's access from your Google account, the hidden app data is deleted by Google — your vault will be lost unless you have a backup elsewhere.
+- Debugging or manual recovery is harder since the file is not directly accessible.
+
+#### User folder
+
+The vault file is stored in a regular, user-visible folder in your Google Drive.
+
+**Pros:**
+- The vault file is visible in your Google Drive — you can browse, download, or back up the file manually at any time.
+- Revoking the app's access does **not** delete the file — it stays in your Drive like any other file.
+- Easier to migrate or share across devices since you can see exactly where the file is.
+
+**Cons:**
+- The file can be accidentally renamed, moved, or deleted by the user, which would break the connector.
+- Uses a broader OAuth scope (`drive.file`), which grants ItchyPassword access to files it creates or that the user opens with it. This is still reasonably scoped, but less restrictive than the app data mode.
+- Adds a visible folder to your Google Drive.
+
+#### Folder path (User folder mode only)
+
+When using User folder mode, you need to specify a **folder path** (not a file path). For example, `ItchyPassword` or `ItchyPassword/Vaults`. The folder is created automatically if it does not exist.
+
+Inside this folder, two files are created and managed by the app:
+- `vault.json` — the encrypted vault blob.
+- `history.txt` — a log of vault operations (save timestamps, etc.).
+
+Do not rename or move these files manually.
 
 ### SOLID Pod
 
