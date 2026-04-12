@@ -16,6 +16,4 @@ public readonly record struct VaultItemMatch(
         : this(item, SearchResult.NoMatch, [])
     {
     }
-
-    public bool HasMetadataMatch => MetadataMatches.Count > 0;
 }

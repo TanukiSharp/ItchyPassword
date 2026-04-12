@@ -63,16 +63,29 @@
                                 @RenderSegmentedName(match)
                             </span>
 
-                            @if (match.HasMetadataMatch)
+                            @if (string.IsNullOrWhiteSpace(AppState.SearchQuery) == false && match.Item.Metadata is not null && match.Item.Metadata.Count > 0)
                             {
                                 <div class="vault-metadata-matches">
-                                    @foreach (MetadataMatch metaMatch in match.MetadataMatches)
+                                    @foreach (MetadataEntryV2 meta in match.Item.Metadata)
                                     {
+                                        int metaIdx = match.MetadataMatches.FindIndex(m => m.Key == meta.Key && m.Value == meta.Value);
                                         <span class="vault-metadata-tag">
-                                            <span>@RenderHighlightedText(metaMatch.Key, metaMatch.KeyResult.Ranges)</span>
-                                            @if (string.IsNullOrEmpty(metaMatch.Value) == false)
+                                            @if (metaIdx >= 0)
                                             {
-                                                <span>: @RenderHighlightedText(metaMatch.Value, metaMatch.ValueResult.Ranges)</span>
+                                                MetadataMatch metaMatch = match.MetadataMatches[metaIdx];
+                                                <span>@RenderHighlightedText(metaMatch.Key, metaMatch.KeyResult.Ranges)</span>
+                                                @if (string.IsNullOrEmpty(metaMatch.Value) == false)
+                                                {
+                                                    <span>: @RenderHighlightedText(metaMatch.Value, metaMatch.ValueResult.Ranges)</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span>@meta.Key</span>
+                                                @if (string.IsNullOrEmpty(meta.Value) == false)
+                                                {
+                                                    <span>: @meta.Value</span>
+                                                }
                                             }
                                         </span>
                                     }
