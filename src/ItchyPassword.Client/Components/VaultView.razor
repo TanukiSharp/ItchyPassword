@@ -7,6 +7,7 @@
 @inject IVaultCryptoService VaultCrypto
 @inject NavigationManager Nav
 @inject ILocalStorageService Storage
+@inject IJSRuntime JS
 
 <div class="card vault-card">
     <div class="card-header vault-header">
@@ -29,7 +30,7 @@
     <div class="vault-search">
         <div class="vault-search-row">
             <input @ref="_searchInput" class="input vault-search-input" type="text" placeholder="Search items..." value="@AppState.SearchQuery" @oninput="OnSearchQueryChanged" />
-            <select class="input vault-search-mode" value="@_searchMode" @onchange="OnSearchModeChanged" title="Search mode">
+            <select @ref="_searchModeSelect" class="input vault-search-mode" value="@_searchMode" @onchange="OnSearchModeChanged" title="Search mode">
                 <option value="@SearchMode.Contains">Contains</option>
                 <option value="@SearchMode.Fuzzy">Fuzzy</option>
                 <option value="@SearchMode.Exact">Exact</option>
@@ -106,6 +107,8 @@
     private const string SearchModeStorageKey = "vault_search_mode";
 
     private ElementReference _searchInput;
+    private ElementReference _searchModeSelect;
+    private bool _focusOnBlurAttached;
     private string _displayFilter = "all";
     private SearchMode _searchMode = SearchMode.Contains;
     private List<VaultItemMatch> _filteredItems = [];
@@ -125,6 +128,18 @@
         {
             _searchMode = parsedMode;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender == false || _focusOnBlurAttached)
+        {
+            return;
+        }
+
+        _focusOnBlurAttached = true;
+        await JS.InvokeVoidAsync("domInterop.focusOnBlur", _searchModeSelect, _searchInput);
+        await _searchInput.FocusAsync();
     }
 
     protected override void OnParametersSet()
