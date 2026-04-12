@@ -22,7 +22,7 @@
 @code {
     private string _text = string.Empty;
     private string _svg = string.Empty;
-    private int _displaySize = 200;
+    private int _displaySize = 500;
     private ElementReference _wrapperRef;
 
     [Parameter]
@@ -39,13 +39,26 @@
         _svg = GenerateSvg(Text);
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await ApplyDisplaySizeAsync(_displaySize);
+        }
+    }
+
     private async Task OnDisplaySizeChangedAsync(ChangeEventArgs e)
     {
         if (int.TryParse(e.Value?.ToString(), out int value))
         {
             _displaySize = value;
-            await JS.InvokeVoidAsync("domInterop.setStyle", _wrapperRef, "max-width", $"{value}px");
+            await ApplyDisplaySizeAsync(value);
         }
+    }
+
+    private async Task ApplyDisplaySizeAsync(int size)
+    {
+        await JS.InvokeVoidAsync("domInterop.setStyle", _wrapperRef, "max-width", $"{size}px");
     }
 
     /// <summary>
