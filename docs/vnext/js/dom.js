@@ -17,5 +17,10 @@ window.domInterop = {
         } else {
             el.style.setProperty('width', widthPercent + '%');
         }
+    },
+    focusOnBlur: (source, target) => {
+        if (source && target) {
+            source.addEventListener('blur', () => target.focus());
+        }
     }
 };
