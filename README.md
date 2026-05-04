@@ -10,7 +10,9 @@ Works on Chromium-based browsers (Edge, Chrome) and Firefox, on both desktop (Wi
 
 Vault storage connectors can optionally sync your encrypted data to external services (GitHub, Google Drive, SOLID Pod), but the app is fully functional offline. Those connectors only ever see encrypted blobs.
 
-**Your master key never leaves the machine and is never stored anywhere** — not even encrypted. It lives in memory only while the tab is open and must be re-entered each time you start the app or refresh the page. This is by design.
+**Your master key never leaves the machine and is never stored anywhere by default** — It lives in memory only while the tab is open and must be re-entered each time you start the app or refresh the page. This is by design.
+
+Optionally, on devices that support it, you can opt in to a [passkey-based quick unlock](#passkey-quick-unlock-optional) that stores your master key encrypted in the browser's local storage, with a wrapping key bound to the device hardware. This is off by default and per-device.
 
 > **Note**
 > The Blazor rewrite (v2) is still in beta-testing and available at:
@@ -69,6 +71,31 @@ If you don't submit your master key within ~30 seconds of inactivity (no typing)
 > It is recommended to use Diceware™ to generate it.
 >
 > You can find a web-based implementation at https://tanukisharp.github.io/Diceware/ ([details](https://github.com/TanukiSharp/Diceware))
+
+### Passkey quick unlock (optional)
+
+On devices that support it, you can opt in to a **passkey-based quick unlock** so that you do not need to type your master key every time. This feature is **off by default** and must be enabled per device, from the **Settings** page.
+
+**How it works in short.** When you opt in, the browser asks you to register a platform passkey (Touch ID, Windows Hello, Android biometrics, device PIN, etc.). The passkey produces a hardware-bound secret used to encrypt your master key. The encrypted master key is stored in the browser's local storage. On subsequent visits, you authenticate with the passkey and the master key is decrypted automatically — no typing.
+
+**Important things to understand:**
+
+- Your **master key remains the only key that encrypts and decrypts your vault**. The passkey only wraps the master key for convenience.
+- The wrapping secret (the PRF output) is derived from a key that lives inside the authenticator hardware and **never leaves it**. The PRF output itself is briefly held inside a single browser JavaScript function while it is used to wrap or unwrap the master key, then zeroed in memory. It is never exposed to the .NET/WebAssembly layer or to any other part of the app. Re-deriving the PRF output requires authenticating again with the passkey (biometric, PIN, etc.).
+- **Each device has its own passkey.** Enabling it on one device does not affect any other device. Devices without passkey support — or where you choose not to enable it — keep working as usual with manual master key entry. This is fine.
+- You will be asked to re-enter your master key on a regular interval (configurable from **1 to 90 days**, default **7 days**) so that you do not forget it. Each re-entry creates a **new passkey credential** and re-encrypts your master key, rolling the cipher in local storage.
+- Critical actions that move or modify your data — **changing connector settings**, **switching the active connector**, or **removing the passkey itself** — always require your master key. Browsing the Settings page and viewing the configuration is free.
+- If you clear your browser data, the encrypted master key in local storage is lost. The next time you enter your master key, a fresh passkey is enrolled automatically.
+
+**Browser compatibility (as of April 2026):**
+
+| Browser | Passkey unlock |
+|---|---|
+| Chrome / Edge (Chromium) | Supported |
+| Safari 18+ | Supported |
+| Firefox | Not supported (PRF extension not implemented yet) |
+
+On unsupported browsers, the Settings page shows a message explaining the situation. You can still use ItchyPassword normally by entering your master key each time.
 
 ### Vault
 
@@ -291,6 +318,16 @@ The output is encoded using a configurable alphabet.
 ### Secret encryption
 
 Secrets are encrypted using AES-GCM via the browser's SubtleCrypto API, with a key derived from your master key. The encrypted blob is stored in the vault alongside a version tag for future-proof decryption.
+
+### Passkey master key wrapping
+
+When the **passkey quick unlock** feature is enabled on a device, ItchyPassword creates a platform passkey and stores a local compatibility payload in browser storage:
+- A random wrapping key (32 bytes).
+- The master key encrypted with that wrapping key using the same AES-GCM scheme as other encrypted data (`EncryptV3`).
+
+Unlock requires a successful [WebAuthn](https://www.w3.org/TR/webauthn-3/) assertion (biometric or PIN) for the enrolled credential. The app only attempts decryption after assertion succeeds. This keeps quick unlock passkey-gated while avoiding known runtime issues with optional authenticator extensions on some platform/browser combinations.
+
+The raw wrapping key is handled only inside `passkey.js` during wrap/unwrap and is zeroed in a `finally` block. The compatibility payload is stored in local storage alongside the credential ID and is cleared when passkey enrollment is removed or browser storage is wiped.
 
 ### Vault integrity
 

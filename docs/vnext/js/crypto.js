@@ -4,7 +4,7 @@
 window.ItchyPassword = window.ItchyPassword || {};
 window.ItchyPassword.Crypto = {
     // Basic Key Derivation (PBKDF2 -> AES-GCM Key Bytes)
-    getDerivedBytes: async function (password, salt, iterations) {
+    _getDerivedBytes: async function (password, salt, iterations) {
         try {
             const baseKey = await window.crypto.subtle.importKey(
                 'raw',
@@ -37,14 +37,13 @@ window.ItchyPassword.Crypto = {
             const exportedKey = await window.crypto.subtle.exportKey('raw', derivedKey);
             return new Uint8Array(exportedKey);
         } catch (e) {
-            console.error('Crypto Error:', e);
             throw e;
         }
     },
 
     _generatePassword: async function (privatePart, publicPart, hkdfPurpose, iterations) {
         // 1. Get Derived Key (PBKDF2 -> AES-GCM) with N iterations
-        const derivedKey = await this.getDerivedBytes(privatePart, publicPart, iterations);
+        const derivedKey = await this._getDerivedBytes(privatePart, publicPart, iterations);
 
         // 2. Import as HMAC key
         const hmacKey = await window.crypto.subtle.importKey(
@@ -71,7 +70,6 @@ window.ItchyPassword.Crypto = {
         try {
             return await this._generatePassword(privatePart, publicPart, 'Password', 100000);
         } catch (e) {
-            console.error('Password V1 generation error:', e);
             throw e;
         }
     },
@@ -80,7 +78,6 @@ window.ItchyPassword.Crypto = {
         try {
             return await this._generatePassword(privatePart, publicPart, hkdfPurpose || 'Password', 400000);
         } catch (e) {
-            console.error('Password V2 generation error:', e);
             throw e;
         }
     },
@@ -132,57 +129,65 @@ window.ItchyPassword.Crypto = {
             return output;
 
         } catch (e) {
-            console.error('Encrypt V3 Error:', e);
+            throw e;
+        }
+    },
+
+    _decrypt: async function (ciphertext, password, iterations) {
+        const input = ciphertext;
+
+        if (input.length < 28) throw new Error('Invalid ciphertext length');
+
+        const nonce = input.slice(0, 12);
+        const salt = input.slice(12, 28);
+        const encryptedData = input.slice(28);
+
+        // Derive key
+        const baseKey = await window.crypto.subtle.importKey(
+            'raw',
+            password,
+            { name: 'PBKDF2' },
+            false,
+            ['deriveKey']
+        );
+
+        const deriveParams = {
+            name: 'PBKDF2',
+            hash: 'SHA-512',
+            iterations: iterations,
+            salt: salt
+        };
+
+        const derivedKey = await window.crypto.subtle.deriveKey(
+            deriveParams,
+            baseKey,
+            { name: 'AES-GCM', length: 256 },
+            false,
+            ['decrypt']
+        );
+
+        // Decrypt
+        const decrypted = await window.crypto.subtle.decrypt(
+            { name: 'AES-GCM', iv: nonce },
+            derivedKey,
+            encryptedData
+        );
+
+        return new Uint8Array(decrypted);
+    },
+
+    decryptV2: async function (ciphertext, password) {
+        try {
+            return await this._decrypt(ciphertext, password, 100000);
+        } catch (e) {
             throw e;
         }
     },
 
     decryptV3: async function (ciphertext, password) {
         try {
-            const input = ciphertext;
-            const iterations = 400000;
-
-            if (input.length < 28) throw new Error('Invalid ciphertext length');
-
-            const nonce = input.slice(0, 12);
-            const salt = input.slice(12, 28);
-            const encryptedData = input.slice(28);
-
-            // Derive key
-            const baseKey = await window.crypto.subtle.importKey(
-                'raw',
-                password,
-                { name: 'PBKDF2' },
-                false,
-                ['deriveKey']
-            );
-
-            const deriveParams = {
-                name: 'PBKDF2',
-                hash: 'SHA-512',
-                iterations: iterations,
-                salt: salt
-            };
-
-            const derivedKey = await window.crypto.subtle.deriveKey(
-                deriveParams,
-                baseKey,
-                { name: 'AES-GCM', length: 256 },
-                false,
-                ['decrypt']
-            );
-
-            // Decrypt
-            const decrypted = await window.crypto.subtle.decrypt(
-                { name: 'AES-GCM', iv: nonce },
-                derivedKey,
-                encryptedData
-            );
-
-            return new Uint8Array(decrypted);
-
+            return await this._decrypt(ciphertext, password, 400000);
         } catch (e) {
-            console.error('Decrypt V3 Error:', e);
             throw e;
         }
     },
@@ -191,5 +196,19 @@ window.ItchyPassword.Crypto = {
          const array = new Uint8Array(count);
          window.crypto.getRandomValues(array);
          return array;
+    },
+
+    computeHmacSha512: async function(data, key) {
+        const hmacKey = await window.crypto.subtle.importKey(
+            'raw',
+            key,
+            { name: 'HMAC', hash: { name: 'SHA-512' } },
+            false,
+            ['sign']
+        );
+
+        const signature = await window.crypto.subtle.sign('HMAC', hmacKey, data);
+
+        return new Uint8Array(signature);
     }
 };

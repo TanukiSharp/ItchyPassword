@@ -1,4 +1,5 @@
 @using ItchyPassword.Client.Services
+@using ItchyPassword.Core.Models
 @using ItchyPassword.Core.Services
 @implements IDisposable
 @inject VaultSession Session
@@ -6,64 +7,98 @@
 @inject IMasterKeyProvider MasterKeyProvider
 @inject NavigationManager Nav
 @inject ILocalStorageService LocalStorage
+@inject IPasskeyService PasskeyService
+@inject ToastService Toast
 
 <div @onclick="FocusMasterKeyAsync" class="master-key-overlay">
     <div class="master-key-panel">
         <h2>ItchyPassword</h2>
 
-        <p class="master-key-warning">
-            Your master key is never stored, so if you forget it, your vault cannot be recovered.
-        </p>
-
-        <EditForm Model="this" OnValidSubmit="Submit">
-            <div class="form-group">
-                <label for="masterKey">Master key</label>
-                <div class="master-key-input-row">
-                    <div class="master-key-input-wrapper">
-                        <input @ref="_masterKeyInput" class="input master-key-input" type="@(_showPassword ? "text" : "password")" id="masterKey" value="@_masterKey" @oninput="OnMasterKeyInput" placeholder="Enter your master key" required autofocus />
-                        <button type="button" class="master-key-toggle" @onclick="TogglePasswordVisibility" @onclick:stopPropagation title="@(_showPassword ? "Hide master key" : "Show master key")">
-                            <img class="themed-icon" src="icons/@(_showPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showPassword ? "Hide" : "Show")" />
-                        </button>
-                    </div>
-                    <span title="Character count" class="char-count @(_masterKey.Length > 0 && _masterKey.Length < MasterKeyConstants.MinimumLength ? "char-count-too-short" : "")">@_masterKey.Length</span>
-                </div>
+        @if (_isPasskeyUnlocking)
+        {
+            <div class="passkey-unlock-status">
+                <div class="loading-spinner-sm"></div>
+                <span>Unlocking with passkey...</span>
             </div>
-
-            <div class="master-key-confirm-details" @onclick:stopPropagation>
-                <button type="button" class="master-key-confirm-toggle" @onclick="OnConfirmToggle">
-                    <span class="master-key-confirm-arrow @(_confirmExpanded ? "expanded" : "")">&#9654;</span>
-                    Confirm Master Key
-                </button>
-                @if (_confirmExpanded)
-                {
-                    <div class="form-group">
-                        <div class="master-key-input-row">
-                            <div class="master-key-input-wrapper">
-                                <input @ref="_confirmKeyInput" class="input master-key-input @ConfirmationCssClass" type="@(_showConfirmPassword ? "text" : "password")" id="masterKeyConfirm" value="@_confirmKey" @oninput="OnConfirmKeyInput" placeholder="Re-enter your master key" />
-                                <button type="button" class="master-key-toggle" @onclick="ToggleConfirmPasswordVisibility" @onclick:stopPropagation title="@(_showConfirmPassword ? "Hide master key" : "Show master key")">
-                                    <img class="themed-icon" src="icons/@(_showConfirmPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showConfirmPassword ? "Hide" : "Show")" />
-                                </button>
-                            </div>
-                            <span title="Character count" class="char-count">@_confirmKey.Length</span>
-                        </div>
-                    </div>
-                    <p class="diceware-hint">
-                        Need a strong master key? Try <a href="https://tanukisharp.github.io/Diceware" target="_blank" rel="noopener noreferrer">Diceware</a> to get one.
-                    </p>
-                }
-            </div>
-
-            @if (_wasAutoProtected)
+        }
+        else
+        {
+            @if (_passkeyStatus == PasskeyStatus.Expired)
             {
-                <div class="alert-inline-warning auto-protect-message">
-                    Master key cleared after @(AutoProtectSeconds)s of inactivity.
+                <div class="alert-inline-warning passkey-status-banner">
+                    Your passkey enrollment has expired. Please re-enter your master key. A new passkey will be enrolled automatically after your vault loads.
+                </div>
+            }
+            else if (_passkeyError is not null)
+            {
+                <div class="alert-inline-warning passkey-status-banner">
+                    @_passkeyError
                 </div>
             }
 
-            <button class="button primary master-key-submit" type="submit" disabled="@IsLoadDisabled" @onclick:stopPropagation>
-                <span>Load vault</span>
-            </button>
-        </EditForm>
+            @if (_passkeyStatus == PasskeyStatus.Ready)
+            {
+                <div class="form-actions">
+                    <button type="button" class="button secondary" @onclick="RetryPasskeyUnlockAsync" @onclick:stopPropagation>
+                        Unlock with passkey
+                    </button>
+                </div>
+            }
+
+            <p class="master-key-warning">
+                If you forget your master jey, your vault cannot be recovered.
+            </p>
+
+            <EditForm Model="this" OnValidSubmit="Submit">
+                <div class="form-group">
+                    <label for="masterKey">Master key</label>
+                    <div class="master-key-input-row">
+                        <div class="master-key-input-wrapper">
+                            <input @ref="_masterKeyInput" class="input master-key-input" type="@(_showPassword ? "text" : "password")" id="masterKey" value="@_masterKey" @oninput="OnMasterKeyInput" placeholder="Enter your master key" required autofocus />
+                            <button type="button" class="master-key-toggle" @onclick="TogglePasswordVisibility" @onclick:stopPropagation title="@(_showPassword ? "Hide master key" : "Show master key")">
+                                <img class="themed-icon" src="icons/@(_showPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showPassword ? "Hide" : "Show")" />
+                            </button>
+                        </div>
+                        <span title="Character count" class="char-count @(_masterKey.Length > 0 && _masterKey.Length < MasterKeyConstants.MinimumLength ? "char-count-too-short" : "")">@_masterKey.Length</span>
+                    </div>
+                </div>
+
+                <div class="master-key-confirm-details" @onclick:stopPropagation>
+                    <button type="button" class="master-key-confirm-toggle" @onclick="OnConfirmToggle">
+                        <span class="master-key-confirm-arrow @(_confirmExpanded ? "expanded" : "")">&#9654;</span>
+                        Confirm Master Key
+                    </button>
+                    @if (_confirmExpanded)
+                    {
+                        <div class="form-group">
+                            <div class="master-key-input-row">
+                                <div class="master-key-input-wrapper">
+                                    <input @ref="_confirmKeyInput" class="input master-key-input @ConfirmationCssClass" type="@(_showConfirmPassword ? "text" : "password")" id="masterKeyConfirm" value="@_confirmKey" @oninput="OnConfirmKeyInput" placeholder="Re-enter your master key" />
+                                    <button type="button" class="master-key-toggle" @onclick="ToggleConfirmPasswordVisibility" @onclick:stopPropagation title="@(_showConfirmPassword ? "Hide master key" : "Show master key")">
+                                        <img class="themed-icon" src="icons/@(_showConfirmPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showConfirmPassword ? "Hide" : "Show")" />
+                                    </button>
+                                </div>
+                                <span title="Character count" class="char-count">@_confirmKey.Length</span>
+                            </div>
+                        </div>
+                        <p class="diceware-hint">
+                            Need a strong master key? Try <a href="https://tanukisharp.github.io/Diceware" target="_blank" rel="noopener noreferrer">Diceware</a> to get one.
+                        </p>
+                    }
+                </div>
+
+                @if (_wasAutoProtected)
+                {
+                    <div class="alert-inline-warning auto-protect-message">
+                        Master key cleared after @(AutoProtectSeconds)s of inactivity.
+                    </div>
+                }
+
+                <button class="button primary master-key-submit" type="submit" disabled="@IsLoadDisabled" @onclick:stopPropagation>
+                    <span>Load vault</span>
+                </button>
+            </EditForm>
+        }
     </div>
     <div class="master-key-version">@AppVersion.FullVersion</div>
 </div>
@@ -84,6 +119,14 @@
     private ElementReference _masterKeyInput;
     private ElementReference _confirmKeyInput;
     private Timer? _autoProtectTimer;
+
+    // Passkey state.
+    private PasskeyStatus _passkeyStatus = PasskeyStatus.NotEnabled;
+    private bool _isPasskeyUnlocking;
+    private string? _passkeyError;
+    // Tracks whether the previous status was Expired, so we can trigger
+    // re-enrollment after a successful manual master key submission.
+    private bool _shouldReEnrollAfterLoad;
 
     /// <summary>
     /// True when the load action should be blocked:
@@ -116,17 +159,26 @@
 
         // Restore the user's preference for the confirmation panel (default: expanded).
         string? saved = await LocalStorage.GetItemAsync(ConfirmExpandedKey, CancellationToken.None);
-        if (saved is not null)
-        {
-            _confirmExpanded = saved == "true";
-        }
+
+        _confirmExpanded = string.Equals(saved, "true", StringComparison.OrdinalIgnoreCase);
+
+        // Determine passkey state. If the previous enrollment expired,
+        // we remember that so a new one can be created after manual entry.
+        _passkeyStatus = await PasskeyService.GetStatusAsync(CancellationToken.None);
+        _shouldReEnrollAfterLoad = _passkeyStatus == PasskeyStatus.Expired;
+        // Do not auto-trigger passkey on page load. Require explicit user gesture
+        // via the "Unlock with passkey" button for better browser compatibility.
+        _isPasskeyUnlocking = false;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            await FocusMasterKeyAsync();
+            if (_isPasskeyUnlocking == false)
+            {
+                await FocusMasterKeyAsync();
+            }
         }
 
         if (_focusConfirmAfterRender)
@@ -139,6 +191,53 @@
             _focusMasterAfterRender = false;
             await FocusMasterKeyAsync();
         }
+    }
+
+    /// <summary>
+    /// Attempts to unlock the vault using the enrolled passkey on this device.
+    /// On any failure, the manual master key form is shown as fallback.
+    /// </summary>
+    private async Task TryPasskeyUnlockAsync()
+    {
+        try
+        {
+            byte[] masterKey = await PasskeyService.UnlockAsync(CancellationToken.None);
+            await AppState.LoadAsync(masterKey, CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            string message = ex.Message;
+            if (message.Contains("not allowed", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("timed out", StringComparison.OrdinalIgnoreCase)
+                || message.Contains("NotAllowedError", StringComparison.OrdinalIgnoreCase))
+            {
+                // The stored enrollment may be stale/incompatible for this authenticator.
+                // After the user logs in with the master key, automatically create a
+                // fresh passkey enrollment to recover without requiring a settings roundtrip.
+                _shouldReEnrollAfterLoad = true;
+                _passkeyError = "Passkey verification was cancelled, timed out, or denied. Enter your master key once to unlock and refresh passkey enrollment on this device, then try again.";
+            }
+            else
+            {
+                _passkeyError = $"Passkey unlock failed: {message}. Please enter your master key.";
+            }
+            await FocusMasterKeyAsync();
+        }
+        finally
+        {
+            // Always clear the spinner, whether we succeeded (parent will swap views),
+            // failed (form will show with error), or the JS call rejected.
+            _isPasskeyUnlocking = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RetryPasskeyUnlockAsync()
+    {
+        _passkeyError = null;
+        _isPasskeyUnlocking = true;
+        StateHasChanged();
+        await TryPasskeyUnlockAsync();
     }
 
     private async Task FocusMasterKeyAsync()
@@ -246,6 +345,20 @@
         _autoProtectTimer = null;
 
         await AppState.LoadAsync(System.Text.Encoding.UTF8.GetBytes(_masterKey), CancellationToken.None);
+
+        // If the user opted in to passkey unlock and the previous enrollment
+        // had expired (or no enrollment data was present), enroll a new
+        // credential now so that the master key cipher in local storage is
+        // refreshed. Only attempt this when the vault loaded successfully.
+        if (_shouldReEnrollAfterLoad && AppState.Status == AppStatus.Loaded)
+        {
+            _shouldReEnrollAfterLoad = false;
+            PasskeyEnrollResult result = await PasskeyService.EnrollAsync(CancellationToken.None);
+            if (result.Success == false)
+            {
+                Toast.Show($"Passkey re-enrollment failed: {result.ErrorMessage}", TimeSpan.FromSeconds(5));
+            }
+        }
     }
 
     public void Dispose()
@@ -254,4 +367,3 @@
         _autoProtectTimer = null;
     }
 }
-

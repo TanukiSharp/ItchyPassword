@@ -8,6 +8,7 @@
 @inject VaultSession Session
 @inject IAppState AppState
 @inject IMasterKeyProvider MasterKeyProvider
+@inject IPasskeyService PasskeyService
 @inject NavigationManager Nav
 @inject ToastService Toast
 
@@ -67,7 +68,7 @@
                 <details>
                     <summary class="details-summary">Configuration</summary>
 
-                    <VaultConnectorSettings Connector="connector" />
+                    <VaultConnectorSettings Connector="connector" AuthorizeChange="@RequestAuthorizationAsync" />
 
                     <div class="connector-test">
                         @if (_busyConnector == captured)
@@ -120,6 +121,13 @@
                    Actions="@modalActions"
                    OnCancel="@DismissModal" />
 
+@if (MasterKeyProvider.HasMasterKey)
+{
+    <PasskeySettings @ref="_passkeySettings" AuthorizeChange="@RequestAuthorizationAsync" />
+}
+
+<MasterKeyReEntryModal @ref="_reEntryModal" />
+
 @code {
     private Dictionary<Guid, (bool? Success, string Message)> testResults = new();
     private string redirectMessage = string.Empty;
@@ -131,6 +139,14 @@
     private string modalTitle = string.Empty;
     private string modalMessage = string.Empty;
     private List<ModalAction> modalActions = [];
+
+    // Master key re-entry gating (only relevant when passkey unlock is enabled).
+    // Once verified during this page visit, all subsequent gated actions are
+    // free until the user navigates away or reloads.
+    private MasterKeyReEntryModal? _reEntryModal;
+    private PasskeySettings? _passkeySettings;
+    private bool _masterKeyReVerified;
+    private bool _passkeyEnabled;
 
     // Use AppState for status message in case loading fails here.
     private string actionMessage => AppState.Status == AppStatus.Error ? AppState.StatusMessage : string.Empty;
@@ -169,6 +185,43 @@
         {
             await connector.LoadConfigurationAsync(CancellationToken.None);
         }
+
+        // Cache whether passkey unlock is enabled to decide whether to gate
+        // mutating actions. Status NotEnabled means no opt-in; anything else
+        // means the user opted in (even if currently expired).
+        PasskeyStatus passkeyStatus = await PasskeyService.GetStatusAsync(CancellationToken.None);
+        _passkeyEnabled = passkeyStatus != PasskeyStatus.NotEnabled;
+    }
+
+    /// <summary>
+    /// Returns true if the action is allowed to proceed:
+    /// either passkey unlock is not enabled, or the user has already verified
+    /// during this page visit, or the user verifies now via the master key
+    /// re-entry modal.
+    /// </summary>
+    private async Task<bool> RequestAuthorizationAsync()
+    {
+        if (_passkeyEnabled == false)
+        {
+            return true;
+        }
+
+        if (_masterKeyReVerified)
+        {
+            return true;
+        }
+
+        if (_reEntryModal is null)
+        {
+            return false;
+        }
+
+        bool verified = await _reEntryModal.ShowAsync();
+        if (verified)
+        {
+            _masterKeyReVerified = true;
+        }
+        return verified;
     }
 
     /// <summary>
@@ -178,6 +231,12 @@
     private async Task ActivateConnectorAsync(IVaultConnector connector)
     {
         if (Session.IsActiveConnector(connector.Id))
+        {
+            return;
+        }
+
+        // Gate behind master key re-entry when passkey unlock is enabled.
+        if (await RequestAuthorizationAsync() == false)
         {
             return;
         }

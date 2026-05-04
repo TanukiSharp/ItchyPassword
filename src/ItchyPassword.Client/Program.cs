@@ -14,6 +14,7 @@ builder.Services.AddScoped<ICryptoService, CryptoService>();
 builder.Services.AddScoped<RandomBytePool>();
 builder.Services.AddScoped<ILocalStorageService, LocalStorageService>();
 builder.Services.AddScoped<IMasterKeyProvider, MasterKeyProvider>();
+builder.Services.AddScoped<IPasskeyService, PasskeyService>();
 builder.Services.AddScoped<IAppState, AppState>();
 builder.Services.AddScoped<VaultSession>();
 builder.Services.AddScoped<IVaultCryptoService, VaultCryptoService>();

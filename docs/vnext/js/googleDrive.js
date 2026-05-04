@@ -12,7 +12,10 @@
 // relay the code/state via BroadcastChannel and close the popup
 // BEFORE Blazor or any other heavy script loads.
 (function () {
-    if (window.location.pathname !== '/google-oauth-callback') {
+    // Use endsWith so the check works both at the root (/google-oauth-callback)
+    // and under a subpath (e.g. /itchypassword/google-oauth-callback on GitHub Pages).
+    var path = window.location.pathname.replace(/\/$/, '');
+    if (!path.endsWith('/google-oauth-callback')) {
         return;
     }
 
@@ -40,6 +43,9 @@ window.googleDriveInterop = {
     /** @type {Promise<string|null>|null} Pending sign-in result. */
     _signInPromise: null,
 
+    /** @type {Function|null} Resolves the pending promise as null when called. */
+    _cancelFn: null,
+
     /**
      * Opens a popup navigating to the given authorization URL and listens
      * for the OAuth callback result via postMessage.
@@ -60,17 +66,34 @@ window.googleDriveInterop = {
         this._signInPromise = new Promise((resolve) => {
             const channel = new BroadcastChannel('google-oauth-callback');
 
+            const cleanup = () => {
+                clearTimeout(timeoutId);
+                channel.close();
+                this._cancelFn = null;
+            };
+
             // Timeout: resolve null if the user closes the popup without
             // completing sign-in. Since we cannot poll popup.closed under
             // COOP, we use a generous timeout instead.
             const timeoutId = setTimeout(() => {
-                channel.close();
+                cleanup();
                 resolve(null);
             }, 5 * 60 * 1000);
 
+            // Allow programmatic cancellation from C# via cancelSignIn().
+            this._cancelFn = () => {
+                cleanup();
+                resolve(null);
+
+                try {
+                    this._popup?.close();
+                } catch {
+                    // Popup may already be closed.
+                }
+            };
+
             channel.onmessage = (event) => {
-                clearTimeout(timeoutId);
-                channel.close();
+                cleanup();
 
                 if (event.data.error) {
                     resolve(null);
@@ -103,6 +126,16 @@ window.googleDriveInterop = {
         const result = await this._signInPromise;
         this._signInPromise = null;
         return result;
+    },
+
+    /**
+     * Cancels a pending sign-in by resolving the promise as null and closing the popup.
+     * Called from C# when the user explicitly cancels the loading flow.
+     */
+    cancelSignIn() {
+        if (this._cancelFn) {
+            this._cancelFn();
+        }
     },
 
 };

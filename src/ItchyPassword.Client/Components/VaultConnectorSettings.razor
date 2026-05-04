@@ -64,6 +64,15 @@
     public IVaultConnector Connector { get; set; } = default!;
 
     /// <summary>
+    /// Optional callback invoked before persisting any change to the connector
+    /// configuration. When provided and returning false, the change is
+    /// reverted (not persisted). Used by the parent to gate edits behind a
+    /// master key re-entry when passkey unlock is enabled.
+    /// </summary>
+    [Parameter]
+    public Func<Task<bool>>? AuthorizeChange { get; set; }
+
+    /// <summary>
     /// Updates a configuration entry value and persists it immediately.
     /// Encryption of secrets is handled by the connector itself.
     /// </summary>
@@ -74,7 +83,27 @@
             return;
         }
 
-        VaultConnectorHelper.SetValue(Connector.Configuration, key, val ?? string.Empty);
+        // Snapshot the previous value so we can detect a no-op and skip the prompt.
+        string previousValue = VaultConnectorHelper.GetValue(Connector.Configuration, key);
+        string newValue = val ?? string.Empty;
+
+        if (string.Equals(previousValue, newValue, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        if (AuthorizeChange is not null)
+        {
+            bool authorized = await AuthorizeChange();
+            if (authorized == false)
+            {
+                // Force a re-render so the input visibly reverts to the previous value.
+                StateHasChanged();
+                return;
+            }
+        }
+
+        VaultConnectorHelper.SetValue(Connector.Configuration, key, newValue);
         await Connector.SaveConfigurationAsync(CancellationToken.None);
     }
 
