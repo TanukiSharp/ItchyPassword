@@ -1,0 +1,240 @@
+@using ItchyPassword.Core.Models
+@using ItchyPassword.Core.Services
+@inject IPasskeyService PasskeyService
+@inject IMasterKeyProvider MasterKeyProvider
+@inject ToastService Toast
+
+<div class="card page-container passkey-card">
+    <div class="card-header">
+        <h2>Passkey quick unlock</h2>
+        <p class="text-muted">Optional, opt-in. Use a device passkey (biometric or PIN) to skip typing your master key on this device.</p>
+    </div>
+
+    <div class="card-body">
+        @if (_loading)
+        {
+            <div class="loading-spinner-sm"></div>
+        }
+        else if (_isSupported == false)
+        {
+            <div class="alert-inline-warning">
+                This browser or device does not support passkeys with the PRF extension required for secure key wrapping.
+                You can still use ItchyPassword normally by entering your master key each time.
+                Other devices where you use ItchyPassword may support this feature independently.
+            </div>
+        }
+        else if (_status == PasskeyStatus.NotEnabled)
+        {
+            <h3>What are passkeys?</h3>
+            <p class="text-muted">
+                Passkeys are credentials bound to this device. To use one, you confirm your presence with a fingerprint, face scan, or device PIN.
+                Each device manages its own passkeys.
+            </p>
+
+            <h3>What does passkey unlock offer?</h3>
+            <ul class="passkey-list">
+                <li>Skip typing your master key on this device.</li>
+                <li>Faster daily access.</li>
+            </ul>
+
+            <h3>Important things to understand</h3>
+            <ul class="passkey-list">
+                <li>Your master key remains the only key that can encrypt and decrypt your vault. Passkeys do <strong>not</strong> replace it.</li>
+                <li>The passkey encrypts your master key in this browser's local storage. The encryption key is derived from a secret that lives inside your device's secure hardware and never leaves it. The derived value is briefly held in browser memory while wrapping or unwrapping your master key, then cleared.</li>
+                <li>Each device has its own passkey. Enrolling a passkey here does not affect other devices.</li>
+                <li>Devices without passkey support — or where you choose not to enable it — will require your master key as usual. This is fine.</li>
+                <li>You will periodically be asked to re-enter your master key, so you do not forget it. The interval is configurable below.</li>
+                <li>Each time you re-enter your master key, a new passkey credential is created and your master key is re-encrypted, rolling the cipher.</li>
+                <li>Critical actions (changing vault connector settings, switching vault connectors, disabling passkey unlock) always require your master key, even with passkey unlock enabled.</li>
+                <li>If you clear your browser data, the encrypted key is lost. The next time you enter your master key, a fresh passkey will be enrolled automatically.</li>
+            </ul>
+
+            <div class="form-actions">
+                <button type="button" class="button primary" disabled="@_busy" @onclick="EnrollAsync">
+                    @if (_busy) { <span>Working...</span> } else { <span>Enable passkey unlock</span> }
+                </button>
+            </div>
+
+            @if (string.IsNullOrWhiteSpace(_actionMessage) == false)
+            {
+                <div class="@(_actionIsError ? "alert-inline-warning" : "text-success") passkey-action-message">
+                    @_actionMessage
+                </div>
+            }
+        }
+        else
+        {
+            <div class="passkey-enrolled-info">
+                <p>
+                    <strong>Passkey unlock is enabled on this device.</strong>
+                </p>
+                @if (_status == PasskeyStatus.Expired)
+                {
+                    <p class="text-muted">
+                        The current enrollment has expired. The next time you enter your master key, a new passkey will be enrolled automatically.
+                    </p>
+                }
+                else if (_enrolledAt is DateTimeOffset enrolledAt)
+                {
+                    DateTimeOffset expiresAt = enrolledAt.AddDays(_expirationDays);
+                    <p class="text-muted">Enrolled on @enrolledAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm").</p>
+                    <p class="text-muted">Expires on @expiresAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm").</p>
+                }
+            </div>
+
+            <div class="form-group">
+                <label for="passkey-expiration">Master key re-entry interval (days)</label>
+                <input id="passkey-expiration" class="input passkey-expiration-input"
+                       type="number" min="@IPasskeyService.MinExpirationDays" max="@IPasskeyService.MaxExpirationDays"
+                       value="@_expirationDays"
+                       @onchange="OnExpirationDaysChanged" />
+                <span class="form-description">
+                    Choose between @IPasskeyService.MinExpirationDays and @IPasskeyService.MaxExpirationDays days. Longer intervals increase the risk of forgetting your master key. Choose at your own risk.
+                </span>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="button danger" disabled="@_busy" @onclick="RemoveAsync">
+                    @if (_busy) { <span>Working...</span> } else { <span>Remove passkey</span> }
+                </button>
+            </div>
+
+            @if (string.IsNullOrWhiteSpace(_actionMessage) == false)
+            {
+                <div class="@(_actionIsError ? "alert-inline-warning" : "text-success") passkey-action-message">
+                    @_actionMessage
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>
+    /// Optional callback invoked before performing a destructive action
+    /// (e.g. removing the passkey). When provided and returning false,
+    /// the action is cancelled. The parent typically returns true after a
+    /// successful master key re-entry.
+    /// </summary>
+    [Parameter]
+    public Func<Task<bool>>? AuthorizeChange { get; set; }
+
+    private bool _loading = true;
+    private bool _busy;
+    private bool _isSupported;
+    private PasskeyStatus _status = PasskeyStatus.NotEnabled;
+    private DateTimeOffset? _enrolledAt;
+    private int _expirationDays = IPasskeyService.DefaultExpirationDays;
+    private string _actionMessage = string.Empty;
+    private bool _actionIsError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshAsync();
+    }
+
+    /// <summary>
+    /// Reloads passkey state from the service.
+    /// </summary>
+    public async Task RefreshAsync()
+    {
+        _loading = true;
+        StateHasChanged();
+
+        _isSupported = await PasskeyService.IsSupportedAsync(CancellationToken.None);
+
+        if (_isSupported)
+        {
+            _status = await PasskeyService.GetStatusAsync(CancellationToken.None);
+            _enrolledAt = await PasskeyService.GetEnrolledAtAsync(CancellationToken.None);
+            _expirationDays = await PasskeyService.GetExpirationDaysAsync(CancellationToken.None);
+        }
+
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private async Task EnrollAsync()
+    {
+        if (MasterKeyProvider.HasMasterKey == false)
+        {
+            SetMessage("Master key must be loaded before enabling passkey unlock.", isError: true);
+            return;
+        }
+
+        _busy = true;
+        _actionMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            PasskeyEnrollResult result = await PasskeyService.EnrollAsync(CancellationToken.None);
+            if (result.Success)
+            {
+                Toast.Show("Passkey enrolled successfully.", TimeSpan.FromSeconds(3));
+                await RefreshAsync();
+            }
+            else
+            {
+                SetMessage(result.ErrorMessage ?? "Passkey enrollment failed.", isError: true);
+            }
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RemoveAsync()
+    {
+        // Gate the removal: if the parent provided an authorization callback,
+        // require the user to re-enter their master key first.
+        if (AuthorizeChange is not null)
+        {
+            bool authorized = await AuthorizeChange();
+            if (authorized == false)
+            {
+                return;
+            }
+        }
+
+        _busy = true;
+        _actionMessage = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await PasskeyService.RemoveAsync(CancellationToken.None);
+            Toast.Show("Passkey removed.", TimeSpan.FromSeconds(3));
+            await RefreshAsync();
+        }
+        finally
+        {
+            _busy = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task OnExpirationDaysChanged(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int days) == false)
+        {
+            return;
+        }
+
+        // Clamp to the allowed range silently.
+        days = Math.Clamp(days, IPasskeyService.MinExpirationDays, IPasskeyService.MaxExpirationDays);
+
+        _expirationDays = days;
+        await PasskeyService.SetExpirationDaysAsync(days, CancellationToken.None);
+        SetMessage("Re-entry interval updated.", isError: false);
+    }
+
+    private void SetMessage(string message, bool isError)
+    {
+        _actionMessage = message;
+        _actionIsError = isError;
+        StateHasChanged();
+    }
+}

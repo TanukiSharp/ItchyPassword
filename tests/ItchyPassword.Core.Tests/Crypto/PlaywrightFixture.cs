@@ -76,4 +76,25 @@ public sealed class PlaywrightFixture : IAsyncLifetime
 
         return page;
     }
+
+    /// <summary>
+    /// Creates a new browser page with crypto.js and passkey.js loaded, and base64 marshaling helpers injected.
+    /// </summary>
+    public async Task<IPage> CreatePageWithPasskeyAsync()
+    {
+        IPage page = await CreatePageWithCryptoAsync();
+
+        string passkeyPath = Path.GetFullPath(
+            Path.Combine(AppContext.BaseDirectory, "../../../../../src/ItchyPassword.Client/wwwroot/js/passkey.js"));
+
+        if (File.Exists(passkeyPath) == false)
+        {
+            throw new FileNotFoundException($"Could not find passkey.js at {passkeyPath}");
+        }
+
+        string jsContent = await File.ReadAllTextAsync(passkeyPath);
+        await page.AddScriptTagAsync(new PageAddScriptTagOptions { Content = jsContent });
+
+        return page;
+    }
 }

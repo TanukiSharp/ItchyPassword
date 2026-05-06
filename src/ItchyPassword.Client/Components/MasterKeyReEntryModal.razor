@@ -1,0 +1,112 @@
+@namespace ItchyPassword.Client.Components
+@using System.Security.Cryptography
+@using ItchyPassword.Core.Services
+@inject IMasterKeyProvider MasterKeyProvider
+
+@if (_isVisible)
+{
+    <div class="modal-backdrop" @onclick="HandleCancel">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <div class="modal-header">
+                <h3>Confirm with master key</h3>
+            </div>
+            <div class="modal-body">
+                <p>This action requires your master key. Please re-enter it to continue.</p>
+
+                <EditForm Model="this" OnValidSubmit="HandleVerify">
+                    <div class="form-group">
+                        <div class="master-key-input-row">
+                            <div class="master-key-input-wrapper">
+                                <input @ref="_input"
+                                       class="input master-key-input @(_hasError ? "input-error" : "")"
+                                       type="@(_showPassword ? "text" : "password")"
+                                       value="@_entered"
+                                       @oninput="OnInput"
+                                       placeholder="Enter your master key"
+                                       autofocus />
+                                <button type="button" class="master-key-toggle" @onclick="TogglePasswordVisibility" @onclick:stopPropagation title="@(_showPassword ? "Hide master key" : "Show master key")">
+                                    <img class="themed-icon" src="icons/@(_showPassword ? "eye-closed-dark" : "eye-open-dark").svg" width="18" height="18" alt="@(_showPassword ? "Hide" : "Show")" />
+                                </button>
+                            </div>
+                        </div>
+                        @if (_hasError)
+                        {
+                            <span class="form-error">Master key does not match.</span>
+                        }
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="submit" class="button primary modal-action-btn" disabled="@(_entered.Length == 0)">Verify</button>
+                        <button type="button" class="button secondary modal-action-btn" @onclick="HandleCancel">Cancel</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool _isVisible;
+    private string _entered = string.Empty;
+    private bool _hasError;
+    private bool _showPassword;
+    private ElementReference _input;
+    private TaskCompletionSource<bool>? _tcs;
+
+    /// <summary>
+    /// Shows the modal and returns true when the user verified successfully,
+    /// false when the user cancelled.
+    /// </summary>
+    public Task<bool> ShowAsync()
+    {
+        _entered = string.Empty;
+        _hasError = false;
+        _showPassword = false;
+        _isVisible = true;
+        _tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        StateHasChanged();
+        return _tcs.Task;
+    }
+
+    private void OnInput(ChangeEventArgs e)
+    {
+        _entered = e.Value?.ToString() ?? string.Empty;
+        _hasError = false;
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        _showPassword = !_showPassword;
+    }
+
+    private void HandleVerify()
+    {
+        byte[] enteredBytes = System.Text.Encoding.UTF8.GetBytes(_entered);
+        bool match = CryptographicOperations.FixedTimeEquals(enteredBytes, MasterKeyProvider.MasterKey);
+        Array.Clear(enteredBytes, 0, enteredBytes.Length);
+
+        if (match == false)
+        {
+            _hasError = true;
+            StateHasChanged();
+            return;
+        }
+
+        Close(verified: true);
+    }
+
+    private void HandleCancel()
+    {
+        Close(verified: false);
+    }
+
+    private void Close(bool verified)
+    {
+        _entered = string.Empty;
+        _isVisible = false;
+        TaskCompletionSource<bool>? tcs = _tcs;
+        _tcs = null;
+        StateHasChanged();
+        tcs?.TrySetResult(verified);
+    }
+}

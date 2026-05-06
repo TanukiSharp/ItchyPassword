@@ -321,13 +321,12 @@ Secrets are encrypted using AES-GCM via the browser's SubtleCrypto API, with a k
 
 ### Passkey master key wrapping
 
-When the **passkey quick unlock** feature is enabled on a device, ItchyPassword creates a platform passkey and stores a local compatibility payload in browser storage:
-- A random wrapping key (32 bytes).
-- The master key encrypted with that wrapping key using the same AES-GCM scheme as other encrypted data (`EncryptV3`).
+When the **passkey quick unlock** feature is enabled on a device, ItchyPassword uses the [WebAuthn PRF extension](https://w3c.github.io/webauthn/#prf-extension) to derive a symmetric key directly from the platform authenticator hardware.
+This derived hardware-bound key is used to encrypt the master key for local storage.
 
-Unlock requires a successful [WebAuthn](https://www.w3.org/TR/webauthn-3/) assertion (biometric or PIN) for the enrolled credential. The app only attempts decryption after assertion succeeds. This keeps quick unlock passkey-gated while avoiding known runtime issues with optional authenticator extensions on some platform/browser combinations.
+**Crucially, no wrapping key is stored locally.** Decrypting the master key strictly requires the hardware authenticator to successfully re-evaluate the PRF, meaning the encrypted master key is cryptographically unrecoverable without successful user verification (biometric or PIN) by the device. 
 
-The raw wrapping key is handled only inside `passkey.js` during wrap/unwrap and is zeroed in a `finally` block. The compatibility payload is stored in local storage alongside the credential ID and is cleared when passkey enrollment is removed or browser storage is wiped.
+The PRF evaluation and AES-GCM wrapping (`EncryptV3`) occur exclusively inside `passkey.js`, and the derived key material is immediately zeroed in a `finally` block to prevent it from leaking into the .NET/WebAssembly environment or lingering in memory.
 
 ### Vault integrity
 
