@@ -36,15 +36,6 @@
                 </div>
             }
 
-            @if (_passkeyStatus == PasskeyStatus.Ready)
-            {
-                <div class="form-actions">
-                    <button type="button" class="button secondary" @onclick="RetryPasskeyUnlockAsync" @onclick:stopPropagation>
-                        Unlock with passkey
-                    </button>
-                </div>
-            }
-
             <p class="master-key-warning">
                 If you forget your master jey, your vault cannot be recovered.
             </p>
@@ -166,16 +157,18 @@
         // we remember that so a new one can be created after manual entry.
         _passkeyStatus = await PasskeyService.GetStatusAsync(CancellationToken.None);
         _shouldReEnrollAfterLoad = _passkeyStatus == PasskeyStatus.Expired;
-        // Do not auto-trigger passkey on page load. Require explicit user gesture
-        // via the "Unlock with passkey" button for better browser compatibility.
-        _isPasskeyUnlocking = false;
+        _isPasskeyUnlocking = _passkeyStatus == PasskeyStatus.Ready;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            if (_isPasskeyUnlocking == false)
+            if (_isPasskeyUnlocking)
+            {
+                await TryPasskeyUnlockAsync();
+            }
+            else
             {
                 await FocusMasterKeyAsync();
             }
@@ -207,7 +200,7 @@
         catch (Exception ex)
         {
             string message = ex.Message;
-            if (message.Contains("PRF extension required", StringComparison.OrdinalIgnoreCase) || 
+            if (message.Contains("PRF extension required", StringComparison.OrdinalIgnoreCase) ||
                 message.Contains("did not return the PRF derived key", StringComparison.OrdinalIgnoreCase))
             {
                 // PRF is strictly required. The device does not support it. Auto re-enrollment will not help.
@@ -237,14 +230,6 @@
             _isPasskeyUnlocking = false;
             StateHasChanged();
         }
-    }
-
-    private async Task RetryPasskeyUnlockAsync()
-    {
-        _passkeyError = null;
-        _isPasskeyUnlocking = true;
-        StateHasChanged();
-        await TryPasskeyUnlockAsync();
     }
 
     private async Task FocusMasterKeyAsync()

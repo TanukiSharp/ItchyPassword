@@ -18,7 +18,7 @@ public class PasskeyJsTests : IClassFixture<PlaywrightFixture>, IAsyncLifetime
     public async Task InitializeAsync()
     {
         _page = await _fixture.CreatePageWithPasskeyAsync();
-        
+
         // Create CDP session to inject a virtual authenticator
         _cdp = await _page.Context.NewCDPSessionAsync(_page);
         await _cdp.SendAsync("WebAuthn.enable");
@@ -75,7 +75,7 @@ public class PasskeyJsTests : IClassFixture<PlaywrightFixture>, IAsyncLifetime
     {
         // 1. Arrange: master key
         string masterKeyB64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("super-secret-master-key-that-is-long-enough"));
-        
+
         // 2. Act: Enroll and Wrap
         JsonElement result = await _page.EvaluateAsync<JsonElement>(@"async (mObj) => {
             const masterBytes = window.__fromB64(mObj.mk);
@@ -110,7 +110,7 @@ public class PasskeyJsTests : IClassFixture<PlaywrightFixture>, IAsyncLifetime
     {
         // 1. Arrange: enroll first
         string masterKeyB64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("another-master-key-here-1234"));
-        
+
         JsonElement result = await _page.EvaluateAsync<JsonElement>(@"async (mObj) => {
             const masterBytes = window.__fromB64(mObj.mk);
             const userIdBytes = new Uint8Array([9, 8, 7, 6, 5, 4, 3, 2]);
@@ -136,7 +136,7 @@ public class PasskeyJsTests : IClassFixture<PlaywrightFixture>, IAsyncLifetime
         {
             await _page.EvaluateAsync<string>(@"async (mObj) => {
                 window.ItchyPassword.Passkey._assertionTimeoutMs = 1000;
-                
+
                 const credBytes = window.__fromB64(mObj.cred);
                 const wrappedBytes = window.__fromB64(mObj.wrapped);
                 await window.ItchyPassword.Passkey.unlockAndUnwrap(credBytes, wrappedBytes);

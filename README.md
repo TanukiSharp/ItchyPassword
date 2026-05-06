@@ -324,7 +324,7 @@ Secrets are encrypted using AES-GCM via the browser's SubtleCrypto API, with a k
 When the **passkey quick unlock** feature is enabled on a device, ItchyPassword uses the [WebAuthn PRF extension](https://w3c.github.io/webauthn/#prf-extension) to derive a symmetric key directly from the platform authenticator hardware.
 This derived hardware-bound key is used to encrypt the master key for local storage.
 
-**Crucially, no wrapping key is stored locally.** Decrypting the master key strictly requires the hardware authenticator to successfully re-evaluate the PRF, meaning the encrypted master key is cryptographically unrecoverable without successful user verification (biometric or PIN) by the device. 
+**Crucially, no wrapping key is stored locally.** Decrypting the master key strictly requires the hardware authenticator to successfully re-evaluate the PRF, meaning the encrypted master key is cryptographically unrecoverable without successful user verification (biometric or PIN) by the device.
 
 The PRF evaluation and AES-GCM wrapping (`EncryptV3`) occur exclusively inside `passkey.js`, and the derived key material is immediately zeroed in a `finally` block to prevent it from leaking into the .NET/WebAssembly environment or lingering in memory.
 

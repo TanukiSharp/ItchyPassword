@@ -237,7 +237,7 @@ public class PasskeyService(
     {
         string message = ex.Message ?? string.Empty;
 
-        if (message.Contains("PRF extension required", StringComparison.OrdinalIgnoreCase) || 
+        if (message.Contains("PRF extension required", StringComparison.OrdinalIgnoreCase) ||
             message.Contains("did not return the PRF derived key", StringComparison.OrdinalIgnoreCase))
         {
             return "Your device or browser does not support the secure cryptographic features (PRF) required for passkeys.";

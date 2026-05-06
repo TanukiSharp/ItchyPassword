@@ -5,7 +5,7 @@
 window.ItchyPassword = window.ItchyPassword || {};
 window.ItchyPassword.Passkey = {
     _assertionTimeoutMs: 65000,
-    
+
     // Constant salt for deriving the PRF key via WebAuthn
     _prfSaltString: 'ItchyPassword-PRF-v1',
 
@@ -97,18 +97,18 @@ window.ItchyPassword.Passkey = {
         if (!credential) {
             throw new Error('Passkey creation returned no credential.');
         }
-        
+
         const prfResults = credential.getClientExtensionResults().prf;
         if (!prfResults || !prfResults.enabled) {
             throw new Error("NotAllowedError: Authenticator does not support the PRF extension required for secure encryption.");
         }
 
         const credentialIdBytes = new Uint8Array(credential.rawId);
-        
+
         // At enrollment, PRF extension returns 'enabled: true' but NOT the evaluated key.
         // We must immediately perform an assertion to get the derived key.
         const derivedKeyResult = await this._getAssertionPrf(credentialIdBytes, prfSalt);
-        
+
         const wrapKeyBytes = derivedKeyResult.prfKey;
 
         try {
