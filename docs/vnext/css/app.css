@@ -1858,6 +1858,48 @@ td.text-right,
     100% { transform: rotate(360deg); }
 }
 
+/* Passkey unlock — auto-unlock status shown in the master key view. */
+.passkey-unlock-status {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1.5rem 0;
+    color: var(--text-muted);
+}
+
+.passkey-status-banner {
+    margin-bottom: var(--spacing-md);
+}
+
+/* Passkey settings card — appears below vault connectors on Settings page. */
+.passkey-card {
+    margin-top: var(--spacing-md);
+}
+
+.passkey-list {
+    margin: var(--spacing-sm) 0 var(--spacing-md) 1.25rem;
+    padding-left: 0;
+}
+
+.passkey-list li {
+    margin-bottom: var(--spacing-xs);
+    color: var(--text-muted);
+}
+
+.passkey-enrolled-info {
+    margin-bottom: var(--spacing-md);
+}
+
+.passkey-action-message {
+    display: block;
+    margin-top: var(--spacing-sm);
+}
+
+.passkey-expiration-input {
+    max-width: 8rem;
+}
+
 /* Blazor error UI - hidden by default, shown by the framework on unhandled exceptions. */
 #blazor-error-ui {
     background: lightyellow;
@@ -2026,9 +2068,14 @@ td.text-right,
     line-height: inherit;
 }
 
-.sidebar-action-link:hover {
+.sidebar-action-link:hover:not(:disabled) {
     background-color: var(--bg-color);
     color: var(--primary-color);
+}
+
+.sidebar-action-link:disabled {
+    opacity: 0.4;
+    cursor: default;
 }
 
 /* ── Sidebar Badge ───────────────────────────────────────────────── */
