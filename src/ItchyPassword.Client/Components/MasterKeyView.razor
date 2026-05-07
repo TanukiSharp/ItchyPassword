@@ -227,7 +227,7 @@
             {
                 _passkeyError = $"Passkey unlock failed: {message}. Please enter your master key.";
             }
-            await FocusMasterKeyAsync();
+            _focusMasterAfterRender = true;
         }
         finally
         {
@@ -246,15 +246,25 @@
         await TryPasskeyUnlockAsync();
     }
 
-    private async Task DismissPasskeyPrompt()
+    private void DismissPasskeyPrompt()
     {
         _passkeyStatus = PasskeyStatus.NotEnabled;
-        await FocusMasterKeyAsync();
+        _focusMasterAfterRender = true;
     }
 
     private async Task FocusMasterKeyAsync()
     {
-        await _masterKeyInput.FocusAsync();
+        try
+        {
+            await _masterKeyInput.FocusAsync();
+        }
+        catch (JSException)
+        {
+            // The element reference may not be in the DOM yet (e.g., passkey prompt
+            // is still showing, or the component hasn't fully rendered). Schedule
+            // focus for the next render cycle instead.
+            _focusMasterAfterRender = true;
+        }
     }
 
     private void TogglePasswordVisibility()
