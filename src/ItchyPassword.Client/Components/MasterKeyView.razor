@@ -21,6 +21,17 @@
                 <span>Unlocking with passkey...</span>
             </div>
         }
+        else if (_passkeyStatus == PasskeyStatus.Ready && _passkeyError is null)
+        {
+            <div class="passkey-prompt">
+                <button type="button" class="button primary passkey-unlock-button" @onclick="OnPasskeyUnlockClicked">
+                    Unlock with passkey
+                </button>
+                <button type="button" class="button-link passkey-fallback-link" @onclick="DismissPasskeyPrompt">
+                    Use master key instead
+                </button>
+            </div>
+        }
         else
         {
             @if (_passkeyStatus == PasskeyStatus.Expired)
@@ -157,18 +168,13 @@
         // we remember that so a new one can be created after manual entry.
         _passkeyStatus = await PasskeyService.GetStatusAsync(CancellationToken.None);
         _shouldReEnrollAfterLoad = _passkeyStatus == PasskeyStatus.Expired;
-        _isPasskeyUnlocking = _passkeyStatus == PasskeyStatus.Ready;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            if (_isPasskeyUnlocking)
-            {
-                await TryPasskeyUnlockAsync();
-            }
-            else
+            if (_passkeyStatus != PasskeyStatus.Ready)
             {
                 await FocusMasterKeyAsync();
             }
@@ -230,6 +236,20 @@
             _isPasskeyUnlocking = false;
             StateHasChanged();
         }
+    }
+
+    private async Task OnPasskeyUnlockClicked()
+    {
+        _passkeyError = null;
+        _isPasskeyUnlocking = true;
+        StateHasChanged();
+        await TryPasskeyUnlockAsync();
+    }
+
+    private async Task DismissPasskeyPrompt()
+    {
+        _passkeyStatus = PasskeyStatus.NotEnabled;
+        await FocusMasterKeyAsync();
     }
 
     private async Task FocusMasterKeyAsync()
