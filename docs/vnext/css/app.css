@@ -1872,6 +1872,33 @@ td.text-right,
     margin-bottom: var(--spacing-md);
 }
 
+.passkey-prompt {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--spacing-md);
+    padding: 2rem 0;
+}
+
+.passkey-unlock-button {
+    min-width: 220px;
+    font-size: 1.05rem;
+}
+
+.passkey-fallback-link {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.85rem;
+    text-decoration: underline;
+    padding: 0;
+}
+
+.passkey-fallback-link:hover {
+    color: var(--text);
+}
+
 /* Passkey settings card — appears below vault connectors on Settings page. */
 .passkey-card {
     margin-top: var(--spacing-md);
