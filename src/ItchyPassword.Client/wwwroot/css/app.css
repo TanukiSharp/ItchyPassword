@@ -233,6 +233,8 @@ a:hover { text-decoration: underline; }
     color: var(--text-muted);
     border-radius: var(--border-radius);
     transition: background-color 0.2s;
+    -webkit-user-drag: none;
+    user-select: none;
 }
 .sidebar nav span:not(.sidebar-badge) {
     display: block;
@@ -372,7 +374,18 @@ button, .button, input[type="submit"] {
     text-decoration: none;
     font-size: 1rem;
     line-height: 1.5;
+    /* Prevent the browser from initiating a drag gesture on buttons,
+       so a click still fires even if the mouse moves slightly. */
+    -webkit-user-drag: none;
+    user-select: none;
 }
+/* Let the button capture all pointer events so embedded icons/images
+   never start a native drag or swallow clicks. */
+button img, .button img,
+button svg, .button svg {
+    pointer-events: none;
+}
+
 button:hover, .button:hover { background-color: var(--primary-hover); }
 button:active, .button:active { transform: translateY(1px); }
 button:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
