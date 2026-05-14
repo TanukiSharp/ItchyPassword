@@ -16,6 +16,8 @@
 
 <h1>Settings</h1>
 
+<div class="settings-page">
+
 @if (string.IsNullOrWhiteSpace(redirectMessage) == false)
 {
     <div class="alert danger settings-alert">@redirectMessage</div>
@@ -115,16 +117,18 @@
     </div>
 </div>
 
+@if (MasterKeyProvider.HasMasterKey)
+{
+    <PasskeySettings @ref="_passkeySettings" AuthorizeChange="@RequestAuthorizationAsync" />
+}
+
+</div> @* settings-page *@
+
 <ConfirmationModal IsVisible="@modalVisible"
                    Title="@modalTitle"
                    Message="@modalMessage"
                    Actions="@modalActions"
                    OnCancel="@DismissModal" />
-
-@if (MasterKeyProvider.HasMasterKey)
-{
-    <PasskeySettings @ref="_passkeySettings" AuthorizeChange="@RequestAuthorizationAsync" />
-}
 
 <MasterKeyReEntryModal @ref="_reEntryModal" />
 

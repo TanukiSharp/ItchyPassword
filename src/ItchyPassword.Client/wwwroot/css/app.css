@@ -1802,6 +1802,12 @@ td.text-right,
         margin-top: 0.5rem;
     }
 
+    /* Settings page: single scrollable area instead of per-section scrolling. */
+    .main-content:has(.settings-page) {
+        overflow-y: auto;
+        display: block;
+    }
+
     .master-key-overlay {
         margin: 0 0.5rem;
     }
