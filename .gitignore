@@ -6,3 +6,4 @@ obj/
 *.csproj.user
 node_modules/
 /BenchmarkDotNet.Artifacts/
+*.csproj.lscache

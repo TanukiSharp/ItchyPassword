@@ -862,6 +862,14 @@ td.text-right,
     margin-bottom: 1rem;
 }
 
+.summary-generate-btn {
+    margin-left: 0.5rem;
+}
+
+details[open] > .details-summary .summary-generate-btn {
+    display: none;
+}
+
 .connector-card .details-summary {
     font-size: 0.9em;
     margin-bottom: 0.5rem;
@@ -1799,7 +1807,7 @@ td.text-right,
     }
 
     .form-actions {
-        margin-top: 0.5rem;
+        margin-top: 1.0rem;
     }
 
     /* Settings page: single scrollable area instead of per-section scrolling. */
