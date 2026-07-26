@@ -7,7 +7,7 @@ namespace ItchyPassword.Client;
 public static partial class AppVersion
 {
     public const int Major = 2;
-    public const int Minor = 4;
+    public const int Minor = 5;
 
     public static string FullVersion
     {
