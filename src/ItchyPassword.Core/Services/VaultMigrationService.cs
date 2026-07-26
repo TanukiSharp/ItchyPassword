@@ -1,6 +1,7 @@
 using ItchyPassword.Core.Constants;
 using ItchyPassword.Core.Encoding;
 using ItchyPassword.Core.Models;
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -54,27 +55,43 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto, ErrorLogServ
         return vault;
     }
 
-    private static VaultV2 PerformStructuralMigration(string jsonContent)
+    private VaultV2 PerformStructuralMigration(string jsonContent)
     {
         var vault = new VaultV2 { Version = 2, Items = [] };
 
+        JsonNode? root;
         try
         {
-            JsonNode? root = JsonNode.Parse(jsonContent);
-
-            if (root is JsonObject rootObj)
-            {
-                foreach (KeyValuePair<string, JsonNode?> kvp in rootObj)
-                {
-                    if (kvp.Value is JsonObject childObj)
-                    {
-                        TraverseV1Node(childObj, kvp.Key, string.Empty, vault.Items);
-                    }
-                }
-            }
+            root = JsonNode.Parse(jsonContent);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            errorLog.Log("Failed to parse legacy vault JSON.", nameof(VaultMigrationService), ex);
+            return vault;
+        }
+
+        if (root is not JsonObject rootObj)
+        {
+            return vault;
+        }
+
+        foreach (KeyValuePair<string, JsonNode?> kvp in rootObj)
+        {
+            if (kvp.Value is not JsonObject childObj)
+            {
+                continue;
+            }
+
+            // Isolate each top-level entry: a single malformed service must not abort the
+            // migration and silently drop every other entry in the vault.
+            try
+            {
+                TraverseV1Node(childObj, kvp.Key, string.Empty, vault.Items);
+            }
+            catch (Exception ex)
+            {
+                errorLog.Log($"Failed to migrate legacy entry '{kvp.Key}'; it was skipped.", nameof(VaultMigrationService), ex);
+            }
         }
 
         return vault;
@@ -93,11 +110,7 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto, ErrorLogServ
                 pubPartNode?.GetValueKind() == JsonValueKind.String &&
                 pubPartNode.ToString().Length >= 4)
             {
-                DateTimeOffset legacyDate = DateTimeOffset.UtcNow;
-                if (passObj.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out legacyDate))
-                {
-                    // Use the original datetime from the legacy vault.
-                }
+                DateTimeOffset legacyDate = ParseLegacyDate(passObj);
 
                 var item = new VaultItemV2
                 {
@@ -171,11 +184,7 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto, ErrorLogServ
 
                         string itemName = string.IsNullOrWhiteSpace(cipherKvp.Key) ? name : $"{name} / {cipherKvp.Key}";
 
-                        DateTimeOffset legacyCipherDate = DateTimeOffset.UtcNow;
-                        if (cipherDetail.TryGetPropertyValue("datetime", out JsonNode? dt) && DateTimeOffset.TryParse(dt?.ToString(), out legacyCipherDate))
-                        {
-                            // Use the original datetime from the legacy vault.
-                        }
+                        DateTimeOffset legacyCipherDate = ParseLegacyDate(cipherDetail);
 
                         var item = new VaultItemV2
                         {
@@ -293,8 +302,6 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto, ErrorLogServ
             try
             {
                 SecretDataV2 secretData = item.SecretData!.Value;
-                string cipher = secretData.Cipher;
-                int cryptoVersion = secretData.CryptoVersion;
 
                 string decryptedValue = await vaultCrypto.DecryptSecretAsync(secretData, masterKeyBytes, cancellationToken);
 
@@ -318,25 +325,65 @@ public class VaultMigrationService(IVaultCryptoService vaultCrypto, ErrorLogServ
         }
     }
 
+    /// <summary>
+    /// Reads a strongly-typed value from a legacy node, tolerating type mismatches.
+    /// A value stored with an unexpected JSON type (for example a number serialized as a
+    /// string in an old export or a hand-edited vault) is coerced when possible and falls
+    /// back to <paramref name="defaultValue"/> otherwise. This method never throws, so a
+    /// single oddly-typed field cannot abort the migration of the surrounding vault.
+    /// </summary>
     private static T ExtractValue<T>(string parentPath, JsonObject obj, string key, T defaultValue)
     {
-        if (obj.TryGetPropertyValue(key, out JsonNode? valNode) == false)
+        if (obj.TryGetPropertyValue(key, out JsonNode? valNode) == false || valNode is null)
         {
             return defaultValue;
         }
 
-        if (valNode is null)
+        // Fast path: the JSON type matches the requested type.
+        try
         {
-            return defaultValue;
+            if (valNode.GetValue<T?>() is T value)
+            {
+                return value;
+            }
+        }
+        catch (Exception)
+        {
+            // Type mismatch (e.g. "version": "3"). Fall through to coercion below.
         }
 
-        T? nullableValue = valNode.GetValue<T?>();
+        // Coercion path: recover common cross-type mismatches instead of losing the value.
+        string raw = valNode.ToString();
 
-        if (nullableValue is null)
+        if (typeof(T) == typeof(int))
         {
-            return defaultValue;
+            if (int.TryParse(raw, NumberStyles.Integer, CultureInfo.InvariantCulture, out int parsedInt))
+            {
+                return (T)(object)parsedInt;
+            }
+        }
+        else if (typeof(T) == typeof(string))
+        {
+            return (T)(object)raw;
         }
 
-        return nullableValue;
+        return defaultValue;
+    }
+
+    /// <summary>
+    /// Parses the optional "datetime" field of a legacy node, falling back to the current
+    /// time (never <see cref="DateTimeOffset.MinValue"/>) when it is missing or unparseable.
+    /// Uses invariant culture so import behaves identically regardless of the machine locale.
+    /// </summary>
+    private static DateTimeOffset ParseLegacyDate(JsonObject node)
+    {
+        if (node.TryGetPropertyValue("datetime", out JsonNode? dt) &&
+            dt is not null &&
+            DateTimeOffset.TryParse(dt.ToString(), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTimeOffset parsed))
+        {
+            return parsed;
+        }
+
+        return DateTimeOffset.UtcNow;
     }
 }
